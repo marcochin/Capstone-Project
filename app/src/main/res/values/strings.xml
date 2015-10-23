@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">StockStreakz</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- logo -->
+    <string name="logo_font_name">harlowsi.TTF</string>
+</resources>
