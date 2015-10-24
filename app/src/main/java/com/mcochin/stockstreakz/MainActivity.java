@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,6 +21,12 @@ import java.io.IOException;
 import yahoofinance.YahooFinance;
 
 public class MainActivity extends AppCompatActivity {
+    private static String TAG = MainActivity.class.getSimpleName();
+    private static String SEARCH_VIEW_ICONIFY = "searchViewIconify";
+    private static String SEARCH_VIEW_QUERY = "searchViewQuery";
+
+    private SearchView mSearchView;
+    private Bundle mSavedInstancedState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +39,10 @@ public class MainActivity extends AppCompatActivity {
             // Disable the default toolbar title because we have our own custom one.
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
+
+        if(savedInstanceState != null){
+            mSavedInstancedState = savedInstanceState;
+        }
     }
 
     @Override
@@ -39,9 +50,17 @@ public class MainActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
-        SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
-        searchView.setQueryHint(getString(R.string.action_search_hint));
-        //MenuItemCompat.expandActionView();
+        mSearchView = (SearchView)menu.findItem(R.id.action_search).getActionView();
+        mSearchView.setQueryHint(getString(R.string.action_search_hint));
+
+        // If searchView is expanded on rotation then restore the state.
+        if(mSavedInstancedState != null){
+           boolean iconify = mSavedInstancedState.getBoolean(SEARCH_VIEW_ICONIFY);
+            if(!iconify){
+                mSearchView.setIconified(false);
+                mSearchView.setQuery(mSavedInstancedState.getCharSequence(SEARCH_VIEW_QUERY), false);
+            }
+        }
         return true;
     }
 
@@ -58,5 +77,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        //save if search view is expanded
+        outState.putBoolean(SEARCH_VIEW_ICONIFY, mSearchView.isIconified());
+        outState.putCharSequence(SEARCH_VIEW_QUERY, mSearchView.getQuery());
     }
 }
