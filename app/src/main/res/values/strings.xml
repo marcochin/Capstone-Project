@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">StockStreakz</string>
+
+    <!-- Toolbar menu-->
     <string name="action_settings">Settings</string>
+    <string name="action_search">Search</string>
+    <string name="action_search_hint">Ticker Symbol...</string>
 
     <!-- logo -->
     <string name="logo_font_name">harlowsi.TTF</string>
