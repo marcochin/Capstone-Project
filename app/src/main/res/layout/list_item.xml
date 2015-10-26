@@ -1,16 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/text_view_list_item"
+        android:id="@+id/text_symbol"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         style="?android:textAppearanceLarge"
-        android:padding="10dp"
-        tools:text="Test"/>
+        android:paddingLeft="10dp"
+        android:paddingStart="10dp"
+        android:paddingRight="0dp"
+        android:paddingEnd="0dp"
+        android:paddingTop="10dp"
+        tools:text="Test 1234"/>
 
-</LinearLayout>
+    <TextView
+        android:id="@+id/text_view_list_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:paddingLeft="10dp"
+        android:paddingStart="10dp"
+        android:paddingRight="0dp"
+        android:paddingEnd="0dp"
+        android:textColor="@color/secondary_text"
+        tools:text="Test 1234"/>
+
+</GridLayout>

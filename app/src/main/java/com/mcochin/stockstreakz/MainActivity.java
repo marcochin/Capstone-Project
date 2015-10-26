@@ -1,29 +1,20 @@
 package com.mcochin.stockstreakz;
 
-import android.graphics.Color;
+import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.view.inputmethod.EditorInfo;
 
-import java.io.IOException;
-
-import yahoofinance.YahooFinance;
+import com.mcochin.stockstreakz.services.NetworkService;
 
 public class MainActivity extends AppCompatActivity {
-    private static String TAG = MainActivity.class.getSimpleName();
-    private static String SEARCH_VIEW_ICONIFY = "searchViewIconify";
-    private static String SEARCH_VIEW_QUERY = "searchViewQuery";
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String SEARCH_VIEW_ICONIFY = "searchViewIconify";
+    public static final String SEARCH_VIEW_QUERY = "searchViewQuery";
 
     private SearchView mSearchView;
     private Bundle mSavedInstancedState;
@@ -49,19 +40,39 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
-
         mSearchView = (SearchView)menu.findItem(R.id.action_search).getActionView();
-        mSearchView.setQueryHint(getString(R.string.action_search_hint));
+        configureSearchView(mSearchView);
+
+        return true;
+    }
+
+    private void configureSearchView(SearchView searchView) {
+        searchView.setQueryHint(getString(R.string.action_search_hint));
+        searchView.setImeOptions(EditorInfo.IME_ACTION_DONE);
 
         // If searchView is expanded on rotation then restore the state.
         if(mSavedInstancedState != null){
-           boolean iconify = mSavedInstancedState.getBoolean(SEARCH_VIEW_ICONIFY);
+            boolean iconify = mSavedInstancedState.getBoolean(SEARCH_VIEW_ICONIFY);
             if(!iconify){
-                mSearchView.setIconified(false);
-                mSearchView.setQuery(mSavedInstancedState.getCharSequence(SEARCH_VIEW_QUERY), false);
+                searchView.setIconified(false);
+                searchView.setQuery(mSavedInstancedState.getCharSequence(SEARCH_VIEW_QUERY), false);
             }
         }
-        return true;
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
+                serviceIntent.putExtra(SEARCH_VIEW_QUERY, query);
+                startService(serviceIntent);
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
     }
 
     @Override

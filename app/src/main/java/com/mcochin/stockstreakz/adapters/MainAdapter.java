@@ -1,6 +1,7 @@
 package com.mcochin.stockstreakz.adapters;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,13 +13,13 @@ import com.mcochin.stockstreakz.R;
  * This is the adapter for <code>MainFragment</code>
  */
 public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder> {
-    String[] mData;
+    private String[] mData;
 
     public MainAdapter (String[] data){
         mData = data;
     }
 
-    static class MainViewHolder extends RecyclerView.ViewHolder{
+    public class MainViewHolder extends RecyclerView.ViewHolder{
         TextView mTextView;
 
         public MainViewHolder(View itemView) {

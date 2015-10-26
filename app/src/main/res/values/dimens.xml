@@ -6,4 +6,7 @@
 
     <!-- logo -->
     <dimen name="logo_font_size">36dp</dimen>
+
+    <!-- stock arrow size-->
+    <dimen name="stock_arrow_size_normal">25dp</dimen>
 </resources>

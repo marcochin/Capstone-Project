@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.GridLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="10dp"
+    app:columnCount="4">
+
+    <TextView
+        android:id="@+id/text_symbol"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:textAppearanceLarge"
+        app:layout_columnWeight="5"
+        tools:text="GPRO"/>
+
+    <TextView
+        android:id="@+id/text_price_prev_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:textAppearanceLarge"
+        app:layout_columnWeight="1"
+        tools:text="$26.26"/>
+
+    <TextView
+        android:id="@+id/text_streak"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:textAppearanceLarge"
+        tools:text="33d"/>
+
+    <ImageView
+        android:id="@+id/image_arrow"
+        android:layout_width="@dimen/stock_arrow_size_normal"
+        android:layout_height="@dimen/stock_arrow_size_normal"
+        android:contentDescription="@string/content_description_stock_arrow"
+        app:layout_gravity="center_vertical"
+        tools:src="@drawable/ic_stock_down"/>
+
+    <TextView
+        android:id="@+id/text_full_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textColor="@color/secondary_text"
+        android:singleLine="true"
+        android:ellipsize="end"
+        app:layout_columnWeight="5"
+        tools:text="GoPro, Inc."/>
+
+    <TextView
+        android:id="@+id/text_change_amt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        app:layout_columnWeight="1"
+        app:layout_columnSpan="3"
+        tools:text="$-20.00 (-39.44%)"
+        tools:textColor="@color/stock_down"/>
+
+</android.support.v7.widget.GridLayout>
