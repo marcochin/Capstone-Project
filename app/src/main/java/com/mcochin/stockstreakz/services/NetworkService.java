@@ -64,4 +64,14 @@ public class NetworkService extends IntentService {
             }
         });
     }
+
+    private void debugToast(final String toastMsg){
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(NetworkService.this, toastMsg, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
 }

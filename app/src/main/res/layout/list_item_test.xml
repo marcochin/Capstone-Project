@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:textAppearanceLarge"
         app:layout_columnWeight="1"
-        tools:text="$26.26"/>
+        tools:text="$263.26"/>
 
     <TextView
         android:id="@+id/text_streak"
@@ -57,7 +57,7 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         app:layout_columnWeight="1"
         app:layout_columnSpan="3"
-        tools:text="$-20.00 (-39.44%)"
+        tools:text="$-220.00 (-39.44%)"
         tools:textColor="@color/stock_down"/>
 
 </android.support.v7.widget.GridLayout>

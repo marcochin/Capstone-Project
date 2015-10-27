@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.GridLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:columnCount="2">
+
+    <android.support.v7.widget.Space
+        android:layout_height="0dp"
+        app:layout_columnSpan="2"
+        app:layout_columnWeight="1"
+        app:layout_rowWeight="1" />
+
+    <TextView
+        android:id="@+id/text_date_updated"
+        android:layout_width="0dp"
+        android:layout_marginBottom="@dimen/date_margin"
+        android:layout_marginTop="@dimen/date_margin"
+        android:fontFamily="sans-serif"
+        android:gravity="center_horizontal"
+        android:textSize="16sp"
+        android:textColor="@color/secondary_text"
+        app:layout_columnSpan="2"
+        app:layout_columnWeight="1"
+        tools:text="Updated: Thursday, April 03 \n @ 4:00pm" />
+
+    <TextView android:id="@+id/text_full_name"
+        android:layout_width="0dp"
+        android:gravity="center_horizontal"
+        android:textColor="@color/secondary_text"
+        app:layout_columnSpan="2"
+        app:layout_columnWeight="1"
+        tools:text="GoPro, Inc."/>
+
+    <TextView android:id="@+id/text_symbol"
+        android:layout_width="0dp"
+        android:gravity="center_horizontal"
+        android:textSize="32sp"
+        android:textColor="@android:color/black"
+        app:layout_columnSpan="2"
+        app:layout_columnWeight="1"
+        tools:text="GPRO"/>
+
+    <TextView
+        style="@style/DetailMainColumns.DetailMainLeftColumn"
+        android:layout_width="0dp"
+        android:text="@string/prev_close"
+        app:layout_columnWeight="1" />
+
+    <TextView
+        style="@style/DetailMainColumns.DetailMainRightColumn"
+        android:id="@+id/text_prev_close"
+        android:layout_width="0dp"
+        android:textColor="@android:color/black"
+        app:layout_columnWeight="1"
+        tools:text="$333.33"/>
+
+    <TextView
+        style="@style/DetailMainColumns.DetailMainLeftColumn"
+        android:layout_width="0dp"
+        android:text="@string/dollar_change"
+        app:layout_columnWeight="1" />
+
+    <TextView
+        style="@style/DetailMainColumns.DetailMainRightColumn"
+        android:id="@+id/text_dollar_change"
+        android:layout_width="0dp"
+        android:textColor="@android:color/black"
+        app:layout_columnWeight="1"
+        tools:textColor="@color/stock_down"
+        tools:text="$-333.33"/>
+
+    <TextView
+        style="@style/DetailMainColumns.DetailMainLeftColumn"
+        android:layout_width="0dp"
+        android:text="@string/percent_change"
+        app:layout_columnWeight="1" />
+
+    <TextView
+        style="@style/DetailMainColumns.DetailMainRightColumn"
+        android:id="@+id/text_percent_change"
+        android:layout_width="0dp"
+        android:textColor="@android:color/black"
+        app:layout_columnWeight="1"
+        tools:textColor="@color/stock_down"
+        tools:text="-333.33%" />
+
+    <TextView
+        style="@style/DetailMainColumns.DetailMainLeftColumn"
+        android:layout_width="0dp"
+        android:text="@string/streak"
+        app:layout_columnWeight="1" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:gravity="start"
+        android:paddingLeft="10dp"
+        android:paddingRight="0dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="0dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:orientation="horizontal"
+        app:layout_columnWeight="1">
+
+        <TextView
+            android:id="@+id/text_streak"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:textColor="@android:color/black"
+            tools:text="33 days"/>
+
+        <ImageView
+            android:id="@+id/image_arrow"
+            android:layout_width="@dimen/stock_arrow_size_normal"
+            android:layout_height="@dimen/stock_arrow_size_normal"
+            android:src="@drawable/ic_stock_down"
+            android:contentDescription="@string/content_description_stock_arrow"/>
+    </LinearLayout>
+
+    <android.support.v7.widget.Space
+        android:layout_height="0dp"
+        app:layout_columnSpan="2"
+        app:layout_columnWeight="1"
+        app:layout_rowWeight="1" />
+
+</android.support.v7.widget.GridLayout>
