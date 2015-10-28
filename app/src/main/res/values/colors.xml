@@ -9,4 +9,9 @@
     <!--stock up or down colors-->
     <color name="stock_up">#0ec24d</color>
     <color name="stock_down">#ff0000</color>
+
+    <!--Detail Fragment extra colors -->
+    <color name="detail_extras_background">#2e4134</color>
+    <color name="detail_extras_label">#b3cab1</color>
+    <color name="detail_extras_text">#ffff</color>
 </resources>

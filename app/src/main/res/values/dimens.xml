@@ -14,4 +14,9 @@
     <!-- first item type date margin-->
     <dimen name="date_margin">16dp</dimen>
 
+    <!-- detail fragment-->
+    <dimen name="detail_main_right_column_padding">30dp</dimen>
+    <dimen name="detail_extras_section_vertical_padding">10dp</dimen>
+    <dimen name="detail_extras_section_horizontal_padding">10dp</dimen>
+
 </resources>

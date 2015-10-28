@@ -16,27 +16,39 @@
         <item name="android:textSize">30sp</item>
     </style>
 
-    <!--detail_main_section TextView styles-->
-    <style name="DetailMainColumns.DetailMainLeftColumn">
+    <!--Detail Fragment styles-->
+    <!--Main Section-->
+    <style name="DetailColumnsCommon.DetailMainLeft">
         <item name="android:gravity">end</item>
         <item name="android:textColor">@android:color/black</item>
-        <item name="android:paddingRight">10dp</item>
-        <item name="android:paddingLeft">0dp</item>
-        <item name="android:paddingEnd">10dp</item>
-        <item name="android:paddingStart">0dp</item>
     </style>
 
-    <style name="DetailMainColumns.DetailMainRightColumn">
-        <item name="android:gravity">start</item>
-        <item name="android:paddingLeft">10dp</item>
+    <!--Extras Section-->
+    <style name="DetailColumnsCommon.DetailExtrasLeft">
+        <item name="android:gravity">end</item>
+        <item name="android:textColor">@color/detail_extras_label</item>
+    </style>
+
+    <!-- Right Columns Only-->
+    <style name="DetailColumnsCommon.DetailRight">
+        <item name="android:paddingLeft">@dimen/detail_main_right_column_padding</item>
         <item name="android:paddingRight">0dp</item>
-        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingStart">@dimen/detail_main_right_column_padding</item>
         <item name="android:paddingEnd">0dp</item>
     </style>
 
-    <style name="DetailMainColumns">
+    <style name="DetailLinearLayoutRight">
+        <item name="android:paddingLeft">@dimen/detail_main_right_column_padding</item>
+        <item name="android:paddingRight">0dp</item>
+        <item name="android:paddingStart">@dimen/detail_main_right_column_padding</item>
+        <item name="android:paddingEnd">0dp</item>
+    </style>
+
+    <!--Common between both left and right columns-->
+    <style name="DetailColumnsCommon">
         <item name="android:textSize">20sp</item>
         <item name="android:layout_marginTop">5dp</item>
         <item name="android:layout_marginBottom">5dp</item>
     </style>
+    <!--End of Detail Fragment Styles-->
 </resources>

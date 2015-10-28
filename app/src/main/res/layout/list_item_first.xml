@@ -79,7 +79,7 @@
             tools:text="33 days"/>
 
         <ImageView
-            android:id="@+id/image_arrow"
+            android:id="@+id/image_streak_arrow"
             android:layout_width="@dimen/stock_arrow_size_first"
             android:layout_height="@dimen/stock_arrow_size_first"
             android:src="@drawable/ic_stock_down"

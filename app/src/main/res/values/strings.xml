@@ -22,5 +22,9 @@
     <string name="percent_change">% Change:</string>
     <string name="dollar_change">$ Change:</string>
     <string name="streak">Streak:</string>
+    <string name="last_streak_price">Last Streak Price:</string>
+    <string name="last_streak">Last Streak:</string>
+    <string name="streak_year_high">365 Day\nStreak High:</string>
+    <string name="streak_year_low">365 Day\nStreak Low:</string>
 
 </resources>

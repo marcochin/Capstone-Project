@@ -17,7 +17,6 @@
         android:id="@+id/text_date_updated"
         android:layout_width="0dp"
         android:layout_marginBottom="@dimen/date_margin"
-        android:layout_marginTop="@dimen/date_margin"
         android:fontFamily="sans-serif"
         android:gravity="center_horizontal"
         android:textSize="16sp"
@@ -44,13 +43,13 @@
         tools:text="GPRO"/>
 
     <TextView
-        style="@style/DetailMainColumns.DetailMainLeftColumn"
+        style="@style/DetailColumnsCommon.DetailMainLeft"
         android:layout_width="0dp"
         android:text="@string/prev_close"
         app:layout_columnWeight="1" />
 
     <TextView
-        style="@style/DetailMainColumns.DetailMainRightColumn"
+        style="@style/DetailColumnsCommon.DetailRight"
         android:id="@+id/text_prev_close"
         android:layout_width="0dp"
         android:textColor="@android:color/black"
@@ -58,13 +57,13 @@
         tools:text="$333.33"/>
 
     <TextView
-        style="@style/DetailMainColumns.DetailMainLeftColumn"
+        style="@style/DetailColumnsCommon.DetailMainLeft"
         android:layout_width="0dp"
         android:text="@string/dollar_change"
         app:layout_columnWeight="1" />
 
     <TextView
-        style="@style/DetailMainColumns.DetailMainRightColumn"
+        style="@style/DetailColumnsCommon.DetailRight"
         android:id="@+id/text_dollar_change"
         android:layout_width="0dp"
         android:textColor="@android:color/black"
@@ -73,13 +72,13 @@
         tools:text="$-333.33"/>
 
     <TextView
-        style="@style/DetailMainColumns.DetailMainLeftColumn"
+        style="@style/DetailColumnsCommon.DetailMainLeft"
         android:layout_width="0dp"
         android:text="@string/percent_change"
         app:layout_columnWeight="1" />
 
     <TextView
-        style="@style/DetailMainColumns.DetailMainRightColumn"
+        style="@style/DetailColumnsCommon.DetailRight"
         android:id="@+id/text_percent_change"
         android:layout_width="0dp"
         android:textColor="@android:color/black"
@@ -88,18 +87,14 @@
         tools:text="-333.33%" />
 
     <TextView
-        style="@style/DetailMainColumns.DetailMainLeftColumn"
+        style="@style/DetailColumnsCommon.DetailMainLeft"
         android:layout_width="0dp"
         android:text="@string/streak"
         app:layout_columnWeight="1" />
 
     <LinearLayout
+        style="@style/DetailLinearLayoutRight"
         android:layout_width="0dp"
-        android:gravity="start"
-        android:paddingLeft="10dp"
-        android:paddingRight="0dp"
-        android:paddingStart="10dp"
-        android:paddingEnd="0dp"
         android:layout_marginTop="5dp"
         android:layout_marginBottom="5dp"
         android:orientation="horizontal"
@@ -114,7 +109,7 @@
             tools:text="33 days"/>
 
         <ImageView
-            android:id="@+id/image_arrow"
+            android:id="@+id/image_streak_arrow"
             android:layout_width="@dimen/stock_arrow_size_normal"
             android:layout_height="@dimen/stock_arrow_size_normal"
             android:src="@drawable/ic_stock_down"
