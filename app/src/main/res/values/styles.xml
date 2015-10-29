@@ -18,29 +18,35 @@
 
     <!--Detail Fragment styles-->
     <!--Main Section-->
-    <style name="DetailColumnsCommon.DetailMainLeft">
-        <item name="android:gravity">end</item>
+    <style name="DetailColumnsCommon.LeftCommon.DetailMainLeft">
         <item name="android:textColor">@android:color/black</item>
     </style>
 
     <!--Extras Section-->
-    <style name="DetailColumnsCommon.DetailExtrasLeft">
-        <item name="android:gravity">end</item>
+    <style name="DetailColumnsCommon.LeftCommon.DetailExtrasLeft">
         <item name="android:textColor">@color/detail_extras_label</item>
+    </style>
+
+    <style name="DetailColumnsCommon.LeftCommon">
+        <item name="android:gravity">end</item>
+        <item name="android:paddingLeft">0dp</item>
+        <item name="android:paddingRight">@dimen/detail_left_column_mid_padding</item>
+        <item name="android:paddingStart">0dp</item>
+        <item name="android:paddingEnd">@dimen/detail_left_column_mid_padding</item>
     </style>
 
     <!-- Right Columns Only-->
     <style name="DetailColumnsCommon.DetailRight">
-        <item name="android:paddingLeft">@dimen/detail_main_right_column_padding</item>
+        <item name="android:paddingLeft">@dimen/detail_right_column_mid_padding</item>
         <item name="android:paddingRight">0dp</item>
-        <item name="android:paddingStart">@dimen/detail_main_right_column_padding</item>
+        <item name="android:paddingStart">@dimen/detail_right_column_mid_padding</item>
         <item name="android:paddingEnd">0dp</item>
     </style>
 
     <style name="DetailLinearLayoutRight">
-        <item name="android:paddingLeft">@dimen/detail_main_right_column_padding</item>
+        <item name="android:paddingLeft">@dimen/detail_right_column_mid_padding</item>
         <item name="android:paddingRight">0dp</item>
-        <item name="android:paddingStart">@dimen/detail_main_right_column_padding</item>
+        <item name="android:paddingStart">@dimen/detail_right_column_mid_padding</item>
         <item name="android:paddingEnd">0dp</item>
     </style>
 

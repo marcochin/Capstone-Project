@@ -5,6 +5,7 @@
     <color name="colorAccent">#7c4dff</color>
 
     <color name="secondary_text">#727272</color>
+    <color name="white">#ffff</color>
 
     <!--stock up or down colors-->
     <color name="stock_up">#0ec24d</color>
@@ -13,5 +14,7 @@
     <!--Detail Fragment extra colors -->
     <color name="detail_extras_background">#2e4134</color>
     <color name="detail_extras_label">#b3cab1</color>
-    <color name="detail_extras_text">#ffff</color>
+
+    <!-- the activated state color of list_item-->
+    <color name="activated">#E0E0E0</color>
 </resources>

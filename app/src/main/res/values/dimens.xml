@@ -1,9 +1,4 @@
 <resources>
-    <!-- Default screen margins, per the Android Design guidelines. -->
-    <dimen name="activity_horizontal_margin">16dp</dimen>
-    <dimen name="activity_vertical_margin">16dp</dimen>
-    <dimen name="fab_margin">16dp</dimen>
-
     <!-- logo -->
     <dimen name="logo_font_size">36dp</dimen>
 
@@ -15,8 +10,12 @@
     <dimen name="date_margin">16dp</dimen>
 
     <!-- detail fragment-->
-    <dimen name="detail_main_right_column_padding">30dp</dimen>
+    <dimen name="detail_right_column_mid_padding">15dp</dimen>
+    <dimen name="detail_left_column_mid_padding">15dp</dimen>
+
+    <!-- on devices < sw360dp scrollview generates this whitespace for
+    some reason and we need to fill it out vertically-->
     <dimen name="detail_extras_section_vertical_padding">10dp</dimen>
-    <dimen name="detail_extras_section_horizontal_padding">10dp</dimen>
+    <dimen name="detail_extras_section_horizontal_padding">20dp</dimen>
 
 </resources>

@@ -5,6 +5,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:paddingBottom="5dp"
+    android:paddingLeft="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingStart="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingRight="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingEnd="@dimen/detail_extras_section_horizontal_padding"
     app:columnCount="2">
 
     <android.support.v7.widget.Space
@@ -29,6 +34,8 @@
         android:layout_width="0dp"
         android:gravity="center_horizontal"
         android:textColor="@color/secondary_text"
+        android:singleLine="true"
+        android:ellipsize="end"
         app:layout_columnSpan="2"
         app:layout_columnWeight="1"
         tools:text="GoPro, Inc."/>
@@ -43,7 +50,7 @@
         tools:text="GPRO"/>
 
     <TextView
-        style="@style/DetailColumnsCommon.DetailMainLeft"
+        style="@style/DetailColumnsCommon.LeftCommon.DetailMainLeft"
         android:layout_width="0dp"
         android:text="@string/prev_close"
         app:layout_columnWeight="1" />
@@ -53,11 +60,13 @@
         android:id="@+id/text_prev_close"
         android:layout_width="0dp"
         android:textColor="@android:color/black"
+        app:layout_gravity="fill_vertical"
+        android:gravity="bottom"
         app:layout_columnWeight="1"
         tools:text="$333.33"/>
 
     <TextView
-        style="@style/DetailColumnsCommon.DetailMainLeft"
+        style="@style/DetailColumnsCommon.LeftCommon.DetailMainLeft"
         android:layout_width="0dp"
         android:text="@string/dollar_change"
         app:layout_columnWeight="1" />
@@ -72,7 +81,7 @@
         tools:text="$-333.33"/>
 
     <TextView
-        style="@style/DetailColumnsCommon.DetailMainLeft"
+        style="@style/DetailColumnsCommon.LeftCommon.DetailMainLeft"
         android:layout_width="0dp"
         android:text="@string/percent_change"
         app:layout_columnWeight="1" />
@@ -87,7 +96,7 @@
         tools:text="-333.33%" />
 
     <TextView
-        style="@style/DetailColumnsCommon.DetailMainLeft"
+        style="@style/DetailColumnsCommon.LeftCommon.DetailMainLeft"
         android:layout_width="0dp"
         android:text="@string/streak"
         app:layout_columnWeight="1" />
@@ -120,6 +129,6 @@
         android:layout_height="0dp"
         app:layout_columnSpan="2"
         app:layout_columnWeight="1"
-        app:layout_rowWeight="1" />
+        app:layout_rowWeight="2" />
 
 </android.support.v7.widget.GridLayout>

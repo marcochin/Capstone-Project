@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- detail fragment-->
+    <dimen name="detail_right_column_mid_padding">25dp</dimen>
+    <dimen name="detail_left_column_mid_padding">5dp</dimen>
+</resources>

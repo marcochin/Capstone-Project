@@ -1,14 +1,21 @@
 package com.mcochin.stockstreakz;
 
+import android.annotation.TargetApi;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.design.widget.AppBarLayout;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.inputmethod.EditorInfo;
 
+import com.mcochin.stockstreakz.adapters.MainAdapter;
 import com.mcochin.stockstreakz.services.NetworkService;
 
 public class MainActivity extends AppCompatActivity {
@@ -18,6 +25,14 @@ public class MainActivity extends AppCompatActivity {
 
     private SearchView mSearchView;
     private Bundle mSavedInstancedState;
+
+    static final String[] FRUITS = new String[] { "Apple", "Avocado", "Banana",
+            "Blueberry", "Coconut", "Durian", "Guava", "Kiwi", "Jackfruit", "Mango",
+            "Olive", "Pear", "Sugar-apple", "Orange", "Strawberry", "Pineapple",
+            "Watermelon", "Grape", "PassionFruit", "DragonFruit", "Honey-dew",
+            "Cantaloupe", "Papaya"};
+
+    private RecyclerView mRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +48,30 @@ public class MainActivity extends AppCompatActivity {
 
         if(savedInstanceState != null){
             mSavedInstancedState = savedInstanceState;
+        }
+
+        mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mRecyclerView.setAdapter(new MainAdapter(FRUITS));
+
+        // When recyclerView is scrolled all the way to the top elevation will disappear
+        // When you start scrolling down elevation will reappear
+        final AppBarLayout appbarView = (AppBarLayout)findViewById(R.id.appBar);
+        if (null != appbarView) {
+            ViewCompat.setElevation(appbarView, 0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+                    @Override
+                    public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                        if (recyclerView.computeVerticalScrollOffset() <= 2 ) {
+                            appbarView.setElevation(0);
+                        } else {
+                            appbarView.setElevation(appbarView.getTargetElevation());
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -55,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
             boolean iconify = mSavedInstancedState.getBoolean(SEARCH_VIEW_ICONIFY);
             if(!iconify){
                 searchView.setIconified(false);
-                searchView.setQuery(mSavedInstancedState.getCharSequence(SEARCH_VIEW_QUERY), false);
+                searchView.setQuery(mSavedInstancedState.getCharSequence(SEARCH_VIEW_QUERY, ""), false);
             }
         }
 
@@ -95,7 +134,17 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
 
         //save if search view is expanded
-        outState.putBoolean(SEARCH_VIEW_ICONIFY, mSearchView.isIconified());
-        outState.putCharSequence(SEARCH_VIEW_QUERY, mSearchView.getQuery());
+        if(mSearchView != null) {
+            outState.putBoolean(SEARCH_VIEW_ICONIFY, mSearchView.isIconified());
+            outState.putCharSequence(SEARCH_VIEW_QUERY, mSearchView.getQuery());
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (null != mRecyclerView) {
+            mRecyclerView.clearOnScrollListeners();
+        }
     }
 }
