@@ -22,7 +22,7 @@
     </android.support.design.widget.AppBarLayout>
 
     <include
-        layout="@layout/recycler_view"
+        layout="@layout/activity_main_recycler_view"
         android:layout_gravity="center_horizontal"
         android:layout_width="360dp"
         android:layout_height="wrap_content"

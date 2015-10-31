@@ -1,28 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/center_space"
+        android:layout_toStartOf="@id/center_space"
         android:background="@android:color/transparent"/>
 
-    <LinearLayout
+    <include layout="@layout/detail_main_section"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:baselineAligned="false"
-        android:orientation="horizontal">
+        android:layout_below="@id/toolbar"
+        android:layout_toLeftOf="@id/center_space"
+        android:layout_toStartOf="@id/center_space"/>
 
-        <include layout="@layout/detail_main_section"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"/>
+    <Space
+        android:id="@+id/center_space"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_centerInParent="true"/>
 
-        <include layout="@layout/detail_extras_section"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"/>
-    </LinearLayout>
-</LinearLayout>
+    <include layout="@layout/detail_extras_section"
+        android:layout_toRightOf="@id/center_space"
+        android:layout_toEndOf="@id/center_space"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</RelativeLayout>

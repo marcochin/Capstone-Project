@@ -85,6 +85,4 @@
             android:src="@drawable/ic_stock_down"
             android:contentDescription="@string/content_description_stock_arrow"/>
     </LinearLayout>
-
-
 </android.support.v7.widget.GridLayout>

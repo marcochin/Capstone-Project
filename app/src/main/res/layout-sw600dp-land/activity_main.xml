@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_width="match_parent"
+        android:layout_alignParentTop="true"
+        android:background="@color/colorPrimary"
+        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+    <com.mcochin.stockstreakz.custom.LogoTextView
+        android:id="@+id/logo"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/listPreferredItemHeight"
+        android:layout_below="@id/toolbar"
+        android:layout_toLeftOf="@id/center_space"
+        android:layout_toStartOf="@id/center_space"
+        android:gravity="center"
+        android:background="@color/colorPrimary"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/logo_font_size"
+        android:text="@string/app_name"
+        app:fontName="@string/logo_font_name"/>
+
+    <Space
+        android:id="@+id/center_space"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_centerInParent="true"/>
+
+    <include layout="@layout/activity_main_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toLeftOf="@id/center_space"
+        android:layout_toStartOf="@id/center_space"
+        android:layout_below="@id/logo"/>
+
+    <include layout="@layout/activity_main_card_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toRightOf="@id/center_space"
+        android:layout_toEndOf="@id/center_space"
+        android:layout_below="@id/toolbar"
+        android:layout_marginRight="@dimen/card_view_margin"
+        android:layout_marginEnd="@dimen/card_view_margin"
+        android:layout_marginBottom="@dimen/card_view_margin"/>
+
+    <View
+        android:layout_width="@dimen/card_view_margin"
+        android:layout_height="?attr/listPreferredItemHeight"
+        android:background="@color/colorPrimary"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/toolbar"/>
+</RelativeLayout>

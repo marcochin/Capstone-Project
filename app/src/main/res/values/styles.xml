@@ -17,37 +17,39 @@
     </style>
 
     <!--Detail Fragment styles-->
-    <!--Main Section-->
+    <!--Main Section left column-->
     <style name="DetailColumnsCommon.LeftCommon.DetailMainLeft">
         <item name="android:textColor">@android:color/black</item>
     </style>
 
-    <!--Extras Section-->
+    <!--Extras Section left column-->
     <style name="DetailColumnsCommon.LeftCommon.DetailExtrasLeft">
         <item name="android:textColor">@color/detail_extras_label</item>
     </style>
 
+    <!--Common between left columns-->
     <style name="DetailColumnsCommon.LeftCommon">
         <item name="android:gravity">end</item>
-        <item name="android:paddingLeft">0dp</item>
-        <item name="android:paddingRight">@dimen/detail_left_column_mid_padding</item>
-        <item name="android:paddingStart">0dp</item>
-        <item name="android:paddingEnd">@dimen/detail_left_column_mid_padding</item>
+        <item name="android:paddingLeft">@dimen/detail_common_column_outer_padding</item>
+        <item name="android:paddingRight">@dimen/detail_left_column_inner_padding</item>
+        <item name="android:paddingStart">@dimen/detail_common_column_outer_padding</item>
+        <item name="android:paddingEnd">@dimen/detail_left_column_inner_padding</item>
     </style>
 
-    <!-- Right Columns Only-->
+    <!-- Main and Extra Section right columns-->
     <style name="DetailColumnsCommon.DetailRight">
-        <item name="android:paddingLeft">@dimen/detail_right_column_mid_padding</item>
-        <item name="android:paddingRight">0dp</item>
-        <item name="android:paddingStart">@dimen/detail_right_column_mid_padding</item>
-        <item name="android:paddingEnd">0dp</item>
+        <item name="android:paddingLeft">@dimen/detail_right_column_inner_padding</item>
+        <item name="android:paddingRight">@dimen/detail_common_column_outer_padding</item>
+        <item name="android:paddingStart">@dimen/detail_right_column_inner_padding</item>
+        <item name="android:paddingEnd">@dimen/detail_common_column_outer_padding</item>
     </style>
 
+    <!-- Main and Extra Section right columns that are linear layouts-->
     <style name="DetailLinearLayoutRight">
-        <item name="android:paddingLeft">@dimen/detail_right_column_mid_padding</item>
-        <item name="android:paddingRight">0dp</item>
-        <item name="android:paddingStart">@dimen/detail_right_column_mid_padding</item>
-        <item name="android:paddingEnd">0dp</item>
+        <item name="android:paddingLeft">@dimen/detail_right_column_inner_padding</item>
+        <item name="android:paddingRight">@dimen/detail_common_column_outer_padding</item>
+        <item name="android:paddingStart">@dimen/detail_right_column_inner_padding</item>
+        <item name="android:paddingEnd">@dimen/detail_common_column_outer_padding</item>
     </style>
 
     <!--Common between both left and right columns-->
