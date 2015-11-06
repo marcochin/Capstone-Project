@@ -2,37 +2,58 @@ package com.mcochin.stockstreakz;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.inputmethod.EditorInfo;
+import android.view.View;
+import android.view.ViewGroup;
 
+import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
+import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
+import com.h6ah4i.android.widget.advrecyclerview.decoration.ItemShadowDecorator;
+import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager;
+import com.h6ah4i.android.widget.advrecyclerview.swipeable.RecyclerViewSwipeManager;
+import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchActionGuardManager;
+import com.h6ah4i.android.widget.advrecyclerview.utils.WrapperAdapterUtils;
 import com.mcochin.stockstreakz.adapters.MainAdapter;
-import com.mcochin.stockstreakz.services.NetworkService;
+import com.mcochin.stockstreakz.custom.MyLinearLayoutManager;
+import com.mcochin.stockstreakz.data.ListManipulator;
+import com.mcochin.stockstreakz.fragments.ListManipulatorFragment;
+import com.mcochin.stockstreakz.fragments.MainMenuFragment;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MainAdapter.EventListener {
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String SEARCH_VIEW_ICONIFY = "searchViewIconify";
-    public static final String SEARCH_VIEW_QUERY = "searchViewQuery";
-
-    private SearchView mSearchView;
-    private Bundle mSavedInstancedState;
-
-    static final String[] FRUITS = new String[] { "Apple", "Avocado", "Banana",
-            "Blueberry", "Coconut", "Durian", "Guava", "Kiwi", "Jackfruit", "Mango",
-            "Olive", "Pear", "Sugar-apple", "Orange", "Strawberry", "Pineapple",
-            "Watermelon", "Grape", "PassionFruit", "DragonFruit", "Honey-dew",
-            "Cantaloupe", "Papaya"};
 
     private RecyclerView mRecyclerView;
+    private MyLinearLayoutManager mLayoutManager;
+    private MainAdapter mAdapter;
+    private RecyclerView.Adapter mWrappedAdapter;
+    private RecyclerViewDragDropManager mRecyclerViewDragDropManager;
+    private RecyclerViewSwipeManager mRecyclerViewSwipeManager;
+    private RecyclerViewTouchActionGuardManager mRecyclerViewTouchActionGuardManager;
+    private ViewGroup mRootView;
+    private AppBarLayout mAppBar;
+    private View.OnClickListener mSnackBarActionListener;
+
+    private boolean mTwoPane;
+    /**
+     * When AppBar is expanded it pushes the RecyclerView down. However, for some reason
+     * Android still sees the hidden portion of the RecyclerView to be visible.
+     * So, when we call findLastCompletelyVisibleItemPosition() from mSnackBarActionListener
+     * it will return the position that is hidden from our view(pushed down by appBar). Therefore,
+     * to find the ACTUAL lastCompletelyVisibleItem we need to offset the returned position by the
+     * number of FAKE completelyVisibleItems.
+     */
+    private int mListItemsOffsettedByExpandedAppBar = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,28 +67,183 @@ public class MainActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
-        if(savedInstanceState != null){
-            mSavedInstancedState = savedInstanceState;
+        if (savedInstanceState == null) {
+            //Initialize the menu with the SearchView
+            getSupportFragmentManager().beginTransaction()
+                    .add(new MainMenuFragment(), MainMenuFragment.TAG)
+                    .commit();
+
+            //Initialize the fragment that stores the list
+            getSupportFragmentManager().beginTransaction()
+                    .add(new ListManipulatorFragment(), ListManipulatorFragment.TAG)
+                            .commit();
+
+            getSupportFragmentManager().executePendingTransactions();
         }
 
-        mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        mRecyclerView.setAdapter(new MainAdapter(FRUITS));
+        mTwoPane = findViewById(R.id.detail_container) != null;
 
-        // When recyclerView is scrolled all the way to the top elevation will disappear
-        // When you start scrolling down elevation will reappear
-        final AppBarLayout appbarView = (AppBarLayout)findViewById(R.id.appBar);
-        if (null != appbarView) {
-            ViewCompat.setElevation(appbarView, 0);
+        mRootView = (ViewGroup)findViewById(R.id.rootView);
+        mAppBar = (AppBarLayout)findViewById(R.id.appBar);
+        mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
+        mLayoutManager = new MyLinearLayoutManager(this);
+
+        mSnackBarActionListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int position = getListManipulator().undoLastRemoveItem();
+                mAdapter.notifyItemInserted(position);
+                if(mAppBar != null) {
+                    mLayoutManager.findLastCompletelyVisibleItemPosition();
+
+                    if(position >= mLayoutManager.findLastCompletelyVisibleItemPosition()
+                             - mListItemsOffsettedByExpandedAppBar) {
+                        mAppBar.setExpanded(false);
+                    }
+                }
+                mRecyclerView.smoothScrollToPosition(position);
+            }
+        };
+
+        configureDragNDropAndSwipe();
+        configureAppBarDynamicElevation();
+    }
+
+    @Override
+    public void onItemClick(MainAdapter.MainViewHolder holder) {
+        if(mTwoPane){
+            //If tablet insert fragment into container
+        }else{
+            //Need to clear focus to hide the soft keyboard or else fragments come up blank
+            MainMenuFragment menuFragment = (MainMenuFragment)getSupportFragmentManager()
+                            .findFragmentByTag(MainMenuFragment.TAG);
+            menuFragment.clearSearchViewFocus();
+
+            //If phone open activity
+            Intent openDetail = new Intent(this, DetailActivity.class);
+            startActivity(openDetail);
+        }
+    }
+
+    @Override
+    public void onItemRemoved(MainAdapter.MainViewHolder holder) {
+        if(mListItemsOffsettedByExpandedAppBar == -1) {
+            int itemPosition = mRecyclerView.getChildLayoutPosition(holder.itemView);
+            if(itemPosition != 0){
+                mListItemsOffsettedByExpandedAppBar = mAppBar.getHeight() /
+                        holder.itemView.getHeight();
+            }
+        }
+        Snackbar.make(mRootView, getString(R.string.snackbar_main_text, holder.getSymbol()), Snackbar.LENGTH_LONG)
+                .setAction(R.string.snackbar_action_text, mSnackBarActionListener).show();
+    }
+
+    @Override
+    public void onPause() {
+        mRecyclerViewDragDropManager.cancelDrag();
+        super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mRecyclerViewDragDropManager != null) {
+            mRecyclerViewDragDropManager.release();
+            mRecyclerViewDragDropManager = null;
+        }
+
+        if (mRecyclerViewSwipeManager != null) {
+            mRecyclerViewSwipeManager.release();
+            mRecyclerViewSwipeManager = null;
+        }
+
+        if (mRecyclerViewTouchActionGuardManager != null) {
+            mRecyclerViewTouchActionGuardManager.release();
+            mRecyclerViewTouchActionGuardManager = null;
+        }
+
+        if (mRecyclerView != null) {
+            mRecyclerView.clearOnScrollListeners();
+            mRecyclerView.setItemAnimator(null);
+            mRecyclerView.setAdapter(null);
+            mRecyclerView = null;
+        }
+
+        if (mWrappedAdapter != null) {
+            WrapperAdapterUtils.releaseAll(mWrappedAdapter);
+            mWrappedAdapter = null;
+        }
+        mAdapter.removeListManipulator();
+        mAdapter = null;
+        mLayoutManager = null;
+
+        super.onDestroy();
+    }
+
+    private void configureDragNDropAndSwipe(){
+        // Touch guard manager  (this class is required to suppress scrolling while swipe-dismiss animation is running)
+        mRecyclerViewTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
+        mRecyclerViewTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
+        mRecyclerViewTouchActionGuardManager.setEnabled(true);
+
+        // Drag & drop manager
+        mRecyclerViewDragDropManager = new RecyclerViewDragDropManager();
+        mRecyclerViewDragDropManager.setDraggingItemShadowDrawable(
+                (NinePatchDrawable) ContextCompat.getDrawable(this, R.drawable.material_shadow_z3));
+        // Start dragging after long press
+        mRecyclerViewDragDropManager.setInitiateOnLongPress(true);
+        mRecyclerViewDragDropManager.setInitiateOnMove(false);
+
+        // Swipe manager
+        mRecyclerViewSwipeManager = new RecyclerViewSwipeManager();
+
+        final MainAdapter mainAdapter =
+                new MainAdapter(this, getListManipulator());
+        mAdapter = mainAdapter;
+
+        mWrappedAdapter = mRecyclerViewDragDropManager.createWrappedAdapter(mainAdapter);      // Wrap for dragging
+        mWrappedAdapter = mRecyclerViewSwipeManager.createWrappedAdapter(mWrappedAdapter);      // Wrap for swiping
+
+        final GeneralItemAnimator animator = new SwipeDismissItemAnimator();
+
+        // Change animations are enabled by default since support-v7-recyclerview v22.
+        // Disable the change animation in order to make turning back animation of swiped item works properly.
+        animator.setSupportsChangeAnimations(false);
+
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        mRecyclerView.setAdapter(mWrappedAdapter);
+        mRecyclerView.setItemAnimator(animator);
+
+        // Additional decorations
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // Lollipop or later has native drop shadow feature. ItemShadowDecorator is not required.
+        } else {
+            mRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(this, R.drawable.material_shadow_z1)));
+        }
+        mRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(this, R.drawable.list_divider_h), true));
+
+        // NOTE:
+        // The initialization order is very important! This order determines the priority of touch event handling.
+        //
+        // priority: TouchActionGuard > Swipe > DragAndDrop
+        mRecyclerViewTouchActionGuardManager.attachRecyclerView(mRecyclerView);
+        mRecyclerViewSwipeManager.attachRecyclerView(mRecyclerView);
+        mRecyclerViewDragDropManager.attachRecyclerView(mRecyclerView);
+    }
+
+    private void configureAppBarDynamicElevation(){
+        // When recyclerView is scrolled all the way to the top, appbar elevation will disappear.
+        // When you start scrolling down elevation will reappear.
+        if (mAppBar != null) {
+            ViewCompat.setElevation(mAppBar, 0);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
                     @Override
                     public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                        if (recyclerView.computeVerticalScrollOffset() <= 2 ) {
-                            appbarView.setElevation(0);
+                        if (recyclerView.computeVerticalScrollOffset() <= 2) {
+                            mAppBar.setElevation(0);
                         } else {
-                            appbarView.setElevation(appbarView.getTargetElevation());
+                            mAppBar.setElevation(mAppBar.getTargetElevation());
                         }
                     }
                 });
@@ -75,76 +251,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        mSearchView = (SearchView)menu.findItem(R.id.action_search).getActionView();
-        configureSearchView(mSearchView);
-
-        return true;
-    }
-
-    private void configureSearchView(SearchView searchView) {
-        searchView.setQueryHint(getString(R.string.action_search_hint));
-        searchView.setImeOptions(EditorInfo.IME_ACTION_DONE);
-
-        // If searchView is expanded on rotation then restore the state.
-        if(mSavedInstancedState != null){
-            boolean iconify = mSavedInstancedState.getBoolean(SEARCH_VIEW_ICONIFY);
-            if(!iconify){
-                searchView.setIconified(false);
-                searchView.setQuery(mSavedInstancedState.getCharSequence(SEARCH_VIEW_QUERY, ""), false);
-            }
-        }
-
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
-                serviceIntent.putExtra(SEARCH_VIEW_QUERY, query);
-                startService(serviceIntent);
-                return false;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                return false;
-            }
-        });
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        //save if search view is expanded
-        if(mSearchView != null) {
-            outState.putBoolean(SEARCH_VIEW_ICONIFY, mSearchView.isIconified());
-            outState.putCharSequence(SEARCH_VIEW_QUERY, mSearchView.getQuery());
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (null != mRecyclerView) {
-            mRecyclerView.clearOnScrollListeners();
-        }
+    public ListManipulator getListManipulator() {
+        Fragment fragment = getSupportFragmentManager()
+                .findFragmentByTag(ListManipulatorFragment.TAG);
+        return ((ListManipulatorFragment) fragment).getListManipulator();
     }
 }

@@ -10,6 +10,9 @@
     <dimen name="date_margin">16dp</dimen>
 
     <!-- Detail fragment-->
+    <dimen name="supplementary_text_size">16sp</dimen>
+    <dimen name="symbol_text_size">32sp</dimen>
+
     <dimen name="detail_right_column_inner_padding">15dp</dimen>
     <dimen name="detail_left_column_inner_padding">15dp</dimen>
     <dimen name="detail_common_column_outer_padding">0dp</dimen>
@@ -25,4 +28,5 @@
     <dimen name="detail_card_elevation">6dp</dimen>
 
     <dimen name="card_view_margin">@dimen/abc_list_item_padding_horizontal_material</dimen>
+    <!--End Detail fragment-->
 </resources>

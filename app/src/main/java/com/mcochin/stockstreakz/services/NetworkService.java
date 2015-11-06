@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import com.mcochin.stockstreakz.MainActivity;
 import com.mcochin.stockstreakz.R;
+import com.mcochin.stockstreakz.fragments.MainMenuFragment;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class NetworkService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String query = intent.getStringExtra(MainActivity.SEARCH_VIEW_QUERY);
+        String query = intent.getStringExtra(MainMenuFragment.SEARCH_VIEW_QUERY);
 
         Calendar toCalendar = Calendar.getInstance();
         Calendar fromCalendar = Calendar.getInstance();
