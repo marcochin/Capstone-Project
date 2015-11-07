@@ -37,9 +37,9 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
     private MyLinearLayoutManager mLayoutManager;
     private MainAdapter mAdapter;
     private RecyclerView.Adapter mWrappedAdapter;
-    private RecyclerViewDragDropManager mRecyclerViewDragDropManager;
-    private RecyclerViewSwipeManager mRecyclerViewSwipeManager;
-    private RecyclerViewTouchActionGuardManager mRecyclerViewTouchActionGuardManager;
+    private RecyclerViewDragDropManager mDragDropManager;
+    private RecyclerViewSwipeManager mSwipeManager;
+    private RecyclerViewTouchActionGuardManager mTouchActionGuardManager;
     private ViewGroup mRootView;
     private AppBarLayout mAppBar;
     private View.OnClickListener mSnackBarActionListener;
@@ -140,25 +140,25 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
 
     @Override
     public void onPause() {
-        mRecyclerViewDragDropManager.cancelDrag();
+        mDragDropManager.cancelDrag();
         super.onPause();
     }
 
     @Override
     public void onDestroy() {
-        if (mRecyclerViewDragDropManager != null) {
-            mRecyclerViewDragDropManager.release();
-            mRecyclerViewDragDropManager = null;
+        if (mDragDropManager != null) {
+            mDragDropManager.release();
+            mDragDropManager = null;
         }
 
-        if (mRecyclerViewSwipeManager != null) {
-            mRecyclerViewSwipeManager.release();
-            mRecyclerViewSwipeManager = null;
+        if (mSwipeManager != null) {
+            mSwipeManager.release();
+            mSwipeManager = null;
         }
 
-        if (mRecyclerViewTouchActionGuardManager != null) {
-            mRecyclerViewTouchActionGuardManager.release();
-            mRecyclerViewTouchActionGuardManager = null;
+        if (mTouchActionGuardManager != null) {
+            mTouchActionGuardManager.release();
+            mTouchActionGuardManager = null;
         }
 
         if (mRecyclerView != null) {
@@ -181,27 +181,27 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
 
     private void configureDragNDropAndSwipe(){
         // Touch guard manager  (this class is required to suppress scrolling while swipe-dismiss animation is running)
-        mRecyclerViewTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
-        mRecyclerViewTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
-        mRecyclerViewTouchActionGuardManager.setEnabled(true);
+        mTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
+        mTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
+        mTouchActionGuardManager.setEnabled(true);
 
         // Drag & drop manager
-        mRecyclerViewDragDropManager = new RecyclerViewDragDropManager();
-        mRecyclerViewDragDropManager.setDraggingItemShadowDrawable(
+        mDragDropManager = new RecyclerViewDragDropManager();
+        mDragDropManager.setDraggingItemShadowDrawable(
                 (NinePatchDrawable) ContextCompat.getDrawable(this, R.drawable.material_shadow_z3));
         // Start dragging after long press
-        mRecyclerViewDragDropManager.setInitiateOnLongPress(true);
-        mRecyclerViewDragDropManager.setInitiateOnMove(false);
+        mDragDropManager.setInitiateOnLongPress(true);
+        mDragDropManager.setInitiateOnMove(false);
 
         // Swipe manager
-        mRecyclerViewSwipeManager = new RecyclerViewSwipeManager();
+        mSwipeManager = new RecyclerViewSwipeManager();
 
         final MainAdapter mainAdapter =
-                new MainAdapter(this, getListManipulator());
+                new MainAdapter(this, mDragDropManager, getListManipulator());
         mAdapter = mainAdapter;
 
-        mWrappedAdapter = mRecyclerViewDragDropManager.createWrappedAdapter(mainAdapter);      // Wrap for dragging
-        mWrappedAdapter = mRecyclerViewSwipeManager.createWrappedAdapter(mWrappedAdapter);      // Wrap for swiping
+        mWrappedAdapter = mDragDropManager.createWrappedAdapter(mainAdapter);      // Wrap for dragging
+        mWrappedAdapter = mSwipeManager.createWrappedAdapter(mWrappedAdapter);      // Wrap for swiping
 
         final GeneralItemAnimator animator = new SwipeDismissItemAnimator();
 
@@ -225,9 +225,9 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         // The initialization order is very important! This order determines the priority of touch event handling.
         //
         // priority: TouchActionGuard > Swipe > DragAndDrop
-        mRecyclerViewTouchActionGuardManager.attachRecyclerView(mRecyclerView);
-        mRecyclerViewSwipeManager.attachRecyclerView(mRecyclerView);
-        mRecyclerViewDragDropManager.attachRecyclerView(mRecyclerView);
+        mTouchActionGuardManager.attachRecyclerView(mRecyclerView);
+        mSwipeManager.attachRecyclerView(mRecyclerView);
+        mDragDropManager.attachRecyclerView(mRecyclerView);
     }
 
     private void configureAppBarDynamicElevation(){

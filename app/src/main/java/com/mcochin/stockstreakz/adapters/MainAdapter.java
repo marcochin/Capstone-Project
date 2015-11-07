@@ -3,6 +3,7 @@ package com.mcochin.stockstreakz.adapters;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter;
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemConstants;
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange;
+import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.SwipeableItemAdapter;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.SwipeableItemConstants;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultActionRemoveItem;
@@ -27,24 +29,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public static final String TAG = MainAdapter.class.getSimpleName();
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
-
-    /**
-     * This boolean is used to prevent drag from initiating while a swipe is occurring. Without this
-     * flag, if you hold the swipe for too long it will trigger the onLongClick drag to initiate.
-     */
-    private boolean mSwiping;
-
-    /**
-     * For some reason onCheckCanStartDrag() gets called after every FULL swipe is performed.
-     * This can involuntarily initiate a drag if you swipe the screen immediately after a full swipe.
-     * If onCheckCanStartDrag() is called from this special case, we need to prevent drag with this
-     * flag.
-     */
-    private boolean mFullSwipePerformed;
+    private RecyclerViewDragDropManager mDragDropManager;
 
     // Our ViewHolder class
     public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
-            implements View.OnClickListener {
+            implements View.OnClickListener, View.OnTouchListener {
         TextView mSymbol;
         ViewGroup mContainer;
 
@@ -53,6 +42,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             mContainer = (ViewGroup) itemView.findViewById(R.id.swipe_container);
             mSymbol = (TextView) itemView.findViewById(R.id.text_symbol);
             itemView.setOnClickListener(this);
+            itemView.setOnTouchListener(this);
         }
 
         public CharSequence getSymbol(){
@@ -67,6 +57,18 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         @Override
         public void onClick(View v) {
             mEventListener.onItemClick(this);
+        }
+
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if(event.getAction() == MotionEvent.ACTION_CANCEL){
+                if(mDragDropManager != null && !mDragDropManager.isDragging()) {
+                    Log.d(TAG, "cancelDrag");
+                    mDragDropManager.cancelDrag();
+                }
+            }
+            return false;
         }
     }
 
@@ -83,11 +85,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     }
 
     // MainAdapter methods start here
-    public MainAdapter (EventListener eventListener, ListManipulator listManipulator){
+    public MainAdapter (EventListener eventListener, RecyclerViewDragDropManager dragDropManager,
+                        ListManipulator listManipulator){
         mEventListener = eventListener;
-
-        listManipulator.setData(null); //TODO remove this, only for debugging
+        mDragDropManager = dragDropManager;
         mListManipulator = listManipulator;
+        mListManipulator.setData(null); //TODO remove this, only for debugging
 
         // DraggableItemAdapter and SwipeableItemAdapter require stable IDs, and also
         // have to implement the getItemId() method appropriately.
@@ -158,17 +161,16 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // SwipeableItemAdapter
     public int onGetSwipeReactionType(MainViewHolder holder, int position, int x, int y) {
-        //Log.d(TAG, "onGetSwipeReactionType");
+        Log.d(TAG, "onGetSwipeReactionType");
 
-        mSwiping = false;
+        // THis is what enables swiping
         return Swipeable.REACTION_CAN_SWIPE_BOTH_H;
     }
 
     @Override // SwipeableItemAdapter
     public void onSetSwipeBackground(MainViewHolder holder, int position, int type) {
-        //Log.d(TAG, "onSetSwipeBackground");
+        Log.d(TAG, "onSetSwipeBackground");
 
-        mSwiping = true;
         int bgRes = 0;
         switch (type) {
             case Swipeable.DRAWABLE_SWIPE_LEFT_BACKGROUND:
@@ -184,26 +186,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // DraggableItemAdapter
     public boolean onCheckCanStartDrag(MainViewHolder holder, int position, int x, int y) {
-        //Log.d(TAG, "onCheckCanStartDrag");
+        Log.d(TAG, "onCheckCanStartDrag");
 
-        // This prevents drag from initiating while swiping
-        if(mSwiping){
-            mSwiping = false;
-            return false;
-
-        // This prevents drag from initiating if you swipe the screen immediately after a full
-        // swipe action has been performed.
-        } else if(mFullSwipePerformed){
-            mFullSwipePerformed = false;
-            return false;
-        }
-
+        // This is what enables dragging
         return true;
     }
 
     @Override // DraggableItemAdapter
     public ItemDraggableRange onGetItemDraggableRange(MainViewHolder holder, int position) {
-        //Log.d(TAG, "onGetItemDraggableRange");
+        Log.d(TAG, "onGetItemDraggableRange");
         return null;
     }
 
@@ -237,8 +228,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         @Override
         protected void onPerformAction() {
             super.onPerformAction();
-            //Log.d(TAG, "onPerformAction");
-            mAdapter.mFullSwipePerformed = true;
+            Log.d(TAG, "onPerformAction");
             mAdapter.mListManipulator.removeItem(mPosition);
             mAdapter.notifyItemRemoved(mPosition);
         }
@@ -246,15 +236,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         @Override
         protected void onSlideAnimationEnd() {
             super.onSlideAnimationEnd();
-            //Log.d(TAG, "onSlideAnimationEnd");
+            Log.d(TAG, "onSlideAnimationEnd");
             mAdapter.mEventListener.onItemRemoved(mHolder);
         }
 
         @Override
         protected void onCleanUp() {
             super.onCleanUp();
+            Log.d(TAG, "onCleanUp");
             // clear the references
-            //Log.d(TAG, "onCleanUp");
             mHolder = null;
             mAdapter = null;
         }
