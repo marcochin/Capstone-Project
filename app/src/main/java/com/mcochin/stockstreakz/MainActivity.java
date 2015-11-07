@@ -129,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
     public void onItemRemoved(MainAdapter.MainViewHolder holder) {
         if(mListItemsOffsettedByExpandedAppBar == -1) {
             int itemPosition = mRecyclerView.getChildLayoutPosition(holder.itemView);
-            if(itemPosition != 0){
+            if(itemPosition != 0 && mAppBar != null){
                 mListItemsOffsettedByExpandedAppBar = mAppBar.getHeight() /
                         holder.itemView.getHeight();
             }

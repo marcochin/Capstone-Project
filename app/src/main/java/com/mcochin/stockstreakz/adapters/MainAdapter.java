@@ -56,7 +56,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
         @Override
         public void onClick(View v) {
-            mEventListener.onItemClick(this);
+            if(mEventListener != null) {
+                mEventListener.onItemClick(this);
+            }
         }
 
 
@@ -237,7 +239,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         protected void onSlideAnimationEnd() {
             super.onSlideAnimationEnd();
             Log.d(TAG, "onSlideAnimationEnd");
-            mAdapter.mEventListener.onItemRemoved(mHolder);
+            if(mAdapter.mEventListener != null) {
+                mAdapter.mEventListener.onItemRemoved(mHolder);
+            }
         }
 
         @Override

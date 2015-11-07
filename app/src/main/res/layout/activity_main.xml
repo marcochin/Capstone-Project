@@ -14,23 +14,30 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/AppTheme.AppBarOverlay">
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="?actionBarSize"
-            app:layout_scrollFlags="scroll|enterAlways"
-            app:popupTheme="@style/AppTheme.PopupOverlay"/>
+            android:layout_height="wrap_content"
+            app:layout_scrollFlags="scroll|enterAlways">
 
-        <com.mcochin.stockstreakz.custom.LogoTextView
-            android:text="@string/app_name"
-            android:layout_width="wrap_content"
-            android:layout_height="?attr/listPreferredItemHeight"
-            android:textColor="@android:color/white"
-            android:textSize="@dimen/logo_font_size"
-            android:gravity="center_vertical"
-            android:layout_gravity="center_horizontal"
-            app:layout_scrollFlags="scroll|enterAlways"
-            app:fontName="@string/logo_font_name"/>
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:popupTheme="@style/AppTheme.PopupOverlay"/>
+
+            <com.mcochin.stockstreakz.custom.LogoTextView
+                android:id="@+id/logo"
+                android:text="@string/app_name"
+                android:layout_width="wrap_content"
+                android:layout_marginTop="?attr/actionBarSize"
+                android:layout_height="?attr/listPreferredItemHeight"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/logo_font_size"
+                android:gravity="center_vertical"
+                android:layout_gravity="center_horizontal"
+                app:fontName="@string/logo_font_name"/>
+        </FrameLayout>
+
     </android.support.design.widget.AppBarLayout>
 
     <include layout="@layout/activity_main_recycler_view"
