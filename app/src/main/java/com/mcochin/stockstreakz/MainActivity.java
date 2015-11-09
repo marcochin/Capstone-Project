@@ -1,20 +1,23 @@
 package com.mcochin.stockstreakz;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
@@ -28,10 +31,11 @@ import com.mcochin.stockstreakz.adapters.MainAdapter;
 import com.mcochin.stockstreakz.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreakz.data.ListManipulator;
 import com.mcochin.stockstreakz.fragments.ListManipulatorFragment;
-import com.mcochin.stockstreakz.fragments.MainMenuFragment;
+import com.quinny898.library.persistentsearch.SearchBox;
 
 public class MainActivity extends AppCompatActivity implements MainAdapter.EventListener {
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String KEY_SEARCH_FOCUSED = "searchFocused";
 
     private RecyclerView mRecyclerView;
     private MyLinearLayoutManager mLayoutManager;
@@ -40,72 +44,50 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
     private RecyclerViewDragDropManager mDragDropManager;
     private RecyclerViewSwipeManager mSwipeManager;
     private RecyclerViewTouchActionGuardManager mTouchActionGuardManager;
-    private ViewGroup mRootView;
-    private AppBarLayout mAppBar;
+    private SearchBox mAppBar;
+    private EditText mSearchEditText;
+    private View mRootView;
     private View.OnClickListener mSnackBarActionListener;
 
     private boolean mTwoPane;
-    /**
-     * When AppBar is expanded it pushes the RecyclerView down. However, for some reason
-     * Android still sees the hidden portion of the RecyclerView to be visible.
-     * So, when we call findLastCompletelyVisibleItemPosition() from mSnackBarActionListener
-     * it will return the position that is hidden from our view(pushed down by appBar). Therefore,
-     * to find the ACTUAL lastCompletelyVisibleItem we need to offset the returned position by the
-     * number of FAKE completelyVisibleItems.
-     */
-    private int mListItemsOffsettedByExpandedAppBar = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        if(getSupportActionBar() != null) {
-            // Disable the default toolbar title because we have our own custom one.
-            getSupportActionBar().setDisplayShowTitleEnabled(false);
-        }
-
-        if (savedInstanceState == null) {
-            //Initialize the menu with the SearchView
-            getSupportFragmentManager().beginTransaction()
-                    .add(new MainMenuFragment(), MainMenuFragment.TAG)
-                    .commit();
-
-            //Initialize the fragment that stores the list
-            getSupportFragmentManager().beginTransaction()
-                    .add(new ListManipulatorFragment(), ListManipulatorFragment.TAG)
-                            .commit();
-
-            getSupportFragmentManager().executePendingTransactions();
-        }
+        //setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_test);
 
         mTwoPane = findViewById(R.id.detail_container) != null;
 
-        mRootView = (ViewGroup)findViewById(R.id.rootView);
-        mAppBar = (AppBarLayout)findViewById(R.id.appBar);
+        mRootView = findViewById(R.id.rootView);
+        mAppBar = (SearchBox)findViewById(R.id.appBar);
+        mSearchEditText = (EditText)findViewById(R.id.search);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
         mLayoutManager = new MyLinearLayoutManager(this);
+
+        if (savedInstanceState == null) {
+            //Initialize the fragment that stores the list
+            getSupportFragmentManager().beginTransaction()
+                    .add(new ListManipulatorFragment(), ListManipulatorFragment.TAG).commit();
+
+            getSupportFragmentManager().executePendingTransactions();
+        } else{
+            if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
+                mAppBar.openSearch(true);
+            }
+        }
 
         mSnackBarActionListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 int position = getListManipulator().undoLastRemoveItem();
                 mAdapter.notifyItemInserted(position);
-                if(mAppBar != null) {
-                    mLayoutManager.findLastCompletelyVisibleItemPosition();
-
-                    if(position >= mLayoutManager.findLastCompletelyVisibleItemPosition()
-                             - mListItemsOffsettedByExpandedAppBar) {
-                        mAppBar.setExpanded(false);
-                    }
-                }
                 mRecyclerView.smoothScrollToPosition(position);
             }
         };
 
-        configureDragNDropAndSwipe();
+        configureAppBar();
+        configureDragDropAndSwipe();
         configureAppBarDynamicElevation();
     }
 
@@ -114,10 +96,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         if(mTwoPane){
             //If tablet insert fragment into container
         }else{
-            //Need to clear focus to hide the soft keyboard or else fragments come up blank
-            MainMenuFragment menuFragment = (MainMenuFragment)getSupportFragmentManager()
-                            .findFragmentByTag(MainMenuFragment.TAG);
-            menuFragment.clearSearchViewFocus();
+            hideKeyboard();
 
             //If phone open activity
             Intent openDetail = new Intent(this, DetailActivity.class);
@@ -127,21 +106,26 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
 
     @Override
     public void onItemRemoved(MainAdapter.MainViewHolder holder) {
-        if(mListItemsOffsettedByExpandedAppBar == -1) {
-            int itemPosition = mRecyclerView.getChildLayoutPosition(holder.itemView);
-            if(itemPosition != 0 && mAppBar != null){
-                mListItemsOffsettedByExpandedAppBar = mAppBar.getHeight() /
-                        holder.itemView.getHeight();
-            }
-        }
         Snackbar.make(mRootView, getString(R.string.snackbar_main_text, holder.getSymbol()), Snackbar.LENGTH_LONG)
                 .setAction(R.string.snackbar_action_text, mSnackBarActionListener).show();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(KEY_SEARCH_FOCUSED, mSearchEditText.isFocused());
+        super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onPause() {
         mDragDropManager.cancelDrag();
         super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        hideKeyboard();
+        super.onStop();
     }
 
     @Override
@@ -179,7 +163,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         super.onDestroy();
     }
 
-    private void configureDragNDropAndSwipe(){
+    private void configureDragDropAndSwipe(){
         // Touch guard manager  (this class is required to suppress scrolling while swipe-dismiss animation is running)
         mTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
         mTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
@@ -230,6 +214,11 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         mDragDropManager.attachRecyclerView(mRecyclerView);
     }
 
+    private void configureAppBar(){
+        mAppBar.setHint(getString(R.string.search_hint));
+        mAppBar.setLogoText(getString(R.string.app_name));
+    }
+
     private void configureAppBarDynamicElevation(){
         // When recyclerView is scrolled all the way to the top, appbar elevation will disappear.
         // When you start scrolling down elevation will reappear.
@@ -243,7 +232,8 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
                         if (recyclerView.computeVerticalScrollOffset() <= 2) {
                             mAppBar.setElevation(0);
                         } else {
-                            mAppBar.setElevation(mAppBar.getTargetElevation());
+                            mAppBar.setElevation(getResources()
+                                    .getDimension(R.dimen.appbar_elevation));
                         }
                     }
                 });
@@ -255,5 +245,14 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         Fragment fragment = getSupportFragmentManager()
                 .findFragmentByTag(ListManipulatorFragment.TAG);
         return ((ListManipulatorFragment) fragment).getListManipulator();
+    }
+
+    private void hideKeyboard(){
+        View view = getCurrentFocus();
+        if (view != null) {
+            view.clearFocus();
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 }

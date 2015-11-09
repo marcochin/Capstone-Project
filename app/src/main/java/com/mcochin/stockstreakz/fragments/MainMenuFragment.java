@@ -59,7 +59,7 @@ public class MainMenuFragment extends Fragment {
     }
 
     private void configureSearchView(SearchView searchView) {
-        searchView.setQueryHint(getString(R.string.action_search_hint));
+        searchView.setQueryHint(getString(R.string.search_hint));
         searchView.setImeOptions(EditorInfo.IME_ACTION_DONE);
 
         // If searchView is expanded on rotation then restore the state.

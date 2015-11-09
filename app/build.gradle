@@ -29,5 +29,6 @@ dependencies {
     compile ('com.h6ah4i.android.widget.advrecyclerview:advrecyclerview:0.8.4@aar'){
         transitive=true
     }
+    compile project(':persistent-search')
     compile group: 'com.yahoofinance-api', name: 'YahooFinanceAPI', version: '2.0.0'
 }

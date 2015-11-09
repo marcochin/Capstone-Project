@@ -66,7 +66,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         public boolean onTouch(View v, MotionEvent event) {
             if(event.getAction() == MotionEvent.ACTION_CANCEL){
                 if(mDragDropManager != null && !mDragDropManager.isDragging()) {
-                    Log.d(TAG, "cancelDrag");
+                    //Log.d(TAG, "cancelDrag");
                     mDragDropManager.cancelDrag();
                 }
             }
@@ -163,7 +163,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // SwipeableItemAdapter
     public int onGetSwipeReactionType(MainViewHolder holder, int position, int x, int y) {
-        Log.d(TAG, "onGetSwipeReactionType");
+        //Log.d(TAG, "onGetSwipeReactionType");
 
         // THis is what enables swiping
         return Swipeable.REACTION_CAN_SWIPE_BOTH_H;
@@ -171,7 +171,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // SwipeableItemAdapter
     public void onSetSwipeBackground(MainViewHolder holder, int position, int type) {
-        Log.d(TAG, "onSetSwipeBackground");
+        //Log.d(TAG, "onSetSwipeBackground");
 
         int bgRes = 0;
         switch (type) {
@@ -188,7 +188,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // DraggableItemAdapter
     public boolean onCheckCanStartDrag(MainViewHolder holder, int position, int x, int y) {
-        Log.d(TAG, "onCheckCanStartDrag");
+        //Log.d(TAG, "onCheckCanStartDrag");
 
         // This is what enables dragging
         return true;
@@ -196,7 +196,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // DraggableItemAdapter
     public ItemDraggableRange onGetItemDraggableRange(MainViewHolder holder, int position) {
-        Log.d(TAG, "onGetItemDraggableRange");
+        //Log.d(TAG, "onGetItemDraggableRange");
         return null;
     }
 
@@ -230,7 +230,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         @Override
         protected void onPerformAction() {
             super.onPerformAction();
-            Log.d(TAG, "onPerformAction");
+            //Log.d(TAG, "onPerformAction");
             mAdapter.mListManipulator.removeItem(mPosition);
             mAdapter.notifyItemRemoved(mPosition);
         }
@@ -238,7 +238,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         @Override
         protected void onSlideAnimationEnd() {
             super.onSlideAnimationEnd();
-            Log.d(TAG, "onSlideAnimationEnd");
+            //Log.d(TAG, "onSlideAnimationEnd");
             if(mAdapter.mEventListener != null) {
                 mAdapter.mEventListener.onItemRemoved(mHolder);
             }
@@ -247,7 +247,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         @Override
         protected void onCleanUp() {
             super.onCleanUp();
-            Log.d(TAG, "onCleanUp");
+            //Log.d(TAG, "onCleanUp");
             // clear the references
             mHolder = null;
             mAdapter = null;
