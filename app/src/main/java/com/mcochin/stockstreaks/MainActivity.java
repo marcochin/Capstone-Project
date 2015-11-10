@@ -1,9 +1,7 @@
-package com.mcochin.stockstreakz;
+package com.mcochin.stockstreaks;
 
 import android.annotation.TargetApi;
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.Rect;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,10 +11,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
-import android.view.ViewTreeObserver;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
@@ -27,10 +22,10 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropM
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.RecyclerViewSwipeManager;
 import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchActionGuardManager;
 import com.h6ah4i.android.widget.advrecyclerview.utils.WrapperAdapterUtils;
-import com.mcochin.stockstreakz.adapters.MainAdapter;
-import com.mcochin.stockstreakz.custom.MyLinearLayoutManager;
-import com.mcochin.stockstreakz.data.ListManipulator;
-import com.mcochin.stockstreakz.fragments.ListManipulatorFragment;
+import com.mcochin.stockstreaks.adapters.MainAdapter;
+import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
+import com.mcochin.stockstreaks.data.ListManipulator;
+import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
 import com.quinny898.library.persistentsearch.SearchBox;
 
 public class MainActivity extends AppCompatActivity implements MainAdapter.EventListener {
@@ -54,8 +49,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //setContentView(R.layout.activity_main);
-        setContentView(R.layout.activity_test);
+        setContentView(R.layout.activity_main);
 
         mTwoPane = findViewById(R.id.detail_container) != null;
 
@@ -73,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
             getSupportFragmentManager().executePendingTransactions();
         } else{
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
-                mAppBar.openSearch(true);
+                mAppBar.openSearch();
             }
         }
 
@@ -96,8 +90,6 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         if(mTwoPane){
             //If tablet insert fragment into container
         }else{
-            hideKeyboard();
-
             //If phone open activity
             Intent openDetail = new Intent(this, DetailActivity.class);
             startActivity(openDetail);
@@ -120,12 +112,6 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
     public void onPause() {
         mDragDropManager.cancelDrag();
         super.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        hideKeyboard();
-        super.onStop();
     }
 
     @Override
@@ -181,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         mSwipeManager = new RecyclerViewSwipeManager();
 
         final MainAdapter mainAdapter =
-                new MainAdapter(this, mDragDropManager, getListManipulator());
+                new MainAdapter(this, this, mDragDropManager, getListManipulator());
         mAdapter = mainAdapter;
 
         mWrappedAdapter = mDragDropManager.createWrappedAdapter(mainAdapter);      // Wrap for dragging
@@ -215,8 +201,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
     }
 
     private void configureAppBar(){
-        mAppBar.setHint(getString(R.string.search_hint));
-        mAppBar.setLogoText(getString(R.string.app_name));
+        mAppBar.setOverflowMenu(R.menu.menu_main);
     }
 
     private void configureAppBarDynamicElevation(){
@@ -245,14 +230,5 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         Fragment fragment = getSupportFragmentManager()
                 .findFragmentByTag(ListManipulatorFragment.TAG);
         return ((ListManipulatorFragment) fragment).getListManipulator();
-    }
-
-    private void hideKeyboard(){
-        View view = getCurrentFocus();
-        if (view != null) {
-            view.clearFocus();
-            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
     }
 }

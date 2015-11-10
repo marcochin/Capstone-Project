@@ -1,4 +1,4 @@
-package com.mcochin.stockstreakz.pojos;
+package com.mcochin.stockstreaks.pojos;
 
 /**
  * Pojo for a stock

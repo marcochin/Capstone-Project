@@ -1,4 +1,4 @@
-package com.mcochin.stockstreakz;
+package com.mcochin.stockstreaks;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

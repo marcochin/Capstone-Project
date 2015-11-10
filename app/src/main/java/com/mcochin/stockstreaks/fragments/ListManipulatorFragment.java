@@ -1,8 +1,8 @@
-package com.mcochin.stockstreakz.fragments;
+package com.mcochin.stockstreaks.fragments;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 
-import com.mcochin.stockstreakz.data.ListManipulator;
+import com.mcochin.stockstreaks.data.ListManipulator;
 
 public class ListManipulatorFragment extends Fragment {
     public static final String TAG = ListManipulatorFragment.class.getSimpleName();

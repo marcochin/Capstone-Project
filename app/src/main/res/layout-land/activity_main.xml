@@ -1,33 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<android.support.design.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:orientation="vertical">
 
-    <android.support.design.widget.AppBarLayout
+    <com.quinny898.library.persistentsearch.SearchBox
         android:id="@+id/appBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:layout_scrollFlags="scroll|enterAlways"
-            app:popupTheme="@style/AppTheme.PopupOverlay"/>
-    </android.support.design.widget.AppBarLayout>
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/app_bar_height"
+        android:background="@color/colorPrimary"
+        app:hintText="@string/search_hint"
+        app:logoText="@string/app_name"
+        app:typefacePath="@string/logo_typeface_path"/>
 
-    <include
-        layout="@layout/activity_main_recycler_view"
-        android:layout_gravity="center_horizontal"
-        android:layout_width="360dp"
-        android:layout_height="wrap_content"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+    <include layout="@layout/activity_main_recycler_view" />
 
-</android.support.design.widget.CoordinatorLayout>
-
+</LinearLayout>

@@ -15,7 +15,7 @@
         app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
-    <com.mcochin.stockstreakz.custom.LogoTextView
+    <com.mcochin.stockstreaks.custom.LogoTextView
         android:id="@+id/logo"
         android:layout_width="match_parent"
         android:layout_height="?attr/listPreferredItemHeight"

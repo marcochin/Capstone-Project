@@ -1,4 +1,4 @@
-package com.mcochin.stockstreakz.custom;
+package com.mcochin.stockstreaks.custom;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -8,7 +8,7 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
-import com.mcochin.stockstreakz.R;
+import com.mcochin.stockstreaks.R;
 
 /**
  * Custom TextView for the app logo that takes in a custom attribute for font.

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SearchBox">
+        <attr name="typefacePath" format="string" />
+        <attr name="hintText" format="string" />
+        <attr name="logoText" format="string" />
+        <attr name="logoTextSize" format="dimension"/>
+    </declare-styleable>
+</resources>

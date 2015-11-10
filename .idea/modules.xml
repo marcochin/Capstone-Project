@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/StockStreakz.iml" filepath="$PROJECT_DIR$/StockStreakz.iml" />
+      <module fileurl="file://$PROJECT_DIR$/StockStreaks.iml" filepath="$PROJECT_DIR$/StockStreaks.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/libs/persistent-search/persistent-search.iml" filepath="$PROJECT_DIR$/app/libs/persistent-search/persistent-search.iml" />
     </modules>

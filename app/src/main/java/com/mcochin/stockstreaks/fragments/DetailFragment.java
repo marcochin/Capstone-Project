@@ -1,4 +1,4 @@
-package com.mcochin.stockstreakz.fragments;
+package com.mcochin.stockstreaks.fragments;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -10,7 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.mcochin.stockstreakz.R;
+import com.mcochin.stockstreaks.R;
 
 /**
  * Fragment that contains more details of the list items in the main list.

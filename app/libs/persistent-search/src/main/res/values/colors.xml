@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="button_ripple">#1f000000</color>
+    <color name="button_highlight">#1f000000</color>
+    <color name="search_box_black">#212121</color>
+    <color name="search_box_grey">#616161</color>
 </resources>

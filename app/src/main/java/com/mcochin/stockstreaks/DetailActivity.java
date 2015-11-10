@@ -1,12 +1,9 @@
-package com.mcochin.stockstreakz;
+package com.mcochin.stockstreaks;
 
-import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
 
-import com.mcochin.stockstreakz.fragments.DetailFragment;
+import com.mcochin.stockstreaks.fragments.DetailFragment;
 
 /**
  * Created by Marco on 10/31/2015.
@@ -21,5 +18,13 @@ public class DetailActivity extends AppCompatActivity {
         getSupportFragmentManager().beginTransaction()
             .add(R.id.detail_container, detailFragment, DetailFragment.TAG)
             .commit();
+
+//        final View rootView = findViewById(R.id.detail_container);
+//        rootView.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                rootView.invalidate();
+//            }
+//        }, 100);
     }
 }

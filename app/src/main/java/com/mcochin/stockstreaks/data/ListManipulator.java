@@ -1,8 +1,8 @@
-package com.mcochin.stockstreakz.data;
+package com.mcochin.stockstreaks.data;
 
 import android.database.Cursor;
 
-import com.mcochin.stockstreakz.pojos.Stock;
+import com.mcochin.stockstreaks.pojos.Stock;
 
 import java.util.ArrayList;
 import java.util.List;

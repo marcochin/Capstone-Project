@@ -1,4 +1,4 @@
-package com.mcochin.stockstreakz.custom;
+package com.mcochin.stockstreaks.custom;
 
 import android.content.Context;
 import android.graphics.PointF;

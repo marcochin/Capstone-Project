@@ -1,7 +1,8 @@
-package com.mcochin.stockstreakz.adapters;
+package com.mcochin.stockstreaks.adapters;
 
+import android.content.Context;
+import android.os.Build;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -16,8 +17,8 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.SwipeableItemAdapter;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.SwipeableItemConstants;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultActionRemoveItem;
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeableItemViewHolder;
-import com.mcochin.stockstreakz.R;
-import com.mcochin.stockstreakz.data.ListManipulator;
+import com.mcochin.stockstreaks.R;
+import com.mcochin.stockstreaks.data.ListManipulator;
 
 /**
  * This is the adapter for <code>MainFragment</code>
@@ -30,6 +31,13 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
     private RecyclerViewDragDropManager mDragDropManager;
+
+    /**
+     * On devices < KITKAT, the list items lost their padding for some reason. Read somewhere
+     * it has to do dynamically changing bg resources. We need to save it and restore it onBind().
+     */
+    //http://stackoverflow.com/questions/10095196/whered-padding-go-when-setting-background-drawable
+    private int mListItemPadding;
 
     // Our ViewHolder class
     public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
@@ -61,7 +69,6 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             }
         }
 
-
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             if(event.getAction() == MotionEvent.ACTION_CANCEL){
@@ -87,12 +94,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     }
 
     // MainAdapter methods start here
-    public MainAdapter (EventListener eventListener, RecyclerViewDragDropManager dragDropManager,
-                        ListManipulator listManipulator){
+    public MainAdapter (Context context, EventListener eventListener,
+                        RecyclerViewDragDropManager dragDropManager, ListManipulator listManipulator){
+
         mEventListener = eventListener;
         mDragDropManager = dragDropManager;
         mListManipulator = listManipulator;
         mListManipulator.setData(null); //TODO remove this, only for debugging
+
+        mListItemPadding = context.getResources().getDimensionPixelSize(R.dimen.list_item_padding);
 
         // DraggableItemAdapter and SwipeableItemAdapter require stable IDs, and also
         // have to implement the getItemId() method appropriately.
@@ -125,6 +135,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             }
 
             holder.mContainer.setBackgroundResource(bgResId);
+        }
+
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            holder.mContainer.setPadding(mListItemPadding, mListItemPadding,
+                    mListItemPadding, mListItemPadding);
         }
 
         // Set swiping properties

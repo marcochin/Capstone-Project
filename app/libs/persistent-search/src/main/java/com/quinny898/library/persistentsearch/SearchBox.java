@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.speech.RecognizerIntent;
@@ -73,7 +75,6 @@ public class SearchBox extends RelativeLayout {
 	private SearchListener listener;
 	private MenuListener menuListener;
 	private FrameLayout rootLayout;
-	private String logoText;
 	private ProgressBar pb;
 	private ArrayList<SearchResult> initialResults;
 	private boolean searchWithoutSuggestions = true;
@@ -86,8 +87,6 @@ public class SearchBox extends RelativeLayout {
 	private android.support.v4.app.Fragment mContainerSupportFragment;
 	private SearchFilter mSearchFilter;
 	private ArrayAdapter<? extends SearchResult> mAdapter;
-
-
 
     /**
 	 * Create a new searchbox
@@ -114,6 +113,7 @@ public class SearchBox extends RelativeLayout {
 	 */
 	public SearchBox(final Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
+
 		inflate(context, R.layout.searchbox, this);
 		this.searchOpen = false;
 		this.isMic = true;
@@ -126,8 +126,9 @@ public class SearchBox extends RelativeLayout {
 		this.overflow = (ImageView) findViewById(R.id.overflow);
 		this.drawerLogo = (ImageView) findViewById(R.id.drawer_logo);
 
+		init(attrs);
+
 		animate = true;
-		logoText = "";
 		searchables = new ArrayList<SearchResult>();
 		resultList = new ArrayList<SearchResult>();
 
@@ -253,6 +254,39 @@ public class SearchBox extends RelativeLayout {
 		};
 	}
 
+	/**
+	 * Initialize the attributes that are set in the xml.
+	 * @param attrs
+	 */
+	private void init(AttributeSet attrs){
+		if (attrs!=null) {
+			TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.SearchBox);
+			String hintText = a.getString(R.styleable.SearchBox_hintText);
+			String logoText = a.getString(R.styleable.SearchBox_logoText);
+			String typefacePath = a.getString(R.styleable.SearchBox_typefacePath);
+			float logoTextSize = a.getDimension(R.styleable.SearchBox_logoTextSize,
+					getResources().getDimension(R.dimen.logo_text_size_default));
+
+			if(hintText != null){
+				search.setHint(hintText);
+			}
+
+			if(logoText != null){
+				logo.setText(logoText);
+			}
+
+			if (typefacePath != null) {
+				Typeface myTypeface = Typeface
+						.createFromAsset(getContext().getAssets(), typefacePath);
+				logo.setTypeface(myTypeface);
+			}
+
+			logo.setTextSize(TypedValue.COMPLEX_UNIT_PX, logoTextSize);
+
+			a.recycle();
+		}
+	}
+
 	private static boolean isIntentAvailable(Context context, Intent intent) {
 		PackageManager mgr = context.getPackageManager();
 		if (mgr != null) {
@@ -277,7 +311,7 @@ public class SearchBox extends RelativeLayout {
 				int[] location = new int[2];
 				menuButton.getLocationInWindow(location);
 				revealFrom((float) location[0], (float) location[1],
-                        activity, this);
+						activity, this);
 			}
 		}
 	}
@@ -296,7 +330,7 @@ public class SearchBox extends RelativeLayout {
 				int[] location = new int[2];
 				menuButton.getLocationInWindow(location);
 				hideCircularly(location[0] + menuButton.getWidth() * 2 / 3, location[1],
-                        activity);
+						activity);
 			}
 		}
 	}
@@ -321,27 +355,27 @@ public class SearchBox extends RelativeLayout {
 		animator.start();
 		animator.addListener(new SupportAnimator.AnimatorListener() {
 
-            @Override
-            public void onAnimationStart() {
+			@Override
+			public void onAnimationStart() {
 
-            }
+			}
 
-            @Override
-            public void onAnimationEnd() {
-                setVisibility(View.GONE);
-            }
+			@Override
+			public void onAnimationEnd() {
+				setVisibility(View.GONE);
+			}
 
-            @Override
-            public void onAnimationCancel() {
+			@Override
+			public void onAnimationCancel() {
 
-            }
+			}
 
-            @Override
-            public void onAnimationRepeat() {
+			@Override
+			public void onAnimationRepeat() {
 
-            }
+			}
 
-        });
+		});
 	}
 	
 	/***
@@ -359,12 +393,9 @@ public class SearchBox extends RelativeLayout {
 	 */
 	public void toggleSearch() {
 		if (searchOpen) {
-			if (TextUtils.isEmpty(getSearchText())) {
-				setLogoTextInt(logoText);
-			}
 			closeSearch();
 		} else {
-			openSearch(true);
+			openSearch();
 		}
 	}
 	
@@ -429,11 +460,13 @@ public class SearchBox extends RelativeLayout {
 	}
 
 	private boolean isMicEnabled() {
-		return isVoiceRecognitionIntentSupported && (mContainerActivity != null || mContainerSupportFragment != null || mContainerFragment != null);
+		return isVoiceRecognitionIntentSupported && (mContainerActivity != null
+				|| mContainerSupportFragment != null
+				|| mContainerFragment != null);
 	}
 
 	private void micStateChanged() {
-		mic.setVisibility((!isMic || isMicEnabled()) ? VISIBLE : INVISIBLE);
+		mic.setVisibility((!isMic || isMicEnabled()) ? VISIBLE : GONE);
 	}
 
 	private void micStateChanged(boolean isMic) {
@@ -459,9 +492,9 @@ public class SearchBox extends RelativeLayout {
 	public void showLoading(boolean show){
 		if(show){
 			pb.setVisibility(View.VISIBLE);
-			mic.setVisibility(View.INVISIBLE);
+			mic.setVisibility(View.GONE);
 		}else{
-			pb.setVisibility(View.INVISIBLE);
+			pb.setVisibility(View.GONE);
 			mic.setVisibility(View.VISIBLE);
 		}
 	}
@@ -472,10 +505,10 @@ public class SearchBox extends RelativeLayout {
 	public void micClick() {
 		if (!isMic) {
 			setSearchString("");
+			showKeyboard();
 		} else {
 			startVoiceRecognition();
 		}
-
 	}
 	
 	/***
@@ -559,7 +592,7 @@ public class SearchBox extends RelativeLayout {
 	 */
 	public void setMaxLength(int length) {
 		search.setFilters(new InputFilter[]{new InputFilter.LengthFilter(
-                length)});
+				length)});
 	}
 	
 	/***
@@ -567,8 +600,15 @@ public class SearchBox extends RelativeLayout {
 	 * @param text Text
 	 */
 	public void setLogoText(String text) {
-		this.logoText = text;
-		setLogoTextInt(text);
+		logo.setText(text);
+	}
+
+	/***
+	 * Set the typeface of the logo
+	 * @param typeface Typeface
+	 */
+	public void setLogoTypeFace(Typeface typeface){
+		logo.setTypeface(typeface);
 	}
 
 
@@ -737,27 +777,27 @@ public class SearchBox extends RelativeLayout {
 		animator.setDuration(500);
 		animator.addListener(new SupportAnimator.AnimatorListener() {
 
-            @Override
-            public void onAnimationCancel() {
+			@Override
+			public void onAnimationCancel() {
 
-            }
+			}
 
-            @Override
-            public void onAnimationEnd() {
-                toggleSearch();
-            }
+			@Override
+			public void onAnimationEnd() {
+				toggleSearch();
+			}
 
-            @Override
-            public void onAnimationRepeat() {
+			@Override
+			public void onAnimationRepeat() {
 
-            }
+			}
 
-            @Override
-            public void onAnimationStart() {
+			@Override
+			public void onAnimationStart() {
 
-            }
+			}
 
-        });
+		});
 		animator.start();
 	}
 
@@ -765,17 +805,14 @@ public class SearchBox extends RelativeLayout {
 		if(!searchWithoutSuggestions && getNumberOfResults() == 0)return;
 		setSearchString(result.title);
 		if (!TextUtils.isEmpty(getSearchText())) {
-			setLogoTextInt(result.title);
 			if (listener != null) {
 				if (resultClicked)
 					listener.onResultClick(result);
 				else
 					listener.onSearch(result.title);
 			}
-		} else {
-			setLogoTextInt(logoText);
 		}
-		toggleSearch();
+		hideKeyboard();
 	}
 
     /***
@@ -785,51 +822,6 @@ public class SearchBox extends RelativeLayout {
     public void setAnimateDrawerLogo(boolean show){
         animateDrawerLogo = show;
     }
-
-	public void openSearch(Boolean openKeyboard) {
-        if(animateDrawerLogo){
-            this.materialMenu.animateState(IconState.ARROW);
-            this.drawerLogo.setVisibility(View.GONE);
-        }
-		this.logo.setVisibility(View.GONE);
-		this.search.setVisibility(View.VISIBLE);
-		this.results.setVisibility(View.VISIBLE);
-
-		animate = true;
-		searchOpen = true;
-
-		search.requestFocus();
-        setAdapter(new SearchAdapter(getContext(), resultList, search));
-
-		results.setOnItemClickListener(new OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
-                                    long arg3) {
-                SearchResult result = resultList.get(arg2);
-                search(result, true);
-            }
-        });
-
-		if(initialResults != null){
-			setInitialResults();
-		}else{
-			updateResults();
-		}
-		
-		if (listener != null)
-			listener.onSearchOpened();
-
-		if (getSearchText().length() > 0) {
-			micStateChanged(false);
-			mic.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_action_mic));
-		}
-
-		if (openKeyboard) {
-			InputMethodManager imm =
-					(InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-			imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
-		}
-	}
 
 	private void setInitialResults(){
 		resultList.clear();
@@ -846,31 +838,71 @@ public class SearchBox extends RelativeLayout {
 			results.setVisibility(View.VISIBLE);
 		}
 	}
+
+	public void openSearch() {
+		if(animateDrawerLogo){
+			this.materialMenu.animateState(IconState.ARROW);
+			this.drawerLogo.setVisibility(View.GONE);
+		}
+		this.materialMenu.setContentDescription(getContext()
+				.getResources().getString(R.string.content_description_close_search));
+		this.logo.setVisibility(View.GONE);
+		this.search.setVisibility(View.VISIBLE);
+		this.results.setVisibility(View.VISIBLE);
+
+		animate = true;
+		searchOpen = true;
+
+		setAdapter(new SearchAdapter(getContext(), resultList, search));
+
+		results.setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
+									long arg3) {
+				SearchResult result = resultList.get(arg2);
+				search(result, true);
+			}
+		});
+
+		if(initialResults != null){
+			setInitialResults();
+		}else{
+			updateResults();
+		}
+
+		if (listener != null)
+			listener.onSearchOpened();
+
+		if (getSearchText().length() > 0) {
+			micStateChanged(false);
+			mic.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_clear));
+		}
+
+		showKeyboard();
+	}
 	
 	private void closeSearch() {
         if(animateDrawerLogo){
             this.materialMenu.animateState(IconState.BURGER);
             this.drawerLogo.setVisibility(View.VISIBLE);
         }
+		this.materialMenu.setContentDescription(getContext()
+				.getResources().getString(R.string.content_description_nav));
 		this.logo.setVisibility(View.VISIBLE);
 		this.search.setVisibility(View.GONE);
 		this.results.setVisibility(View.GONE);
+
 		if (tint != null && rootLayout != null) {
 			rootLayout.removeView(tint);
 		}
 		if (listener != null)
 			listener.onSearchClosed();
+
 		micStateChanged(true);
 		mic.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_action_mic));
-		InputMethodManager inputMethodManager =
-				(InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-		inputMethodManager.hideSoftInputFromWindow(getApplicationWindowToken(),
-				0);
-		searchOpen = false;
-	}
 
-	private void setLogoTextInt(String text) {
-		logo.setText(text);
+		searchOpen = false;
+		hideKeyboard();
 	}
 
 	private void search(String text) {
@@ -878,6 +910,19 @@ public class SearchBox extends RelativeLayout {
 		search(option, false);
 	}
 
+	public void showKeyboard(){
+		search.requestFocus();
+		InputMethodManager imm =
+				(InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+		imm.showSoftInput(search, InputMethodManager.SHOW_IMPLICIT);
+	}
+
+	public void hideKeyboard(){
+		search.clearFocus();
+		InputMethodManager imm =
+				(InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+		imm.hideSoftInputFromWindow(search.getWindowToken(), 0);
+	}
 
     public static class SearchAdapter extends ArrayAdapter<SearchResult> {
         private boolean mAnimate;

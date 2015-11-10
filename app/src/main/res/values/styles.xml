@@ -54,9 +54,9 @@
 
     <!--Common between both left and right columns-->
     <style name="DetailColumnsCommon">
-        <item name="android:textSize">20sp</item>
-        <item name="android:layout_marginTop">5dp</item>
-        <item name="android:layout_marginBottom">5dp</item>
+        <item name="android:textSize">@dimen/column_item_text_size</item>
+        <item name="android:layout_marginTop">@dimen/column_item_vertical_margin</item>
+        <item name="android:layout_marginBottom">@dimen/column_item_vertical_margin</item>
     </style>
     <!--End of Detail Fragment Styles-->
 </resources>

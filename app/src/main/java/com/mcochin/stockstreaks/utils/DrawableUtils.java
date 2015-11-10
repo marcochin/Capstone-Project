@@ -1,4 +1,4 @@
-package com.mcochin.stockstreakz.utils;
+package com.mcochin.stockstreaks.utils;
 
 /**
  * Utility class for holding methods that act on drawables.

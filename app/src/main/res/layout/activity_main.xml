@@ -1,50 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<android.support.design.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:orientation="vertical"
+    android:focusableInTouchMode="true">
 
-    <android.support.design.widget.AppBarLayout
+    <com.quinny898.library.persistentsearch.SearchBox
         android:id="@+id/appBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay"
-        android:fitsSystemWindows="true">
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_scrollFlags="scroll|enterAlways">
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/app_bar_height"
+        android:background="@color/colorPrimary"
+        app:hintText="@string/search_hint"
+        app:logoText="@string/app_name"
+        app:typefacePath="@string/logo_typeface_path"/>
 
-            <android.support.v7.widget.Toolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                app:popupTheme="@style/AppTheme.PopupOverlay"/>
+    <include layout="@layout/activity_main_recycler_view" />
 
-            <com.mcochin.stockstreakz.custom.LogoTextView
-                android:id="@+id/logo"
-                android:text="@string/app_name"
-                android:layout_width="wrap_content"
-                android:layout_marginTop="?attr/actionBarSize"
-                android:layout_height="?attr/listPreferredItemHeight"
-                android:textColor="@android:color/white"
-                android:textSize="@dimen/logo_font_size"
-                android:gravity="center_vertical"
-                android:layout_gravity="center_horizontal"
-                app:fontName="@string/logo_font_name"/>
-        </FrameLayout>
-
-    </android.support.design.widget.AppBarLayout>
-
-    <include layout="@layout/activity_main_recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
-
-</android.support.design.widget.CoordinatorLayout>
-
+</LinearLayout>

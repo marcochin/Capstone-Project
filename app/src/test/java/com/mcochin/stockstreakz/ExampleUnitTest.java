@@ -1,4 +1,4 @@
-package com.mcochin.stockstreakz;
+package com.mcochin.stockstreaks;
 
 import org.junit.Test;
 

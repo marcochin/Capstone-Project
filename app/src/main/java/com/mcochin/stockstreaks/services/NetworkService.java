@@ -1,4 +1,4 @@
-package com.mcochin.stockstreakz.services;
+package com.mcochin.stockstreaks.services;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -7,9 +7,7 @@ import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.mcochin.stockstreakz.MainActivity;
-import com.mcochin.stockstreakz.R;
-import com.mcochin.stockstreakz.fragments.MainMenuFragment;
+import com.mcochin.stockstreaks.R;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -34,7 +32,7 @@ public class NetworkService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String query = intent.getStringExtra(MainMenuFragment.SEARCH_VIEW_QUERY);
+        String query = "";
 
         Calendar toCalendar = Calendar.getInstance();
         Calendar fromCalendar = Calendar.getInstance();
