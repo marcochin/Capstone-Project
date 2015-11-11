@@ -28,6 +28,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         SwipeableItemAdapter<MainAdapter.MainViewHolder> {
 
     public static final String TAG = MainAdapter.class.getSimpleName();
+    public static final int LIST_ITEM_NORMAL = 0;
+    public static final int LIST_ITEM_FIRST = 1;
+
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
     private RecyclerViewDragDropManager mDragDropManager;
@@ -112,14 +115,17 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     @Override
     public MainViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-        View v = inflater.inflate(R.layout.list_item, parent, false);
+
+        int layoutId = viewType == LIST_ITEM_FIRST ? R.layout.list_item_first : R.layout.list_item;
+
+        View v = inflater.inflate(layoutId, parent, false);
         return new MainViewHolder(v);
     }
 
     @Override
     public void onBindViewHolder(final MainViewHolder holder, int position) {
         //Log.d(TAG, "onBind");
-        holder.mSymbol.setText(mListManipulator.getItem(position).getSymbol());
+        //holder.mSymbol.setText(mListManipulator.getItem(position).getSymbol());
 
         // set background resource (target view ID: container)
         final int dragState = holder.getDragStateFlags();
@@ -150,6 +156,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     @Override
     public int getItemCount() {
         return mListManipulator.getCount();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return position == 0 ? LIST_ITEM_FIRST : LIST_ITEM_NORMAL;
     }
 
     @Override

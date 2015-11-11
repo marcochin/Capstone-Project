@@ -15,6 +15,10 @@
         app:logoText="@string/app_name"
         app:typefacePath="@string/logo_typeface_path"/>
 
-    <include layout="@layout/activity_main_recycler_view" />
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:scrollbars="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </LinearLayout>

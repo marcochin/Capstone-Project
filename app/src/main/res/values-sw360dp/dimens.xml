@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- mid 4 inch to low 5 inch-->
-<resources>
-    <dimen name="detail_extras_section_vertical_padding">0dp</dimen>
-</resources>

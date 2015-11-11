@@ -5,7 +5,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="10dp"
     android:paddingLeft="@dimen/detail_extras_section_horizontal_padding"
     android:paddingStart="@dimen/detail_extras_section_horizontal_padding"
     android:paddingRight="@dimen/detail_extras_section_horizontal_padding"
@@ -20,13 +19,13 @@
         <TextView
             android:id="@+id/text_date_updated"
             android:layout_width="0dp"
-            android:layout_marginBottom="@dimen/date_margin"
+            android:layout_marginBottom="8dp"
             android:fontFamily="sans-serif"
             android:gravity="center_horizontal"
-            android:textSize="@dimen/supplementary_text_size"
             android:textColor="@color/secondary_text"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
+            android:text="Updated: Thursday, April 03 \n @ 4:00pm"
             tools:text="Updated: Thursday, April 03 \n @ 4:00pm" />
 
         <TextView android:id="@+id/text_full_name"
@@ -35,9 +34,10 @@
             android:textColor="@color/secondary_text"
             android:singleLine="true"
             android:ellipsize="end"
-            android:textSize="@dimen/supplementary_text_size"
+            android:textSize="@dimen/full_name_text_size"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
+            android:text="GoPro, Inc."
             tools:text="GoPro, Inc."/>
 
         <TextView android:id="@+id/text_symbol"
@@ -47,74 +47,77 @@
             android:textColor="@android:color/black"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
+            android:text="GPRO"
             tools:text="GPRO"/>
 
         <TextView
-            style="@style/DetailColumnsCommon.LeftCommon.DetailMainLeft"
+            style="@style/DetailColumnsCommon.TextSize.LeftCommon.DetailMainLeft"
             android:layout_width="0dp"
             android:text="@string/prev_close"
             app:layout_columnWeight="1" />
 
         <TextView
-            style="@style/DetailColumnsCommon.DetailRight"
+            style="@style/DetailColumnsCommon.TextSize.DetailRight"
             android:id="@+id/text_prev_close"
             android:layout_width="0dp"
-            android:textColor="@android:color/black"
+            android:textColor="@color/black"
             app:layout_gravity="fill_vertical"
             android:gravity="bottom"
             app:layout_columnWeight="1"
+            android:text="$333.33"
             tools:text="$333.33"/>
 
         <TextView
-            style="@style/DetailColumnsCommon.LeftCommon.DetailMainLeft"
+            style="@style/DetailColumnsCommon.TextSize.LeftCommon.DetailMainLeft"
             android:layout_width="0dp"
             android:text="@string/dollar_change"
             app:layout_columnWeight="1" />
 
         <TextView
-            style="@style/DetailColumnsCommon.DetailRight"
+            style="@style/DetailColumnsCommon.TextSize.DetailRight"
             android:id="@+id/text_dollar_change"
             android:layout_width="0dp"
-            android:textColor="@android:color/black"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
+            android:text="$-333.33"
             tools:text="$-333.33"/>
 
         <TextView
-            style="@style/DetailColumnsCommon.LeftCommon.DetailMainLeft"
+            style="@style/DetailColumnsCommon.TextSize.LeftCommon.DetailMainLeft"
             android:layout_width="0dp"
             android:text="@string/percent_change"
             app:layout_columnWeight="1" />
 
         <TextView
-            style="@style/DetailColumnsCommon.DetailRight"
+            style="@style/DetailColumnsCommon.TextSize.DetailRight"
             android:id="@+id/text_percent_change"
             android:layout_width="0dp"
             android:textColor="@android:color/black"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
+            android:text="-333.33%"
             tools:text="-333.33%" />
 
         <TextView
-            style="@style/DetailColumnsCommon.LeftCommon.DetailMainLeft"
+            style="@style/DetailColumnsCommon.TextSize.LeftCommon.DetailMainLeft"
             android:layout_width="0dp"
             android:text="@string/streak"
             app:layout_columnWeight="1" />
 
         <LinearLayout
-            style="@style/DetailLinearLayoutRight"
+            style="@style/DetailColumnsCommon.DetailLinearLayoutRight"
             android:layout_width="0dp"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
             android:orientation="horizontal"
+            android:gravity="bottom"
             app:layout_columnWeight="1">
 
             <TextView
                 android:id="@+id/text_streak"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="20sp"
-                android:textColor="@android:color/black"
+                android:textSize="@dimen/column_item_text_size"
+                android:textColor="@color/black"
+                android:text="33 days"
                 tools:text="33 days"/>
 
             <ImageView
@@ -122,6 +125,7 @@
                 android:layout_width="@dimen/stock_arrow_size_normal"
                 android:layout_height="@dimen/stock_arrow_size_normal"
                 android:contentDescription="@string/content_description_stock_arrow"
+                android:src="@drawable/ic_stock_down"
                 tools:src="@drawable/ic_stock_down"/>
         </LinearLayout>
 

@@ -10,20 +10,19 @@
         android:id="@+id/swipe_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="10dp"
+        android:padding="15dp"
         app:columnCount="2">
 
         <TextView
             android:id="@+id/text_date_updated"
             android:layout_width="0dp"
-            android:layout_marginBottom="@dimen/date_margin"
-            android:layout_marginTop="@dimen/date_margin"
+            android:layout_marginBottom="8dp"
             android:fontFamily="sans-serif"
             android:gravity="center_horizontal"
-            android:textSize="16sp"
             android:textColor="@color/secondary_text"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
+            android:text="Updated: Thursday, April 03 \n @ 4:00pm"
             tools:text="Updated: Thursday, April 03 \n @ 4:00pm" />
 
         <TextView
@@ -33,8 +32,10 @@
             android:textColor="@color/secondary_text"
             android:singleLine="true"
             android:ellipsize="end"
+            android:textSize="@dimen/full_name_text_size"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
+            android:text="GoPro, Inc."
             tools:text="GoPro, Inc."/>
 
         <TextView
@@ -43,6 +44,7 @@
             android:gravity="center_horizontal"
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
+            android:text="GPRO"
             tools:text="GPRO"/>
 
         <TextView
@@ -52,6 +54,7 @@
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
+            android:text="$-282.91"
             tools:text="$-282.91"/>
 
         <TextView
@@ -60,6 +63,7 @@
             android:gravity="center_horizontal"
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
+            android:text="$220.23"
             tools:text="$220.23"/>
 
         <TextView
@@ -69,6 +73,7 @@
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
+            android:text="-120.23%"
             tools:text="-120.23%"/>
 
         <LinearLayout
@@ -82,6 +87,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/ListItemFirstTextLarge"
+                android:text="33 days"
                 tools:text="33 days"/>
 
             <ImageView

@@ -5,17 +5,14 @@
     <dimen name="app_bar_height">68dp</dimen>
 
     <!-- Stock arrow size-->
-    <dimen name="stock_arrow_size_normal">24dp</dimen>
-    <dimen name="stock_arrow_size_first">30dp</dimen>
-
-    <!-- First item type date margin-->
-    <dimen name="date_margin">16dp</dimen>
+    <dimen name="stock_arrow_size_normal">22dp</dimen>
+    <dimen name="stock_arrow_size_first">26dp</dimen>
 
     <!-- Detail fragment-->
-    <dimen name="supplementary_text_size">16sp</dimen>
+    <dimen name="full_name_text_size">16sp</dimen>
     <dimen name="symbol_text_size">32sp</dimen>
 
-    <dimen name="column_item_text_size">20sp</dimen>
+    <dimen name="column_item_text_size">18sp</dimen>
     <dimen name="column_item_vertical_margin">5dp</dimen>
 
     <dimen name="detail_right_column_inner_padding">15dp</dimen>
@@ -24,7 +21,8 @@
 
     <!-- On devices < sw360dp scrollview generates this whitespace on bottom of screen for
     some reason and we need to fill it out vertically-->
-    <dimen name="detail_extras_section_vertical_padding">10dp</dimen>
+    <dimen name="detail_extras_section_top_padding">15dp</dimen>
+    <dimen name="detail_extras_section_bottom_padding">25dp</dimen>
     <dimen name="detail_extras_section_horizontal_padding">20dp</dimen>
 
     <!-- Values for the cardView detail view in tablets-->

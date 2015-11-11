@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- This layout is only used for sw360+ phone landscape-->
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -12,10 +13,9 @@
         android:layout_toStartOf="@+id/center_space"
         android:background="@android:color/transparent"/>
 
-    <include layout="@layout/detail_main_section"
+    <include layout="@layout/detail_main_section_center_vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/toolbar"
         android:layout_toLeftOf="@+id/center_space"
         android:layout_toStartOf="@+id/center_space"/>
 
@@ -25,7 +25,7 @@
         android:layout_height="0dp"
         android:layout_centerInParent="true"/>
 
-    <include layout="@layout/detail_extras_section"
+    <include layout="@layout/detail_extras_section_center_vertical"
         android:layout_toRightOf="@+id/center_space"
         android:layout_toEndOf="@+id/center_space"
         android:layout_width="match_parent"

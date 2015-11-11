@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:paddingLeft="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingStart="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingRight="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingEnd="@dimen/detail_extras_section_horizontal_padding"
+    android:background="@color/detail_extras_background">
+
+    <android.support.v7.widget.GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        app:columnCount="2">
+
+        <include layout="@layout/detail_extras_section_base"/>
+
+    </android.support.v7.widget.GridLayout>
+</RelativeLayout>

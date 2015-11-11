@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- For devices < sw360dp, this extras section is contained within a ScrollView
+and it leaves white space at the bottom of the scroll view if we don't out the screen. Therefore we
+need to add padding to the bottom of the extras section so it fills the screen leaving no white
+space for better aesthetics. This is possible with "center vertical" version of xml but padding
+on top and bottom must be always equal or we risk obscuring some data! Hence we have created this
+"no center vertical" version, so we can have different sizing for our top and bottom padding-->
+<android.support.v7.widget.GridLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="@dimen/detail_extras_section_top_padding"
+    android:paddingBottom="@dimen/detail_extras_section_bottom_padding"
+    android:paddingLeft="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingStart="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingRight="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingEnd="@dimen/detail_extras_section_horizontal_padding"
+    android:background="@color/detail_extras_background"
+    app:columnCount="2">
+
+    <include layout="@layout/detail_extras_section_base"/>
+
+</android.support.v7.widget.GridLayout>

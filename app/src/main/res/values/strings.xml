@@ -19,7 +19,7 @@
     <string name="content_description_stock_arrow">Stock arrow</string>
 
     <!-- detail fragment strings-->
-    <string name="prev_close">Previous Close:</string>
+    <string name="prev_close">Prev. Close:</string>
     <string name="percent_change">% Change:</string>
     <string name="dollar_change">$ Change:</string>
     <string name="streak">Streak:</string>
