@@ -30,7 +30,6 @@
         style="@style/DetailColumnsCommon.DetailLinearLayoutRight"
         android:layout_width="0dp"
         android:orientation="horizontal"
-        android:gravity="bottom"
         app:layout_gravity="fill_vertical"
         app:layout_columnWeight="1">
 
@@ -44,12 +43,13 @@
             tools:text="33 days"/>
 
         <ImageView
+            style="@style/StreakArrow"
             android:id="@+id/image_streak_arrow_last"
             android:layout_width="@dimen/stock_arrow_size_normal"
             android:layout_height="@dimen/stock_arrow_size_normal"
             android:contentDescription="@string/content_description_stock_arrow"
-            android:src="@drawable/ic_stock_up"
-            tools:src="@drawable/ic_stock_up"/>
+            android:src="@drawable/ic_streak_up"
+            tools:src="@drawable/ic_streak_up"/>
     </LinearLayout>
 
     <TextView
@@ -62,7 +62,6 @@
         style="@style/DetailColumnsCommon.DetailLinearLayoutRight"
         android:layout_width="0dp"
         android:orientation="horizontal"
-        android:gravity="bottom"
         app:layout_gravity="fill_vertical"
         app:layout_columnWeight="1">
 
@@ -76,12 +75,13 @@
             tools:text="33 days"/>
 
         <ImageView
+            style="@style/StreakArrow"
             android:id="@+id/image_streak_arrow_year_high"
             android:layout_width="@dimen/stock_arrow_size_normal"
             android:layout_height="@dimen/stock_arrow_size_normal"
             android:contentDescription="@string/content_description_stock_arrow"
-            android:src="@drawable/ic_stock_up"
-            tools:src="@drawable/ic_stock_up"/>
+            android:src="@drawable/ic_streak_up"
+            tools:src="@drawable/ic_streak_up"/>
     </LinearLayout>
 
     <TextView
@@ -94,7 +94,6 @@
         style="@style/DetailColumnsCommon.DetailLinearLayoutRight"
         android:layout_width="0dp"
         android:orientation="horizontal"
-        android:gravity="bottom"
         app:layout_gravity="fill_vertical"
         app:layout_columnWeight="1">
 
@@ -108,12 +107,13 @@
             tools:text="33 days"/>
 
         <ImageView
+            style="@style/StreakArrow"
             android:id="@+id/image_streak_arrow_year_low"
             android:layout_width="@dimen/stock_arrow_size_normal"
             android:layout_height="@dimen/stock_arrow_size_normal"
             android:contentDescription="@string/content_description_stock_arrow"
-            android:src="@drawable/ic_stock_down"
-            tools:src="@drawable/ic_stock_down"/>
+            android:src="@drawable/ic_streak_down"
+            tools:src="@drawable/ic_streak_down"/>
     </LinearLayout>
 
     <android.support.v7.widget.Space

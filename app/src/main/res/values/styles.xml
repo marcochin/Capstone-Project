@@ -16,6 +16,13 @@
         <item name="android:textSize">30sp</item>
     </style>
 
+    <!-- streak arrows -->
+    <style name="StreakArrow">
+        <item name="android:layout_marginLeft">@dimen/stock_arrow_margin_left</item>
+        <item name="android:layout_marginStart">@dimen/stock_arrow_margin_left</item>
+        <item name="android:baselineAlignBottom">true</item>
+    </style>
+
     <!-- =============================Detail Fragment styles=====================================-->
     <!--Main Section left column-->
     <style name="DetailColumnsCommon.TextSize.LeftCommon.DetailMainLeft">
@@ -46,6 +53,7 @@
 
     <!-- Main and Extra Section right columns that are linear layouts-->
     <style name="DetailColumnsCommon.DetailLinearLayoutRight">
+        <item name="android:gravity">bottom</item>
         <item name="android:paddingLeft">@dimen/detail_right_column_inner_padding</item>
         <item name="android:paddingStart">@dimen/detail_right_column_inner_padding</item>
         <item name="android:paddingRight">@dimen/detail_common_column_outer_padding</item>

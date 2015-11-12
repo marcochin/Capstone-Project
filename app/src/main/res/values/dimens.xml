@@ -5,8 +5,9 @@
     <dimen name="app_bar_height">68dp</dimen>
 
     <!-- Stock arrow size-->
-    <dimen name="stock_arrow_size_normal">22dp</dimen>
-    <dimen name="stock_arrow_size_first">26dp</dimen>
+    <dimen name="stock_arrow_size_normal">12dp</dimen>
+    <dimen name="stock_arrow_size_first">16dp</dimen>
+    <dimen name="stock_arrow_margin_left">2dp</dimen>
 
     <!-- Detail fragment-->
     <dimen name="full_name_text_size">16sp</dimen>

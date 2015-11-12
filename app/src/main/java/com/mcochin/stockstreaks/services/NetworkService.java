@@ -22,6 +22,7 @@ import yahoofinance.histquotes.Interval;
  */
 public class NetworkService extends IntentService {
     private static final String TAG = NetworkService.class.getSimpleName();
+    public static String KEY_SEARCH_QUERY ="searchQuery";
 //    private static String SEARCH_REQUEST = NetworkService.class.getSimpleName();
 //    private static String LIST_REFRESH_REQUEST = NetworkService.class.getSimpleName();
     private static final int MONTH = 31;
@@ -32,7 +33,7 @@ public class NetworkService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String query = "";
+        String query = intent.getStringExtra(KEY_SEARCH_QUERY);
 
         Calendar toCalendar = Calendar.getInstance();
         Calendar fromCalendar = Calendar.getInstance();
@@ -43,6 +44,14 @@ public class NetworkService extends IntentService {
             Stock stock = YahooFinance.get(query, fromCalendar, toCalendar, Interval.DAILY);
             if(stock == null){
                 showToast(getString(R.string.toast_error_retrieving_data));
+
+            } else{
+                Log.d(TAG, "Symbol: " +  stock.getSymbol()
+                        + " Full name: " + stock.getName()
+                        + " Prev. Close: " + stock.getQuote().getPreviousClose()
+                        + " Current Stock Price: " + stock.getQuote().getPrice()
+                        + " Change $: " + stock.getQuote().getChange()
+                        + " Change %: " + stock.getQuote().getChangeInPercent());
             }
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
@@ -55,16 +64,6 @@ public class NetworkService extends IntentService {
     }
 
     private void showToast(final String toastMsg){
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(NetworkService.this, toastMsg, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private void debugToast(final String toastMsg){
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override

@@ -1,6 +1,7 @@
 package com.mcochin.stockstreaks;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
@@ -11,8 +12,10 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
@@ -26,7 +29,9 @@ import com.mcochin.stockstreaks.adapters.MainAdapter;
 import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
+import com.mcochin.stockstreaks.services.NetworkService;
 import com.quinny898.library.persistentsearch.SearchBox;
+import com.quinny898.library.persistentsearch.SearchResult;
 
 public class MainActivity extends AppCompatActivity implements MainAdapter.EventListener {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -57,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         mAppBar = (SearchBox)findViewById(R.id.appBar);
         mSearchEditText = (EditText)findViewById(R.id.search);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
-        mLayoutManager = new MyLinearLayoutManager(this);
 
         if (savedInstanceState == null) {
             //Initialize the fragment that stores the list
@@ -67,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
             getSupportFragmentManager().executePendingTransactions();
         } else{
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
-                mAppBar.openSearch();
+                mAppBar.toggleSearch();
             }
         }
 
@@ -80,12 +84,54 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
             }
         };
 
-        configureAppBar();
-        configureDragDropAndSwipe();
+        mAppBar.setOverflowMenu(R.menu.menu_main);
+        mAppBar.setSearchListener(new SearchBox.SearchListener() {
+            @Override
+            public void onSearchOpened() {
+
+            }
+
+            @Override
+            public void onSearchCleared() {
+
+            }
+
+            @Override
+            public void onSearchClosed() {
+
+            }
+
+            @Override
+            public void onSearchTermChanged(String term) {
+
+            }
+
+            @Override
+            public void onSearch(String query) {
+                // TODO start service, start cursor loader when service fetches data and uses
+                // TODO content provider to put in the db.
+                // TODO Cursor loader will detect it and then update ui.
+                if(TextUtils.isEmpty(query)){
+                    Toast.makeText(getBaseContext(), R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Intent serviceIntent = new Intent();
+                serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query);
+                startService(serviceIntent);
+            }
+
+            @Override
+            public void onResultClick(SearchResult result) {
+
+            }
+        });
+
+        configureRecyclerView();
         configureAppBarDynamicElevation();
     }
 
-    @Override
+    @Override // MainAdapter.EventListener
     public void onItemClick(MainAdapter.MainViewHolder holder) {
         if(mTwoPane){
             //If tablet insert fragment into container
@@ -96,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         }
     }
 
-    @Override
+    @Override // MainAdapter.EventListener
     public void onItemRemoved(MainAdapter.MainViewHolder holder) {
         Snackbar.make(mRootView, getString(R.string.snackbar_main_text, holder.getSymbol()), Snackbar.LENGTH_LONG)
                 .setAction(R.string.snackbar_action_text, mSnackBarActionListener).show();
@@ -149,7 +195,8 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         super.onDestroy();
     }
 
-    private void configureDragDropAndSwipe(){
+    private void configureRecyclerView(){
+
         // Touch guard manager  (this class is required to suppress scrolling while swipe-dismiss animation is running)
         mTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
         mTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
@@ -179,6 +226,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         // Disable the change animation in order to make turning back animation of swiped item works properly.
         animator.setSupportsChangeAnimations(false);
 
+        mLayoutManager = new MyLinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setAdapter(mWrappedAdapter);
         mRecyclerView.setItemAnimator(animator);
@@ -198,10 +246,6 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         mTouchActionGuardManager.attachRecyclerView(mRecyclerView);
         mSwipeManager.attachRecyclerView(mRecyclerView);
         mDragDropManager.attachRecyclerView(mRecyclerView);
-    }
-
-    private void configureAppBar(){
-        mAppBar.setOverflowMenu(R.menu.menu_main);
     }
 
     private void configureAppBarDynamicElevation(){

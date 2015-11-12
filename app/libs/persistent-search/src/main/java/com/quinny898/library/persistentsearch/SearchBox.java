@@ -198,11 +198,7 @@ public class SearchBox extends RelativeLayout {
 
 				switch (keyCode) {
 					case KeyEvent.KEYCODE_ENTER:
-						if (TextUtils.isEmpty(getSearchText())) {
-							toggleSearch();
-						} else {
-							search(getSearchText());
-						}
+						search(getSearchText());
 						return true;
 				}
 
@@ -801,20 +797,6 @@ public class SearchBox extends RelativeLayout {
 		animator.start();
 	}
 
-	private void search(SearchResult result, boolean resultClicked) {
-		if(!searchWithoutSuggestions && getNumberOfResults() == 0)return;
-		setSearchString(result.title);
-		if (!TextUtils.isEmpty(getSearchText())) {
-			if (listener != null) {
-				if (resultClicked)
-					listener.onResultClick(result);
-				else
-					listener.onSearch(result.title);
-			}
-		}
-		hideKeyboard();
-	}
-
     /***
      * Set to false to retain the logo from setDrawerLogo() instead of animating to the arrow during searches.
      * @param show Should the SearchBox animate the drawer logo
@@ -839,7 +821,7 @@ public class SearchBox extends RelativeLayout {
 		}
 	}
 
-	public void openSearch() {
+	private void openSearch() {
 		if(animateDrawerLogo){
 			this.materialMenu.animateState(IconState.ARROW);
 			this.drawerLogo.setVisibility(View.GONE);
@@ -908,6 +890,19 @@ public class SearchBox extends RelativeLayout {
 	private void search(String text) {
 		SearchResult option = new SearchResult(text, null);
 		search(option, false);
+	}
+
+	private void search(SearchResult result, boolean resultClicked) {
+		if(!searchWithoutSuggestions && getNumberOfResults() == 0)return;
+		setSearchString(result.title);
+		if (listener != null) {
+			if (resultClicked)
+				listener.onResultClick(result);
+			else
+				listener.onSearch(result.title);
+		}
+
+		hideKeyboard();
 	}
 
 	public void showKeyboard(){
@@ -1013,9 +1008,9 @@ public class SearchBox extends RelativeLayout {
 
 		/**
 		 * Called when a search happens, with a result
-		 * @param result
+		 * @param query
 		 */
-		public void onSearch(String result);
+		public void onSearch(String query);
 		
 		/**
 		 * Called when a search result is clicked, with the result

@@ -78,7 +78,7 @@
 
         <LinearLayout
             android:layout_width="0dp"
-            android:gravity="center"
+            android:gravity="center_horizontal"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1">
 
@@ -91,11 +91,13 @@
                 tools:text="33 days"/>
 
             <ImageView
+                style="@style/StreakArrow"
                 android:id="@+id/image_streak_arrow"
                 android:layout_width="@dimen/stock_arrow_size_first"
                 android:layout_height="@dimen/stock_arrow_size_first"
-                android:src="@drawable/ic_stock_down"
-                android:contentDescription="@string/content_description_stock_arrow"/>
+                android:contentDescription="@string/content_description_stock_arrow"
+                android:src="@drawable/ic_streak_down"
+                tools:src="@drawable/ic_streak_down"/>
         </LinearLayout>
     </android.support.v7.widget.GridLayout>
 

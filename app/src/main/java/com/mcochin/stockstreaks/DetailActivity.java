@@ -14,10 +14,12 @@ public class DetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
-        DetailFragment detailFragment = new DetailFragment();
-        getSupportFragmentManager().beginTransaction()
-            .add(R.id.detail_container, detailFragment, DetailFragment.TAG)
-            .commit();
+        if(savedInstanceState == null) {
+            DetailFragment detailFragment = new DetailFragment();
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.detail_container, detailFragment, DetailFragment.TAG)
+                    .commit();
+        }
 
 //        final View rootView = findViewById(R.id.detail_container);
 //        rootView.postDelayed(new Runnable() {

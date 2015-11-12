@@ -41,13 +41,13 @@
             tools:text="33d"/>
 
         <ImageView
+            style="@style/StreakArrow"
             android:id="@+id/image_streak_arrow"
             android:layout_width="@dimen/stock_arrow_size_normal"
             android:layout_height="@dimen/stock_arrow_size_normal"
             android:contentDescription="@string/content_description_stock_arrow"
-            app:layout_gravity="center_vertical"
-            android:src="@drawable/ic_stock_down"
-            tools:src="@drawable/ic_stock_down"/>
+            android:src="@drawable/ic_streak_down"
+            tools:src="@drawable/ic_streak_down"/>
 
         <TextView
             android:id="@+id/text_full_name"
