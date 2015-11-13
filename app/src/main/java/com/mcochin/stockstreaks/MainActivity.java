@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
                     return;
                 }
 
-                Intent serviceIntent = new Intent();
+                Intent serviceIntent = new Intent(getBaseContext(), NetworkService.class);
                 serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query);
                 startService(serviceIntent);
             }
