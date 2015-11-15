@@ -1,6 +1,7 @@
 package com.mcochin.stockstreaks.services;
 
 import android.app.IntentService;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
@@ -45,6 +46,8 @@ public class NetworkService extends IntentService {
 
         try {
             // TODO add more reliable check for internet
+
+
             Stock stock = YahooFinance.get(query, fromCalendar, toCalendar, Interval.DAILY);
             if(stock == null){
                 showToast(getString(R.string.toast_error_retrieving_data));
@@ -71,7 +74,7 @@ public class NetworkService extends IntentService {
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
             if(e instanceof FileNotFoundException){
-                showToast(getString(R.string.toast_stock_not_found));
+                showToast(getString(R.string.toast_error_retrieving_data));
             }else {
                 showToast(getString(R.string.toast_no_network));
             }

@@ -11,10 +11,13 @@
     <string name="logo_font_name">harlowsi.TTF</string>
 
     <!-- toast msgs -->
-    <string name="toast_error_retrieving_data">Error retrieving data.</string>
-    <string name="toast_stock_not_found">Symbol not found.</string>
-    <string name="toast_empty_search">Please enter a symbol.</string>
-    <string name="toast_no_network">No Network Connection.</string>
+    <string name="toast_error_retrieving_data">Error retrieving data</string>
+    <string name="toast_stock_not_found">Symbol not found</string>
+    <string name="toast_empty_search">Please enter a symbol</string>
+    <string name="toast_no_network">No Network Connection</string>
+
+    <!--Content Provider-->
+    <string name="unknown_uri">Unknown Uri: %1$s</string>
 
     <!--content description-->
     <string name="content_description_stock_arrow">Stock arrow</string>

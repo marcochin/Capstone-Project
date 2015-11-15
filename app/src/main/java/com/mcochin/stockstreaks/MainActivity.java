@@ -1,14 +1,17 @@
 package com.mcochin.stockstreaks;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -28,14 +31,18 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.WrapperAdapterUtils;
 import com.mcochin.stockstreaks.adapters.MainAdapter;
 import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListManipulator;
+import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
 import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
 import com.mcochin.stockstreaks.services.NetworkService;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
-public class MainActivity extends AppCompatActivity implements MainAdapter.EventListener {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
+    private static final int ID_LOADER_UPDATE_DATE = 0;
+    private static final int ID_LOADER_STOCKS = 1;
 
     private RecyclerView mRecyclerView;
     private MyLinearLayoutManager mLayoutManager;
@@ -112,11 +119,12 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
                 // TODO content provider to put in the db.
                 // TODO Cursor loader will detect it and then update ui.
                 if(TextUtils.isEmpty(query)){
-                    Toast.makeText(getBaseContext(), R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this,
+                            R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                Intent serviceIntent = new Intent(getBaseContext(), NetworkService.class);
+                Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
                 serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query);
                 startService(serviceIntent);
             }
@@ -131,21 +139,50 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         configureAppBarDynamicElevation();
     }
 
-    @Override // MainAdapter.EventListener
-    public void onItemClick(MainAdapter.MainViewHolder holder) {
-        if(mTwoPane){
-            //If tablet insert fragment into container
-        }else{
-            //If phone open activity
-            Intent openDetail = new Intent(this, DetailActivity.class);
-            startActivity(openDetail);
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        CursorLoader loader = null;
+        switch(id){
+            case ID_LOADER_UPDATE_DATE:
+                loader = new CursorLoader(
+                        MainActivity.this,
+                        UpdateDateEntry.CONTENT_URI,
+                        null,
+                        null,
+                        null,
+                        null);
+                break;
+            case ID_LOADER_STOCKS:
+                loader = new CursorLoader(
+                        MainActivity.this,
+                        StockEntry.CONTENT_URI,
+                        null,
+                        null,
+                        null,
+                        null);
+                break;
+        }
+        return loader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if (!data.moveToFirst()) {
+            return;
+        }
+        int id = loader.getId();
+
+        switch(id){
+            case ID_LOADER_UPDATE_DATE:
+                break;
+            case ID_LOADER_STOCKS:
+                break;
         }
     }
 
-    @Override // MainAdapter.EventListener
-    public void onItemRemoved(MainAdapter.MainViewHolder holder) {
-        Snackbar.make(mRootView, getString(R.string.snackbar_main_text, holder.getSymbol()), Snackbar.LENGTH_LONG)
-                .setAction(R.string.snackbar_action_text, mSnackBarActionListener).show();
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
     }
 
     @Override
@@ -213,17 +250,44 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         // Swipe manager
         mSwipeManager = new RecyclerViewSwipeManager();
 
-        final MainAdapter mainAdapter =
-                new MainAdapter(this, this, mDragDropManager, getListManipulator());
-        mAdapter = mainAdapter;
+        //Create adapter
+        final MainAdapter mainAdapter = new MainAdapter(
+                this,
+                new MainAdapter.EventListener() {
+                    @Override
+                    public void onItemClick(MainAdapter.MainViewHolder holder) {
+                        if(mTwoPane){
+                            //If tablet insert fragment into container
+                        }else{
+                            //If phone open activity
+                            Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
+                            startActivity(openDetail);
+                        }
+                    }
 
-        mWrappedAdapter = mDragDropManager.createWrappedAdapter(mainAdapter);      // Wrap for dragging
-        mWrappedAdapter = mSwipeManager.createWrappedAdapter(mWrappedAdapter);      // Wrap for swiping
+                    @Override
+                    public void onItemRemoved(MainAdapter.MainViewHolder holder) {
+                        Snackbar.make(
+                                mRootView,
+                                getString(R.string.snackbar_main_text, holder.getSymbol()),
+                                Snackbar.LENGTH_LONG)
+                        .setAction(
+                                R.string.snackbar_action_text,
+                                mSnackBarActionListener)
+                        .show();
+                    }
+                },
+                mDragDropManager,
+                getListManipulator());
+
+        mAdapter = mainAdapter;
+        mWrappedAdapter = mDragDropManager.createWrappedAdapter(mainAdapter);  // Wrap for dragging
+        mWrappedAdapter = mSwipeManager.createWrappedAdapter(mWrappedAdapter); // Wrap for swiping
 
         final GeneralItemAnimator animator = new SwipeDismissItemAnimator();
 
-        // Change animations are enabled by default since support-v7-recyclerview v22.
-        // Disable the change animation in order to make turning back animation of swiped item works properly.
+        // Change animations are enabled by default since support-v7-recyclerview v22. Disable the
+        // change animation in order to make turning back animation of swiped item works properly.
         animator.setSupportsChangeAnimations(false);
 
         mLayoutManager = new MyLinearLayoutManager(this);
@@ -232,12 +296,13 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
         mRecyclerView.setItemAnimator(animator);
 
         // Additional decorations
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            // Lollipop or later has native drop shadow feature. ItemShadowDecorator is not required.
-        } else {
-            mRecyclerView.addItemDecoration(new ItemShadowDecorator((NinePatchDrawable) ContextCompat.getDrawable(this, R.drawable.material_shadow_z1)));
+        // Lollipop or later has native drop shadow feature. ItemShadowDecorator is not required.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            mRecyclerView.addItemDecoration(new ItemShadowDecorator(
+                    (NinePatchDrawable) ContextCompat.getDrawable(this, R.drawable.material_shadow_z1)));
         }
-        mRecyclerView.addItemDecoration(new SimpleListDividerDecorator(ContextCompat.getDrawable(this, R.drawable.list_divider_h), true));
+        mRecyclerView.addItemDecoration(new SimpleListDividerDecorator(
+                ContextCompat.getDrawable(this, R.drawable.list_divider_h), true));
 
         // NOTE:
         // The initialization order is very important! This order determines the priority of touch event handling.
@@ -261,8 +326,8 @@ public class MainActivity extends AppCompatActivity implements MainAdapter.Event
                         if (recyclerView.computeVerticalScrollOffset() <= 2) {
                             mAppBar.setElevation(0);
                         } else {
-                            mAppBar.setElevation(getResources()
-                                    .getDimension(R.dimen.appbar_elevation));
+                            mAppBar.setElevation(
+                                    getResources().getDimension(R.dimen.appbar_elevation));
                         }
                     }
                 });

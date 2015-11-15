@@ -36,8 +36,8 @@ public class StockContract {
 
         // There will only be one item in the update date table and that is the time_in_milli
         // "vnd.android.cursor.item/com.mcochin.stockstreaks/update_date
-        public static final String CONTENT_ITEM_TYPE =
-                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/"
+        public static final String CONTENT_DIR_TYPE =
+                ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
                         + CONTENT_AUTHORITY + "/" + PATH_UPDATE_DATE;
 
         public static final String TABLE_NAME = PATH_UPDATE_DATE;
@@ -47,9 +47,9 @@ public class StockContract {
          * This will serve as the return URI for something like inserting a row.
          * @param id The id of the row
          * @return The URI of the row of the recent transaction.
+         * e.g. content://com.mcochin.stockstreaks/update_date/123
          */
-        public static Uri buildUpdateDateUri(long id) {
-            // content://com.mcochin.stockstreaks/update_date/123
+        public static Uri buildUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);
         }
     }
@@ -88,9 +88,9 @@ public class StockContract {
          *
          * @param id The id of the row
          * @return The URI of the row of the recent transaction.
+         * e.g. content://com.mcochin.stockstreaks/stocks/123
          */
-        public static Uri buildStocksUri(long id) {
-            // content://com.mcochin.stockstreaks/stocks/123
+        public static Uri buildUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);
         }
 
@@ -99,9 +99,9 @@ public class StockContract {
          *
          * @param symbol The symbol of the stock
          * @return The URI of the row of the recent transaction.
+         * e.g. content://com.mcochin.stockstreaks/stocks/GPRO
          */
-        public static Uri buildStocksUri(String symbol) {
-            // content://com.mcochin.stockstreaks/stocks/GPRO
+        public static Uri buildUri(String symbol) {
             return CONTENT_URI.buildUpon().appendPath(symbol).build();
         }
     }

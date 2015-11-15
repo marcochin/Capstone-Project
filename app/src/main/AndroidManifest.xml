@@ -26,5 +26,10 @@
         </activity>
 
         <service android:name="com.mcochin.stockstreaks.services.NetworkService"/>
+
+        <provider
+            android:name=".data.StockProvider"
+            android:authorities="com.mcochin.stockstreaks"
+            android:exported="false" />
     </application>
 </manifest>
