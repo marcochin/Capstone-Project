@@ -75,7 +75,7 @@
 
         <TextView
             style="@style/DetailColumnsCommon.TextSize.DetailRight"
-            android:id="@+id/text_dollar_change"
+            android:id="@+id/text_change_dollar"
             android:layout_width="0dp"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
@@ -90,7 +90,7 @@
 
         <TextView
             style="@style/DetailColumnsCommon.TextSize.DetailRight"
-            android:id="@+id/text_percent_change"
+            android:id="@+id/text_change_percent"
             android:layout_width="0dp"
             android:textColor="@android:color/black"
             app:layout_columnWeight="1"

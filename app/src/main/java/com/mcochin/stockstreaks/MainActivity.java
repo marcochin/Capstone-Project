@@ -38,6 +38,8 @@ import com.mcochin.stockstreaks.services.NetworkService;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
+import java.util.Locale;
+
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
@@ -125,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 }
 
                 Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
-                serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query);
+                serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query.toUpperCase(Locale.US));
                 startService(serviceIntent);
             }
 
@@ -176,6 +178,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             case ID_LOADER_UPDATE_DATE:
                 break;
             case ID_LOADER_STOCKS:
+                getListManipulator().setCursor(data);
                 break;
         }
     }

@@ -48,7 +48,7 @@
             tools:text="GPRO"/>
 
         <TextView
-            android:id="@+id/text_dollar_change"
+            android:id="@+id/text_change_dollar"
             android:layout_width="0dp"
             android:gravity="center_horizontal"
             android:textAppearance="@style/ListItemFirstTextLarge"
@@ -67,7 +67,7 @@
             tools:text="$220.23"/>
 
         <TextView
-            android:id="@+id/text_percent_change"
+            android:id="@+id/text_change_percent"
             android:layout_width="0dp"
             android:gravity="center_horizontal"
             android:textAppearance="@style/ListItemFirstTextLarge"

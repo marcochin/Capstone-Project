@@ -19,6 +19,7 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultAct
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeableItemViewHolder;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
+import com.mcochin.stockstreaks.pojos.Stock;
 
 /**
  * This is the adapter for <code>MainFragment</code>
@@ -46,12 +47,22 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
             implements View.OnClickListener, View.OnTouchListener {
         TextView mSymbol;
+        TextView mFullName;
+        TextView mPrevClose;
+        TextView mChangeDollar;
+        TextView mChangePercent;
+        TextView mStreak;
         ViewGroup mContainer;
 
         public MainViewHolder(View itemView) {
             super(itemView);
             mContainer = (ViewGroup) itemView.findViewById(R.id.swipe_container);
             mSymbol = (TextView) itemView.findViewById(R.id.text_symbol);
+            mFullName = (TextView) itemView.findViewById(R.id.text_full_name);
+            mPrevClose = (TextView) itemView.findViewById(R.id.text_prev_close);
+            mChangeDollar = (TextView) itemView.findViewById(R.id.text_change_dollar);
+            mChangePercent = (TextView) itemView.findViewById(R.id.text_change_percent);
+            mStreak = (TextView) itemView.findViewById(R.id.text_streak);
             itemView.setOnClickListener(this);
             itemView.setOnTouchListener(this);
         }
@@ -103,7 +114,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         mEventListener = eventListener;
         mDragDropManager = dragDropManager;
         mListManipulator = listManipulator;
-        mListManipulator.setData(null); //TODO remove this, only for debugging
+        //mListManipulator.setCursor(null); //TODO remove this, only for debugging
 
         mListItemPadding = context.getResources().getDimensionPixelSize(R.dimen.list_item_padding);
 
@@ -125,7 +136,14 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     @Override
     public void onBindViewHolder(final MainViewHolder holder, int position) {
         //Log.d(TAG, "onBind");
-        //holder.mSymbol.setText(mListManipulator.getItem(position).getSymbol());
+        Stock stock = mListManipulator.getItem(position);
+
+        holder.mSymbol.setText(stock.getSymbol());
+        holder.mFullName.setText(stock.getFullName());
+        holder.mPrevClose.setText(String.format("%.2f", stock.getPrevClose()));
+        holder.mChangeDollar.setText(String.format("%.2f", stock.getChangeDollar()));
+        holder.mChangePercent.setText(String.format("%.2f", stock.getChangePercent()));
+        holder.mStreak.setText(String.format("%d", stock.getStreak()));
 
         // set background resource (target view ID: container)
         final int dragState = holder.getDragStateFlags();

@@ -11,8 +11,8 @@
     <string name="logo_font_name">harlowsi.TTF</string>
 
     <!-- toast msgs -->
-    <string name="toast_error_retrieving_data">Error retrieving data</string>
-    <string name="toast_stock_not_found">Symbol not found</string>
+    <string name="toast_error_retrieving_data">Error retrieving data from server</string>
+    <string name="toast_symbol_not_found">Symbol not found</string>
     <string name="toast_empty_search">Please enter a symbol</string>
     <string name="toast_no_network">No Network Connection</string>
 

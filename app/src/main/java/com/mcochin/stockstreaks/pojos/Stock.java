@@ -9,13 +9,12 @@ public class Stock {
     private String mFullName;
     private float mPrevClose;
     private int mStreak;
-    private float mDollarChange;
-    private float mPercentChange;
+    private float mChangeDollar;
+    private float mChangePercent;
     private int mPrevStreak;
     private float mPrevStreakPrice;
     private int mYearStreakHigh;
     private int mYearStreakLow;
-    private boolean mCanDrag;
 
     public int getId() {
         return mId;
@@ -33,19 +32,19 @@ public class Stock {
         this.mSymbol = mSymbol;
     }
 
-    public String getmFullName() {
+    public String getFullName() {
         return mFullName;
     }
 
-    public void setmFullName(String mFullName) {
+    public void setFullName(String mFullName) {
         this.mFullName = mFullName;
     }
 
-    public float getmPrevClose() {
+    public float getPrevClose() {
         return mPrevClose;
     }
 
-    public void setmPrevClose(float mPrevClose) {
+    public void setPrevClose(float mPrevClose) {
         this.mPrevClose = mPrevClose;
     }
 
@@ -57,20 +56,20 @@ public class Stock {
         this.mStreak = streak;
     }
 
-    public float getmDollarChange() {
-        return mDollarChange;
+    public float getChangeDollar() {
+        return mChangeDollar;
     }
 
-    public void setmDollarChange(float mDollarChange) {
-        this.mDollarChange = mDollarChange;
+    public void setChangeDollar(float mDollarChange) {
+        this.mChangeDollar = mDollarChange;
     }
 
-    public float getPercentChange() {
-        return mPercentChange;
+    public float getChangePercent() {
+        return mChangePercent;
     }
 
-    public void setPercentChange(float percentChange) {
-        this.mPercentChange = percentChange;
+    public void setChangePercent(float percentChange) {
+        this.mChangePercent = percentChange;
     }
 
     public int getPrevStreak() {
@@ -103,13 +102,5 @@ public class Stock {
 
     public void setYearStreakLow(int yearStreakLow) {
         this.mYearStreakLow = yearStreakLow;
-    }
-
-    public boolean isCanDrag() {
-        return mCanDrag;
-    }
-
-    public void setCanDrag(boolean canDrag) {
-        this.mCanDrag = mCanDrag;
     }
 }

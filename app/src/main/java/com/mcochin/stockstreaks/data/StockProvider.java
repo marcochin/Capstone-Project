@@ -109,7 +109,6 @@ public class StockProvider extends ContentProvider {
     @Override
     public Uri insert(@NonNull Uri uri, ContentValues values) {
         final int match = sUriMatcher.match(uri);
-        Uri returnUri = null;
         long id;
 
         switch (match){
@@ -117,19 +116,12 @@ public class StockProvider extends ContentProvider {
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(UpdateDateEntry.TABLE_NAME, null, values);
 
-                if(id > 0 ){
-                    returnUri = UpdateDateEntry.buildUri(id);
-                }
                 break;
 
             case STOCKS_WITH_SYMBOL:
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(StockEntry.TABLE_NAME, null, values);
 
-                if(id > 0 ){
-                    String symbol = StockContract.getSymbolFromUri(uri);
-                    returnUri = StockEntry.buildUri(symbol);
-                }
                 break;
 
             default:
@@ -143,7 +135,7 @@ public class StockProvider extends ContentProvider {
             getContext().getContentResolver().notifyChange(uri, null);
         }
 
-        return returnUri;
+        return uri;
     }
 
     @Override

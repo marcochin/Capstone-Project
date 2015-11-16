@@ -1,7 +1,6 @@
 package com.mcochin.stockstreaks.services;
 
 import android.app.IntentService;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
@@ -9,8 +8,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.mcochin.stockstreaks.R;
+import com.mcochin.stockstreaks.utils.Utility;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
@@ -45,14 +44,27 @@ public class NetworkService extends IntentService {
         fromCalendar.add(Calendar.DAY_OF_MONTH, -5);
 
         try {
-            // TODO add more reliable check for internet
+            // check for internet
+            if(!Utility.isNetworkAvailable(this)){
+                showToast(getString(R.string.toast_no_network));
+                return;
+            }
 
+            Stock stock = YahooFinance.get(query);
 
-            Stock stock = YahooFinance.get(query, fromCalendar, toCalendar, Interval.DAILY);
             if(stock == null){
                 showToast(getString(R.string.toast_error_retrieving_data));
 
-            } else{
+            } else {
+                String fullName = stock.getName();
+
+                if(fullName.equals("N/A")){
+                    showToast(getString(R.string.toast_symbol_not_found));
+                    return;
+                }
+
+                stock.getHistory(fromCalendar, toCalendar, Interval.DAILY);
+
                 Log.d(TAG, "Symbol: " + stock.getSymbol()
                         + " Full name: " + stock.getName()
                         + " Prev. Close: " + stock.getQuote().getPreviousClose()
@@ -61,37 +73,42 @@ public class NetworkService extends IntentService {
                         + " Change %: " + stock.getQuote().getChangeInPercent());
 
 
-                List<HistoricalQuote> history = stock.getHistory();
+                List<HistoricalQuote> history = stock.getHistory(fromCalendar, toCalendar, Interval.DAILY);
                 Log.d(TAG, stock.getHistory() + "");
-                for(HistoricalQuote h : history){
+                for (HistoricalQuote h : history) {
                     Log.d(TAG, "Date: " + h.getDate().get(Calendar.MONTH)
                             + h.getDate().get(Calendar.DAY_OF_MONTH)
                             + h.getDate().get(Calendar.YEAR)
                             + " Close: " + h.getClose()
                             + " Adjusted close: " + h.getAdjClose());
                 }
+
+                    // TODO calculate current streak
+
+//                ContentValues values = new ContentValues();
+//                values.put(StockEntry.COLUMN_SYMBOL, stock.getSymbol());
+//                values.put(StockEntry.COLUMN_FULL_NAME, stock.getName());
+//                values.put(StockEntry.COLUMN_PREV_CLOSE,
+//                        stock.getQuote().getPreviousClose().floatValue());
+//                values.put(StockEntry.COLUMN_CHANGE_DOLLAR,
+//                        stock.getQuote().getChange().floatValue());
+//                values.put(StockEntry.COLUMN_CHANGE_DOLLAR,
+//                        stock.getQuote().getChangeInPercent().floatValue());
+//                //values.put(StockEntry.COLUMN_STREAK, streak);
+//
+//
+//                // TODO put stock into the database
+//                getContentResolver().insert(
+//                        StockContract.StockEntry.buildUri(stock.getSymbol()), values);
+
             }
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
-            if(e instanceof FileNotFoundException){
-                showToast(getString(R.string.toast_error_retrieving_data));
-            }else {
-                showToast(getString(R.string.toast_no_network));
-            }
+            showToast(getString(R.string.toast_error_retrieving_data));
         }
     }
 
     private void showToast(final String toastMsg) {
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(NetworkService.this, toastMsg, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private void debugToast(final String toastMsg){
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
