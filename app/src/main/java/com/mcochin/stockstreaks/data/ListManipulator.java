@@ -37,26 +37,26 @@ public class ListManipulator {
 //            uniqueId++;
 //        }
 
-        while(data.moveToNext()){
-            String symbol = data.getString(StockDbHelper.INDEX_SYMBOL);
-            String fullName = data.getString(StockDbHelper.INDEX_FULL_NAME);
-            float prevClose = data.getFloat(StockDbHelper.INDEX_PREV_CLOSE);
-            float changeDollar = data.getFloat(StockDbHelper.INDEX_CHANGE_DOLLAR);
-            float changePercent = data.getFloat(StockDbHelper.INDEX_CHANGE_PERCENT);
-            int streak = data.getInt(StockDbHelper.INDEX_STREAK);
-
-            Stock stock = new Stock();
-            stock.setId(uniqueId);
-            stock.setSymbol(symbol);
-            stock.setFullName(fullName);
-            stock.setPrevClose(prevClose);
-            stock.setChangeDollar(changeDollar);
-            stock.setChangePercent(changePercent);
-            stock.setStreak(streak);
-
-            mData.add(stock);
-            uniqueId++;
-        }
+//        while(data.moveToNext()){
+//            String symbol = data.getString(StockDbHelper.INDEX_SYMBOL);
+//            String fullName = data.getString(StockDbHelper.INDEX_FULL_NAME);
+//            float prevClose = data.getFloat(StockDbHelper.INDEX_PREV_CLOSE);
+//            float changeDollar = data.getFloat(StockDbHelper.INDEX_CHANGE_DOLLAR);
+//            float changePercent = data.getFloat(StockDbHelper.INDEX_CHANGE_PERCENT);
+//            int streak = data.getInt(StockDbHelper.INDEX_STREAK);
+//
+//            Stock stock = new Stock();
+//            stock.setId(uniqueId);
+//            stock.setSymbol(symbol);
+//            stock.setFullName(fullName);
+//            stock.setPrevClose(prevClose);
+//            stock.setChangeDollar(changeDollar);
+//            stock.setChangePercent(changePercent);
+//            stock.setStreak(streak);
+//
+//            mData.add(stock);
+//            uniqueId++;
+//        }
     }
 
     public int getCount(){

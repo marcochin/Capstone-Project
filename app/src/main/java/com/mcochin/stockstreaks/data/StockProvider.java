@@ -115,13 +115,11 @@ public class StockProvider extends ContentProvider {
             case UPDATE_DATE:
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(UpdateDateEntry.TABLE_NAME, null, values);
-
                 break;
 
             case STOCKS_WITH_SYMBOL:
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(StockEntry.TABLE_NAME, null, values);
-
                 break;
 
             default:

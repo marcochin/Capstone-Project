@@ -78,6 +78,14 @@ public class StockContract {
         public static final String COLUMN_CHANGE_DOLLAR = "change_dollar";
         public static final String COLUMN_CHANGE_PERCENT = "change_percent";
         public static final String COLUMN_STREAK = "streak";
+
+        /**
+         * If there is a day where the stock maintains the same opening and close price
+         * (no price change), it will not affect the stock's streak in any way. E.g.: If a stock
+         * has gone up 4 days in a row, the 5th day it has no price change, and it goes up 4 days
+         * in a row again, the streak will be 8, but the absolute day coverage will be 9;
+         */
+        public static final String COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE = "streak_absolute_day_coverage";
         public static final String COLUMN_PREV_STREAK_END_PRICE = "prev_end_streak_price";
         public static final String COLUMN_PREV_STREAK= "prev_streak";
         public static final String COLUMN_STREAK_YEAR_HIGH = "streak_year_high";
