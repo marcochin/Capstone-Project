@@ -53,6 +53,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 StockEntry.COLUMN_CHANGE_PERCENT + " REAL, " +
                 StockEntry.COLUMN_STREAK + " INTEGER, " +
                 StockEntry.COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE + " INTEGER, " +
+                StockEntry.COLUMN_PREV_STREAK_END_DATE + " INTEGER, " +
                 StockEntry.COLUMN_PREV_STREAK_END_PRICE + " REAL, " +
                 StockEntry.COLUMN_PREV_STREAK + " INTEGER, " +
                 StockEntry.COLUMN_STREAK_YEAR_HIGH + " INTEGER, " +
