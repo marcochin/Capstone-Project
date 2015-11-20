@@ -24,7 +24,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
 
 //    public static final int INDEX_SYMBOL = 1;
 //    public static final int INDEX_FULL_NAME = INDEX_SYMBOL + 1;
-//    public static final int INDEX_PREV_CLOSE = INDEX_FULL_NAME + 1;
+//    public static final int INDEX_RECENT_CLOSE = INDEX_FULL_NAME + 1;
 //    public static final int INDEX_CHANGE_DOLLAR = INDEX_PREV_CLOSE + 1;
 //    public static final int INDEX_CHANGE_PERCENT = INDEX_CHANGE_DOLLAR + 1;
 //    public static final int INDEX_STREAK = INDEX_CHANGE_PERCENT + 1;
@@ -48,7 +48,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 StockEntry._ID + " INTEGER PRIMARY KEY," +
                 StockEntry.COLUMN_SYMBOL + " TEXT NOT NULL, " +
                 StockEntry.COLUMN_FULL_NAME + " TEXT NOT NULL, " +
-                StockEntry.COLUMN_PREV_CLOSE + " REAL, " +
+                StockEntry.COLUMN_RECENT_CLOSE + " REAL, " +
                 StockEntry.COLUMN_CHANGE_DOLLAR + " REAL, " +
                 StockEntry.COLUMN_CHANGE_PERCENT + " REAL, " +
                 StockEntry.COLUMN_STREAK + " INTEGER, " +

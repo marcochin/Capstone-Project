@@ -53,7 +53,7 @@
         <TextView
             style="@style/DetailColumnsCommon.TextSize.LeftCommon.DetailMainLeft"
             android:layout_width="0dp"
-            android:text="@string/prev_close"
+            android:text="@string/recent_close"
             app:layout_columnWeight="1" />
 
         <TextView

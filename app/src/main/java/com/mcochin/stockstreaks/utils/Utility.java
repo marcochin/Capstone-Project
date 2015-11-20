@@ -5,7 +5,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
 /**
- * Utility class containing helper methods for this application
+ * Utility class containing general helper methods for this application
  */
 public class Utility {
     /**

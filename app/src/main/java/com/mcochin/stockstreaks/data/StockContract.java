@@ -74,7 +74,7 @@ public class StockContract {
         public static final String TABLE_NAME = PATH_STOCKS;
         public static final String COLUMN_SYMBOL = "symbol";
         public static final String COLUMN_FULL_NAME = "full_name";
-        public static final String COLUMN_PREV_CLOSE = "prev_close";
+        public static final String COLUMN_RECENT_CLOSE = "recent_close";
         public static final String COLUMN_CHANGE_DOLLAR = "change_dollar";
         public static final String COLUMN_CHANGE_PERCENT = "change_percent";
         public static final String COLUMN_STREAK = "streak";
