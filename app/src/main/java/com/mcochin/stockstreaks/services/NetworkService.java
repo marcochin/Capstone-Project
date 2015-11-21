@@ -35,8 +35,10 @@ public class NetworkService extends IntentService {
     private static String ACTION_ITEM_QUERY = "actionItemQuery";
     private static String ACTION_LIST_QUERY = "actionListQuery";
 
-    private static final int MONTH = 32; //needs to be 32 since we need to compare closing to prev closing price
-    private static final int YEAR = 365;
+    //needs to be 32 and 366 since we need to compare closing to prev day's closing price
+    private static final int MONTH = 32;
+    private static final int YEAR = 366;
+
     private static final int REG_HOURS_START_HOUR = 9;
     private static final int REG_HOURS_START_MINUTE = 29;
     private static final int REG_HOURS_END_HOUR = 4;
@@ -62,41 +64,7 @@ public class NetworkService extends IntentService {
                 return;
             }
 
-            Stock stock = YahooFinance.get(query);
-
-            if(stock == null){
-                showToast(getString(R.string.toast_error_retrieving_data));
-
-            } else {
-                if(stock.getName().equals(NOT_AVAILABLE)
-                        || (!stock.getStockExchange().equals(NASDAQ)
-                        && !stock.getStockExchange().equals(NYSE))){
-                    showToast(getString(R.string.toast_symbol_not_found));
-                    return;
-                }
-
-                Log.d(TAG, "Symbol: " + stock.getSymbol()
-                        + " Full name: " + stock.getName()
-                        + " Exchange: " + stock.getStockExchange()
-                        + " Prev. Close: " + stock.getQuote().getPreviousClose()
-                        + " Open: " + stock.getQuote().getOpen()
-                        + " Current Stock Price: " + stock.getQuote().getPrice()
-                        + " Change $: " + stock.getQuote().getChange()
-                        + " Change %: " + stock.getQuote().getChangeInPercent());
-
-                // Calculate the stock's current streak, prevClose, absolute day coverage and
-                // previous streak end price
-                StreakInfo streakInfo = calculateStreakRelatedInfo(stock);
-                Log.d(TAG, "streak " + streakInfo.mStreak
-                    + " recentClose " + streakInfo.mRecentClose
-                    + " prevStreakEndDate " + streakInfo.mPrevStreakEndDate
-                    + " prevStreakEndPrice " + streakInfo.mPrevStreakEndPrice);
-
-                Pair changeDollarAndPercentage =
-                        calculateChange(streakInfo.mRecentClose, streakInfo.mPrevStreakEndPrice);
-
-                Log.d(TAG, "change dollar " + String.format("%.2f", changeDollarAndPercentage.first)
-                        + " change percent  " + String.format("%.2f", changeDollarAndPercentage.second));
+            calculateStreakRelatedInfo(query);
 
 //                ContentValues values = new ContentValues();
 //                values.put(StockEntry.COLUMN_SYMBOL, stock.getSymbol());
@@ -109,163 +77,153 @@ public class NetworkService extends IntentService {
 //
 //               // Put stock into the database
 //                getContentResolver().insert(StockEntry.buildUri(stock.getSymbol()), values);
-            }
+
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
             showToast(getString(R.string.toast_error_retrieving_data));
         }
     }
 
-    /**
-     * Calculates the stock's current streak, recentClose, streak start date, and prev. streak's
-     * end price.
-     * @param stock Stock to calculate the info for.
-     * @return {@link com.mcochin.stockstreaks.services.NetworkService.StreakInfo}
-     * @throws IOException
-     */
-    private StreakInfo calculateStreakRelatedInfo(Stock stock) throws IOException{
+    private void calculateStreakRelatedInfo(String symbol) throws IOException{
         int streak = 0;
         int streakAbsoluteDayCoverage = 0;
         long prevStreakEndDate = 0;
         float prevStreakEndPrice = 0;
         float recentClose = 0;
 
-        Calendar nowTime = Calendar.getInstance(TimeZone.getTimeZone(TIMEZONE_NEW_YORK));
-        Calendar fromTime = Calendar.getInstance(TimeZone.getTimeZone(TIMEZONE_NEW_YORK));
-        //We want historical data for the past month
-        fromTime.add(Calendar.DAY_OF_MONTH, -MONTH);
+        // Query the stock from Yahoo
+        Stock stock = YahooFinance.get(symbol);
 
-        //network call to download history
-        List<HistoricalQuote> historyList = stock.getHistory(fromTime, nowTime, Interval.DAILY);
+        if(stock == null){
+            showToast(getString(R.string.toast_error_retrieving_data));
 
-        //Configure regular hours start and end times
-        Calendar regHoursStartTime = Calendar.getInstance();
-        regHoursStartTime.set(Calendar.HOUR_OF_DAY, REG_HOURS_START_HOUR);
-        regHoursStartTime.set(Calendar.MINUTE, REG_HOURS_START_MINUTE);
-
-        Calendar regHoursEndTime = Calendar.getInstance();
-        regHoursEndTime.set(Calendar.HOUR_OF_DAY, REG_HOURS_END_HOUR);
-        regHoursEndTime.set(Calendar.MINUTE, REG_HOURS_END_MINUTE);
-
-        // Use quote price first if it is not a active trade day (weekends, holidays) or if is
-        // outside reg hours trade time.
-        // Basically, we just use history only approach during reg trading hours.
-        // Days with no price change have no effect on streaks, but it will add toward
-        // streakAbsoluteDayCoverage
-        StockQuote quote = stock.getQuote();
-        int lastTradeDay = quote.getLastTradeTime().get(Calendar.DAY_OF_MONTH);
-
-        if(nowTime.get(Calendar.DAY_OF_MONTH) != lastTradeDay
-                || !(nowTime.after(regHoursStartTime) && nowTime.before(regHoursEndTime))) {
-            Log.d(TAG, "quote");
-
-            if (quote.getChange().floatValue() > 0) {
-                streak++;
-
-            } else if (quote.getChange().floatValue() < 0) {
-                streak--;
-            }
-            //increase absolute day coverage whether stock is up or down or no change
-            streakAbsoluteDayCoverage++;
-            recentClose = stock.getQuote().getPrice().floatValue();
-        }
-
-        for(int i = 0; i < historyList.size(); i++){
-            HistoricalQuote history = historyList.get(i);
-
-            Log.d(TAG, "Date: " + history.getDate().get(Calendar.MONTH)
-                    + history.getDate().get(Calendar.DAY_OF_MONTH)
-                    + history.getDate().get(Calendar.YEAR)
-                    + " Hour: " + history.getDate().get(Calendar.HOUR_OF_DAY)
-                    + " Minute: " + history.getDate().get(Calendar.MINUTE)
-                    + " Close: " + history.getClose()
-                    + " Adjusted close: " + history.getAdjClose());
-
-            // Make sure quote lastTradeTime date doesn't match any history dates so it doesn't
-            // get calculated twice. This can happen after active trading hours, when historical
-            // data gets updated and the day is an active trading day.
-            if(history.getDate().get(Calendar.DAY_OF_MONTH) == lastTradeDay){
-                continue;
+        } else {
+            // Invalid stock symbol
+            if (stock.getName().equals(NOT_AVAILABLE)
+                    || (!stock.getStockExchange().equals(NASDAQ)
+                    && !stock.getStockExchange().equals(NYSE))) {
+                showToast(getString(R.string.toast_symbol_not_found));
+                return;
             }
 
-            // Retrieves recent close if not already retrieved.
-            if(recentClose == 0){
-                recentClose = history.getClose().floatValue();
+            Log.d(TAG, "Symbol: " + stock.getSymbol()
+                    + " Full name: " + stock.getName()
+                    + " Exchange: " + stock.getStockExchange()
+                    + " Prev. Close: " + stock.getQuote().getPreviousClose()
+                    + " Open: " + stock.getQuote().getOpen()
+                    + " Current Stock Price: " + stock.getQuote().getPrice()
+                    + " Change $: " + stock.getQuote().getChange()
+                    + " Change %: " + stock.getQuote().getChangeInPercent());
+
+
+            Calendar nowCalendar = Calendar.getInstance(TimeZone.getTimeZone(TIMEZONE_NEW_YORK));
+            Calendar fromCalendar = Calendar.getInstance(TimeZone.getTimeZone(TIMEZONE_NEW_YORK));
+            fromCalendar.add(Calendar.DAY_OF_MONTH, -MONTH); // We want one month of data
+
+            // Download history from Yahoo
+            List<HistoricalQuote> historyList =
+                    stock.getHistory(fromCalendar, nowCalendar, Interval.DAILY);
+
+            StockQuote quote = stock.getQuote();
+            Calendar lastTradeDate = Utility.calendarTimeReset(quote.getLastTradeTime());
+            Calendar firstHistoricalDate = Utility.calendarTimeReset(historyList.get(0).getDate());
+
+            if(!lastTradeDate.equals(firstHistoricalDate)){
+                Log.d(TAG, "quote");
+                if (quote.getChange().floatValue() > 0) {
+                    streak++;
+
+                } else if (quote.getChange().floatValue() < 0) {
+                    streak--;
+                }
+                recentClose = stock.getQuote().getPrice().floatValue();
+
+                //increase absolute day coverage whether stock is up or down or no change
+                streakAbsoluteDayCoverage++;
             }
 
-            float historyClose = history.getClose().floatValue();
-            boolean shouldBreak = false;
+            for (int i = 0; i < historyList.size(); i++) {
+                HistoricalQuote history = historyList.get(i);
 
-            // Need to compare history close to its previous history close. Can't compare to
-            // it's open value because stock change values don't get calculated from that.
-            // If its the last day in the history we need to skip it because we have nothing to
-            // compare it to unless we have access to its ipo price, which we don't.
-            if(i + 1 < historyList.size()) {
-                float prevHistoryClose = historyList.get(i+1).getClose().floatValue();
+                Log.d(TAG, "Date: " + history.getDate().get(Calendar.MONTH)
+                        + history.getDate().get(Calendar.DAY_OF_MONTH)
+                        + history.getDate().get(Calendar.YEAR)
+                        + " Hour: " + history.getDate().get(Calendar.HOUR_OF_DAY)
+                        + " Minute: " + history.getDate().get(Calendar.MINUTE)
+                        + " Close: " + history.getClose()
+                        + " Adjusted close: " + history.getAdjClose());
 
-                if (historyClose > prevHistoryClose){
-                    // Down streak broken so break;
-                    if(streak < 0){
-                        shouldBreak = true;
-                    }else {
-                        streak++;
-                    }
-                } else if (historyClose < prevHistoryClose){
-                    // Up streak broken so break;
-                    if(streak > 0){
-                        shouldBreak = true;
-                    }else {
-                        streak--;
-                    }
+                if (recentClose == 0) {
+                    // Retrieves most recent close if not already retrieved.
+                    recentClose = history.getAdjClose().floatValue();
                 }
 
-            } else if(historyList.size() < MONTH){
-                //If it doesn't even have a month of history and it's the last history,
-                // it is a high chance it is ipo day. Compare to its opening price instead.
-                float historyOpen =  history.getOpen().floatValue();
+                float historyAdjClose = history.getAdjClose().floatValue();
+                boolean shouldBreak = false;
 
-                if (historyClose > historyOpen){
-                    // Down streak broken so break;
-                    if(streak < 0){
-                        shouldBreak = true;
-                    }else {
-                        streak++;
-                    }
-                } else if (historyClose < historyOpen){
-                    // Up streak broken so break;
-                    if(streak > 0){
-                        shouldBreak = true;
-                    }else {
-                        streak--;
+                // Need to compare history adj close to its previous history's adj close.
+                // http://budgeting.thenest.com/adjusted-closing-price-vs-closing-price-32457.html
+                // If its the last day in the history we need to skip it because we have
+                // nothing to compare it to.
+                if (i + 1 < historyList.size()) {
+                    float prevHistoryAdjClose = historyList.get(i + 1).getAdjClose().floatValue();
+
+                    if (historyAdjClose > prevHistoryAdjClose) {
+                        // Down streak broken so break;
+                        if (streak < 0) {
+                            shouldBreak = true;
+                        } else {
+                            streak++;
+                        }
+                    } else if (historyAdjClose < prevHistoryAdjClose) {
+                        // Up streak broken so break;
+                        if (streak > 0) {
+                            shouldBreak = true;
+                        } else {
+                            streak--;
+                        }
                     }
                 }
+                if (shouldBreak) {
+                    prevStreakEndDate = history.getDate().getTimeInMillis();
+                    prevStreakEndPrice = historyAdjClose;
+                    break;
+                }
+                //increase absolute day coverage whether stock is up or down or no change
+                streakAbsoluteDayCoverage++;
             }
 
-            if(shouldBreak){
-                prevStreakEndDate = history.getDate().getTimeInMillis();
-                prevStreakEndPrice = historyClose;
-                break;
-            }
+            Log.d(TAG, "streak " + streak
+                    + " recentClose " + recentClose
+                    + " absoluteDayCoverage " + streakAbsoluteDayCoverage
+                    + " prevStreakEndDate " + prevStreakEndDate
+                    + " prevStreakEndPrice " + prevStreakEndPrice);
 
-            //increase absolute day coverage whether stock is up or down or no change
-            streakAbsoluteDayCoverage++;
+            Pair changeDollarAndPercentage =
+                    calculateChange(recentClose, prevStreakEndPrice);
+
+            Log.d(TAG, "change dollar " + String.format("%.2f", changeDollarAndPercentage.first)
+                    + " change percent  " + String.format("%.2f", changeDollarAndPercentage.second));
+
+            //TODO add to Content Values, put in database
         }
-        return new StreakInfo(streak, streakAbsoluteDayCoverage, recentClose,
-                prevStreakEndDate, prevStreakEndPrice);
     }
 
-    private DetailInfo calculateDetailInfo(String symbol) throws IOException{
+    private void calculateDetailInfo(String symbol) throws IOException{
         Cursor cursor = null;
+        int historyStreak = 0;
         int prevStreak = 0;
-        float prevStreakEndPrice = 0;
         int yearStreakHigh = 0;
         int yearStreakLow = 0;
 
         try {
             final String[] projection = new String[]{StockEntry.COLUMN_PREV_STREAK_END_DATE,
-                    StockEntry.COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE};
+                    StockEntry.COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE,
+                    StockEntry.COLUMN_STREAK};
+
             final int indexPrevStreakEndDate = 0;
             final int indexAbsoluteDayCoverage = 1;
+            final int indexStreak = 2;
 
             long prevStreakEndDate = 0;
             int absoluteDayCoverage = 0;
@@ -280,11 +238,18 @@ public class NetworkService extends IntentService {
             if (cursor != null && !cursor.moveToFirst()) {
                 prevStreakEndDate = cursor.getLong(indexPrevStreakEndDate);
                 absoluteDayCoverage = cursor.getInt(indexAbsoluteDayCoverage);
+                int streak = cursor.getInt(indexStreak);
+
+                //set its current streak to yearHigh or yearLow
+                if(streak > 0 ){
+                    yearStreakHigh = streak;
+                } else if (streak < 0){
+                    yearStreakLow = streak;
+                }
             }
 
             Calendar fromCalendar = Calendar.getInstance();
             fromCalendar.add(Calendar.DAY_OF_MONTH, -YEAR + absoluteDayCoverage);
-
             Calendar toCalendar = Calendar.getInstance();
             toCalendar.setTimeInMillis(prevStreakEndDate);
 
@@ -292,15 +257,53 @@ public class NetworkService extends IntentService {
             List<HistoricalQuote> historyList =
                    stock.getHistory(fromCalendar, toCalendar, Interval.DAILY);
 
-            // TODO loop through history
+            //loop through 1 year history to find highest high and low, and prev streak
+            for(int i = 0; i < historyList.size(); i++){
+                HistoricalQuote history = historyList.get(i);
+                boolean resetHistoryStreak = false;
 
+                if(i + 1 < historyList.size()) {
+                    float historyAdjClose = history.getAdjClose().floatValue();
+                    float prevHistoryAdjClose = historyList.get(i + 1).getAdjClose().floatValue();
+
+                    if (historyAdjClose > prevHistoryAdjClose) {
+                        // Down streak broken so break;
+                        if (historyStreak < 0) {
+                            resetHistoryStreak = true;
+                        } else {
+                            historyStreak++;
+                        }
+                    } else if (historyAdjClose < prevHistoryAdjClose) {
+                        // Up streak broken so break;
+                        if (historyStreak > 0) {
+                            resetHistoryStreak = true;
+                        } else {
+                            historyStreak--;
+                        }
+                    }
+                }
+
+                if(resetHistoryStreak){
+                    //record the first history streak as the prev streak
+                    if(prevStreak == 0) {
+                        prevStreak = historyStreak;
+                    }
+                    //set the history high and lows if historyStreak exceeds them
+                    if(historyStreak > yearStreakHigh){
+                        yearStreakHigh = historyStreak;
+                    } else if (historyStreak < yearStreakLow){
+                        yearStreakLow = historyStreak;
+                    }
+
+                    //reset historyStreak
+                    historyStreak = 0;
+                }
+            }
         }finally {
             if (cursor != null){
                 cursor.close();
             }
         }
-
-        return new DetailInfo(prevStreak, prevStreakEndPrice, yearStreakHigh, yearStreakLow);
     }
 
     /**
@@ -349,14 +352,11 @@ public class NetworkService extends IntentService {
 
     private static class DetailInfo {
         public final int mPrevStreak;
-        public final float mPrevStreakEndPrice;
         public final int mYearStreakHigh;
         public final int mYearStreakLow;
 
-        public DetailInfo (int prevStreak, float prevStreakEndPrice, int yearStreakHigh,
-                           int yearStreakLow){
+        public DetailInfo (int prevStreak,  int yearStreakHigh, int yearStreakLow){
             mPrevStreak = prevStreak;
-            mPrevStreakEndPrice = prevStreakEndPrice;
             mYearStreakHigh = yearStreakHigh;
             mYearStreakLow = yearStreakLow;
         }
