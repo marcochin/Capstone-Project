@@ -88,17 +88,6 @@ public class StockContract {
         /**
          * This will serve as the return URI for something like inserting a row.
          *
-         * @param id The id of the row
-         * @return The URI of the row of the recent transaction.
-         * e.g. content://com.mcochin.stockstreaks/stocks/123
-         */
-        public static Uri buildUri(long id) {
-            return ContentUris.withAppendedId(CONTENT_URI, id);
-        }
-
-        /**
-         * This will serve as the return URI for something like inserting a row.
-         *
          * @param symbol The symbol of the stock
          * @return The URI of the row of the recent transaction.
          * e.g. content://com.mcochin.stockstreaks/stocks/GPRO

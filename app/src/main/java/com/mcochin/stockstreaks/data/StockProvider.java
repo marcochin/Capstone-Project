@@ -4,6 +4,7 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -127,7 +128,7 @@ public class StockProvider extends ContentProvider {
         }
 
         if(id < 0){
-            throw new android.database.SQLException(ERROR_ROW_INSERT + uri);
+            throw new SQLException(ERROR_ROW_INSERT + uri);
         }
         if(getContext()!= null) {
             getContext().getContentResolver().notifyChange(uri, null);
@@ -147,8 +148,8 @@ public class StockProvider extends ContentProvider {
 
                 rowsDeleted = mStockDbHelper.getWritableDatabase().delete(
                         StockEntry.TABLE_NAME, STOCK_SYMBOL_SELECTION, new String[]{symbol});
-
                 break;
+
             default:
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);
         }
@@ -167,9 +168,23 @@ public class StockProvider extends ContentProvider {
 
         switch (match){
             case UPDATE_DATE:
-                mStockDbHelper.getWritableDatabase()
-                        .update(UpdateDateEntry.TABLE_NAME, values, null, null);
+                mStockDbHelper.getWritableDatabase().update(
+                        UpdateDateEntry.TABLE_NAME,
+                        values,
+                        null,
+                        null);
                 break;
+
+            case STOCKS_WITH_SYMBOL:
+                String symbol = StockContract.getSymbolFromUri(uri);
+
+                mStockDbHelper.getWritableDatabase().update(
+                        StockEntry.TABLE_NAME,
+                        values,
+                        STOCK_SYMBOL_SELECTION,
+                        new String[]{symbol});
+                break;
+
             default:
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);
         }
@@ -233,22 +248,6 @@ public class StockProvider extends ContentProvider {
 //            getContext().getContentResolver().notifyChange(uri, null);
 //        }
 //        return rowsAffected;
-//    }
-
-//    // http://stackoverflow.com/questions/9917935/adding-rows-into-cursor-manually
-//    private Cursor mergeWithDateCursor(Cursor cursor){
-//        Cursor dateCursor = null;
-//
-//        try{
-//            dateCursor = mStockDbHelper.getWritableDatabase().query(
-//                    UpdateDateEntry.TABLE_NAME, null, null, null, null, null, null);
-//
-//            return new MergeCursor(new Cursor[]{dateCursor, cursor});
-//        } finally {
-//            if (dateCursor != null){
-//                dateCursor.close();
-//            }
-//        }
 //    }
 
     private static UriMatcher buildUriMatcher() {

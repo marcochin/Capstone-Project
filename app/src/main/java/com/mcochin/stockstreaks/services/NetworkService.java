@@ -66,17 +66,8 @@ public class NetworkService extends IntentService {
 
             calculateStreakRelatedInfo(query);
 
-//                ContentValues values = new ContentValues();
-//                values.put(StockEntry.COLUMN_SYMBOL, stock.getSymbol());
-//                values.put(StockEntry.COLUMN_FULL_NAME, stock.getName());
-//                values.put(StockEntry.COLUMN_STREAK, streakInfo.mStreak);
-//                values.put(StockEntry.COLUMN_RECENT_CLOSE, streakInfo.mRecentClose);
-//                values.put(StockEntry.COLUMN_CHANGE_DOLLAR, (float)changeDollarAndPercentage.first);
-//                values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float)changeDollarAndPercentage.second);
-//                values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, streakInfo.mStreakStartDate);
-//
-//               // Put stock into the database
-//                getContentResolver().insert(StockEntry.buildUri(stock.getSymbol()), values);
+//           // Put stock into the database
+//            getContentResolver().insert(StockEntry.buildUri(query), values);
 
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
@@ -84,12 +75,13 @@ public class NetworkService extends IntentService {
         }
     }
 
-    private void calculateStreakRelatedInfo(String symbol) throws IOException{
+    private ContentValues calculateStreakRelatedInfo(String symbol) throws IOException{
         int streak = 0;
         int streakAbsoluteDayCoverage = 0;
         long prevStreakEndDate = 0;
         float prevStreakEndPrice = 0;
         float recentClose = 0;
+        ContentValues values = null;
 
         // Query the stock from Yahoo
         Stock stock = YahooFinance.get(symbol);
@@ -97,15 +89,11 @@ public class NetworkService extends IntentService {
         if(stock == null){
             showToast(getString(R.string.toast_error_retrieving_data));
 
-        } else {
-            // Invalid stock symbol
-            if (stock.getName().equals(NOT_AVAILABLE)
-                    || (!stock.getStockExchange().equals(NASDAQ)
-                    && !stock.getStockExchange().equals(NYSE))) {
-                showToast(getString(R.string.toast_symbol_not_found));
-                return;
-            }
+        } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getStockExchange().equals(NASDAQ)
+                && !stock.getStockExchange().equals(NYSE))) {
+            showToast(getString(R.string.toast_symbol_not_found));
 
+        } else{
             Log.d(TAG, "Symbol: " + stock.getSymbol()
                     + " Full name: " + stock.getName()
                     + " Exchange: " + stock.getStockExchange()
@@ -205,22 +193,37 @@ public class NetworkService extends IntentService {
             Log.d(TAG, "change dollar " + String.format("%.2f", changeDollarAndPercentage.first)
                     + " change percent  " + String.format("%.2f", changeDollarAndPercentage.second));
 
-            //TODO add to Content Values, put in database
+            values = new ContentValues();
+            values.put(StockEntry.COLUMN_SYMBOL, symbol);
+            values.put(StockEntry.COLUMN_FULL_NAME, stock.getName());
+            values.put(StockEntry.COLUMN_RECENT_CLOSE, recentClose);
+            values.put(StockEntry.COLUMN_STREAK, streak);
+            values.put(StockEntry.COLUMN_CHANGE_DOLLAR, (float)changeDollarAndPercentage.first);
+            values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float)changeDollarAndPercentage.second);
+            values.put(StockEntry.COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE, streakAbsoluteDayCoverage);
+            values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, prevStreakEndPrice);
+            values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, prevStreakEndDate);
         }
+
+        return values;
     }
 
-    private void calculateDetailInfo(String symbol) throws IOException{
+    private ContentValues calculateDetailInfo(String symbol) throws IOException{
         Cursor cursor = null;
         int historyStreak = 0;
         int prevStreak = 0;
         int yearStreakHigh = 0;
         int yearStreakLow = 0;
 
+        ContentValues values;
+
         try {
+            //projection
             final String[] projection = new String[]{StockEntry.COLUMN_PREV_STREAK_END_DATE,
                     StockEntry.COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE,
                     StockEntry.COLUMN_STREAK};
 
+            //indexes for the projection
             final int indexPrevStreakEndDate = 0;
             final int indexAbsoluteDayCoverage = 1;
             final int indexStreak = 2;
@@ -299,11 +302,18 @@ public class NetworkService extends IntentService {
                     historyStreak = 0;
                 }
             }
+
+            values = new ContentValues();
+            values.put(StockEntry.COLUMN_PREV_STREAK, prevStreak);
+            values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, yearStreakHigh);
+            values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, yearStreakLow);
         }finally {
             if (cursor != null){
                 cursor.close();
             }
         }
+
+        return values;
     }
 
     /**
@@ -331,34 +341,5 @@ public class NetworkService extends IntentService {
                 Toast.makeText(NetworkService.this, toastMsg, Toast.LENGTH_LONG).show();
             }
         });
-    }
-
-    private static class StreakInfo {
-        public final int mStreak;
-        public final int mStreakAbsoluteDayCoverage;
-        public final float mRecentClose;
-        public final long mPrevStreakEndDate;
-        public final float mPrevStreakEndPrice;
-
-        public StreakInfo(int streak, int streakAbsoluteDayCoverage, float recentClose,
-                          long prevStreakEndDate, float prevStreakEndPrice){
-            mStreak = streak;
-            mStreakAbsoluteDayCoverage = streakAbsoluteDayCoverage;
-            mRecentClose = recentClose;
-            mPrevStreakEndDate = prevStreakEndDate;
-            mPrevStreakEndPrice = prevStreakEndPrice;
-        }
-    }
-
-    private static class DetailInfo {
-        public final int mPrevStreak;
-        public final int mYearStreakHigh;
-        public final int mYearStreakLow;
-
-        public DetailInfo (int prevStreak,  int yearStreakHigh, int yearStreakLow){
-            mPrevStreak = prevStreak;
-            mYearStreakHigh = yearStreakHigh;
-            mYearStreakLow = yearStreakLow;
-        }
     }
 }
