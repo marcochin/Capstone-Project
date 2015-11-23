@@ -1,7 +1,10 @@
 package com.mcochin.stockstreaks.data;
 
 import android.content.ContentProvider;
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
 import android.content.ContentValues;
+import android.content.OperationApplicationException;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -11,6 +14,8 @@ import android.support.annotation.Nullable;
 
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
+
+import java.util.ArrayList;
 
 /**
  * Content Provider that gives us an interface to interact with the SQLite db.
@@ -196,59 +201,18 @@ public class StockProvider extends ContentProvider {
         return rowsAffected;
     }
 
-//    @NonNull
-//    @Override
-//    public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations) throws OperationApplicationException {
-//        ContentProviderResult[] results =  super.applyBatch(operations);
-//        if(getContext()!= null) {
-//            getContext().getContentResolver().notifyChange(StockEntry.CONTENT_URI, null);
-//        }
-//
-//        return results;
-//    }
+    @NonNull
+    @Override
+    public ContentProviderResult[] applyBatch(@NonNull ArrayList<ContentProviderOperation> operations)
+            throws OperationApplicationException {
+        ContentProviderResult[] results =  super.applyBatch(operations);
 
-    //    /**
-//     * Updates db items efficiently in a bulk.
-//     * @param uri The content:// Uri of the update request.
-//     * @param values An array of sets of column_name/value pairs to add to the database.
-//     *               This must not be null.
-//     * @return The number of values that were updated.
-//     */
-//    public int bulkUpdate(@NonNull Uri uri, ContentValues[] values) {
-//        final int match = sUriMatcher.match(uri);
-//        int rowsAffected = 0;
-//
-//        switch(match){
-//            case STOCKS:
-//                SQLiteDatabase db = mStockDbHelper.getWritableDatabase();
-//                try {
-//                    db.beginTransaction();
-//                    for (ContentValues cv : values) {
-//                        String symbol = cv.getAsString(StockEntry.COLUMN_SYMBOL);
-//                        if (symbol != null) {
-//                            db.update(
-//                                    StockEntry.TABLE_NAME,
-//                                    cv,
-//                                    STOCK_SYMBOL_SELECTION,
-//                                    new String[] {symbol}
-//                            );
-//                            // Update will only update one row since all symbols are unique
-//                            rowsAffected++;
-//                        }
-//                    }
-//                    db.setTransactionSuccessful();
-//                } finally {
-//                db.endTransaction();
-//            }
-//
-//            break;
-//        }
-//
-//        if(getContext()!= null) {
-//            getContext().getContentResolver().notifyChange(uri, null);
-//        }
-//        return rowsAffected;
-//    }
+        if(getContext()!= null) {
+            getContext().getContentResolver().notifyChange(StockEntry.CONTENT_URI, null);
+        }
+
+        return results;
+    }
 
     private static UriMatcher buildUriMatcher() {
         // All paths added to the UriMatcher have a corresponding code to return when a match is
