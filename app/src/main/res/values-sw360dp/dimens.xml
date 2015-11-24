@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--detail fragment-->
+    <item name="detail_center_vertical" type="dimen" format="boolean">true</item>
+
+    <!-- On devices < sw360dp scrollview generates this whitespace on bottom of screen for
+some reason and we need to fill it out vertically-->
+    <dimen name="detail_extras_section_top_padding">0dp</dimen>
+    <dimen name="detail_extras_section_bottom_padding">0dp</dimen>
+</resources>

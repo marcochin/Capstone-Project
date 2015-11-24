@@ -3,6 +3,7 @@ package com.mcochin.stockstreaks.adapters;
 import android.content.Context;
 import android.os.Build;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,7 +20,6 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultAct
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeableItemViewHolder;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
-import com.mcochin.stockstreaks.pojos.Stock;
 
 /**
  * This is the adapter for <code>MainFragment</code>
@@ -41,7 +41,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
      * it has to do dynamically changing bg resources. We need to save it and restore it onBind().
      */
     //http://stackoverflow.com/questions/10095196/whered-padding-go-when-setting-background-drawable
-    private int mListItemPadding;
+    private int mListItemVerticalPadding;
+    private int mListItemHorizontalPadding;
 
     // Our ViewHolder class
     public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
@@ -114,9 +115,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         mEventListener = eventListener;
         mDragDropManager = dragDropManager;
         mListManipulator = listManipulator;
-        //mListManipulator.setCursor(null); //TODO remove this, only for debugging
+        mListManipulator.setCursor(null); //TODO remove this, only for debugging
 
-        mListItemPadding = context.getResources().getDimensionPixelSize(R.dimen.list_item_padding);
+        mListItemVerticalPadding = context.getResources()
+                .getDimensionPixelSize(R.dimen.list_item_vertical_padding);
+        mListItemHorizontalPadding = context.getResources()
+                .getDimensionPixelSize(R.dimen.list_item_horizontal_padding);
 
         // DraggableItemAdapter and SwipeableItemAdapter require stable IDs, and also
         // have to implement the getItemId() method appropriately.
@@ -135,15 +139,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override
     public void onBindViewHolder(final MainViewHolder holder, int position) {
-        //Log.d(TAG, "onBind");
-        Stock stock = mListManipulator.getItem(position);
-
-        holder.mSymbol.setText(stock.getSymbol());
-        holder.mFullName.setText(stock.getFullName());
-        holder.mPrevClose.setText(String.format("%.2f", stock.getPrevClose()));
-        holder.mChangeDollar.setText(String.format("%.2f", stock.getChangeDollar()));
-        holder.mChangePercent.setText(String.format("%.2f", stock.getChangePercent()));
-        holder.mStreak.setText(String.format("%d", stock.getStreak()));
+        Log.d(TAG, "onBind");
+//        Stock stock = mListManipulator.getItem(position);
+//
+//        holder.mSymbol.setText(stock.getSymbol());
+//        holder.mFullName.setText(stock.getFullName());
+//        holder.mPrevClose.setText(String.format("%.2f", stock.getPrevClose()));
+//        holder.mChangeDollar.setText(String.format("%.2f", stock.getChangeDollar()));
+//        holder.mChangePercent.setText(String.format("%.2f", stock.getChangePercent()));
+//        holder.mStreak.setText(String.format("%d", stock.getStreak()));
 
         // set background resource (target view ID: container)
         final int dragState = holder.getDragStateFlags();
@@ -154,7 +158,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             // ACTIVE flags is the one being acted upon
             if ((dragState & Draggable.STATE_FLAG_IS_ACTIVE) != 0) {
                 bgResId = R.drawable.bg_item_dragging_active_state;
-            } else {
+            } else if (position == 0){
+                bgResId = R.drawable.list_item_first_selector;
+            } else{
                 bgResId = R.drawable.list_item_selector;
             }
 
@@ -162,8 +168,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         }
 
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            holder.mContainer.setPadding(mListItemPadding, mListItemPadding,
-                    mListItemPadding, mListItemPadding);
+            holder.mContainer.setPadding(mListItemHorizontalPadding, mListItemVerticalPadding,
+                    mListItemHorizontalPadding, mListItemVerticalPadding);
         }
 
         // Set swiping properties
@@ -188,7 +194,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // SwipeableItemAdapter
     public SwipeResultAction onSwipeItem(MainViewHolder holder, int position, int result) {
-        //Log.d(TAG, "onSwipeItem(position = " + position + ", result = " + result + ")");
+        Log.d(TAG, "onSwipeItem(position = " + position + ", result = " + result + ")");
 
         switch (result) {
             // swipe right
@@ -198,8 +204,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             case Swipeable.RESULT_SWIPED_LEFT:
                 //Log.d(TAG, "Swiped left");
                 return new SwipeResultAction(this, holder, position);
-            // other --- do nothing
             case Swipeable.RESULT_CANCELED:
+                // other --- do nothing
             default:
                 return null;
         }
@@ -207,7 +213,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // SwipeableItemAdapter
     public int onGetSwipeReactionType(MainViewHolder holder, int position, int x, int y) {
-        //Log.d(TAG, "onGetSwipeReactionType");
+        Log.d(TAG, "onGetSwipeReactionType");
 
         // THis is what enables swiping
         return Swipeable.REACTION_CAN_SWIPE_BOTH_H;
@@ -256,7 +262,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         notifyItemMoved(fromPosition, toPosition);
     }
 
-    public void removeListManipulator(){
+    public void release(){
+        mDragDropManager = null;
         mListManipulator = null;
     }
 

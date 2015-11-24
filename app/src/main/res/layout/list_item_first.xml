@@ -4,13 +4,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:outlineProvider="bounds"
+    android:elevation="4dp">
 
     <android.support.v7.widget.GridLayout
         android:id="@+id/swipe_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="15dp"
+        android:background="@color/white"
         app:columnCount="2">
 
         <TextView

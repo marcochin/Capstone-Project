@@ -27,15 +27,15 @@ public class ListManipulator {
         uniqueId = 0;
         mData.clear();
 
-//        //TODO remove this, Using fruits array just to debug
-//        for(String fruit : FRUITS){
-//            Stock stock = new Stock();
-//            stock.setSymbol(fruit);
-//            stock.setId(uniqueId);
-//
-//            mData.add(stock);
-//            uniqueId++;
-//        }
+        //TODO remove this, Using fruits array just to debug
+        for(String fruit : FRUITS){
+            Stock stock = new Stock();
+            stock.setSymbol(fruit);
+            stock.setId(uniqueId);
+
+            mData.add(stock);
+            uniqueId++;
+        }
 
 //        while(data.moveToNext()){
 //            String symbol = data.getString(StockDbHelper.INDEX_SYMBOL);

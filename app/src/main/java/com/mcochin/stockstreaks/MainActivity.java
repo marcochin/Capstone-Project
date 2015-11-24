@@ -228,7 +228,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             WrapperAdapterUtils.releaseAll(mWrappedAdapter);
             mWrappedAdapter = null;
         }
-        mAdapter.removeListManipulator();
+        mAdapter.release();
         mAdapter = null;
         mLayoutManager = null;
 
@@ -298,12 +298,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mRecyclerView.setAdapter(mWrappedAdapter);
         mRecyclerView.setItemAnimator(animator);
 
-        // Additional decorations
-        // Lollipop or later has native drop shadow feature. ItemShadowDecorator is not required.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            mRecyclerView.addItemDecoration(new ItemShadowDecorator(
-                    (NinePatchDrawable) ContextCompat.getDrawable(this, R.drawable.material_shadow_z1)));
-        }
+//        // Additional decorations
+//        // Lollipop or later has native drop shadow feature. ItemShadowDecorator is not required.
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+//            mRecyclerView.addItemDecoration(new ItemShadowDecorator(
+//                    (NinePatchDrawable) ContextCompat.getDrawable(this, R.drawable.material_shadow_z1)));
+//        }
         mRecyclerView.addItemDecoration(new SimpleListDividerDecorator(
                 ContextCompat.getDrawable(this, R.drawable.list_divider_h), true));
 

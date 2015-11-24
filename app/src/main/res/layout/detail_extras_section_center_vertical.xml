@@ -4,6 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
     android:layout_width="match_parent"
+    android:paddingTop="@dimen/detail_extras_section_top_padding"
+    android:paddingBottom="@dimen/detail_extras_section_bottom_padding"
     android:paddingLeft="@dimen/detail_extras_section_horizontal_padding"
     android:paddingStart="@dimen/detail_extras_section_horizontal_padding"
     android:paddingRight="@dimen/detail_extras_section_horizontal_padding"
@@ -13,10 +15,124 @@
     <android.support.v7.widget.GridLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
+        android:layout_centerVertical="@dimen/detail_center_vertical"
         app:columnCount="2">
 
-        <include layout="@layout/detail_extras_section_base"/>
+        <TextView
+            style="@style/DetailColumnsCommon.TextSize.LeftCommon.DetailExtrasLeft"
+            android:layout_width="0dp"
+            android:text="@string/last_streak_price"
+            app:layout_columnWeight="1"/>
+
+        <TextView
+            style="@style/DetailColumnsCommon.TextSize.DetailRight"
+            android:id="@+id/text_streak_end_price_prev"
+            android:layout_width="0dp"
+            android:textColor="@color/white"
+            android:gravity="bottom"
+            app:layout_gravity="fill_vertical"
+            app:layout_columnWeight="1"
+            android:text="$543.34"
+            tools:text="$543.34"/>
+
+        <TextView
+            style="@style/DetailColumnsCommon.TextSize.LeftCommon.DetailExtrasLeft"
+            android:layout_width="0dp"
+            android:text="@string/last_streak"
+            app:layout_columnWeight="1"/>
+
+        <LinearLayout
+            style="@style/DetailColumnsCommon.DetailLinearLayoutRight"
+            android:layout_width="0dp"
+            android:orientation="horizontal"
+            app:layout_gravity="fill_vertical"
+            app:layout_columnWeight="1">
+
+            <TextView
+                android:id="@+id/text_streak_prev"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/column_item_text_size"
+                android:textColor="@color/white"
+                android:text="33 days"
+                tools:text="33 days"/>
+
+            <ImageView
+                style="@style/StreakArrow"
+                android:id="@+id/image_streak_arrow_last"
+                android:layout_width="@dimen/stock_arrow_size_normal"
+                android:layout_height="@dimen/stock_arrow_size_normal"
+                android:contentDescription="@string/content_description_stock_arrow"
+                android:src="@drawable/ic_streak_up"
+                tools:src="@drawable/ic_streak_up"/>
+        </LinearLayout>
+
+        <TextView
+            style="@style/DetailColumnsCommon.TextSize.LeftCommon.DetailExtrasLeft"
+            android:layout_width="0dp"
+            android:text="@string/streak_year_high"
+            app:layout_columnWeight="1" />
+
+        <LinearLayout
+            style="@style/DetailColumnsCommon.DetailLinearLayoutRight"
+            android:layout_width="0dp"
+            android:orientation="horizontal"
+            app:layout_gravity="fill_vertical"
+            app:layout_columnWeight="1">
+
+            <TextView
+                android:id="@+id/text_streak_year_high"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/column_item_text_size"
+                android:textColor="@color/white"
+                android:text="33 days"
+                tools:text="33 days"/>
+
+            <ImageView
+                style="@style/StreakArrow"
+                android:id="@+id/image_streak_arrow_year_high"
+                android:layout_width="@dimen/stock_arrow_size_normal"
+                android:layout_height="@dimen/stock_arrow_size_normal"
+                android:contentDescription="@string/content_description_stock_arrow"
+                android:src="@drawable/ic_streak_up"
+                tools:src="@drawable/ic_streak_up"/>
+        </LinearLayout>
+
+        <TextView
+            style="@style/DetailColumnsCommon.TextSize.LeftCommon.DetailExtrasLeft"
+            android:layout_width="0dp"
+            android:text="@string/streak_year_low"
+            app:layout_columnWeight="1" />
+
+        <LinearLayout
+            style="@style/DetailColumnsCommon.DetailLinearLayoutRight"
+            android:layout_width="0dp"
+            android:orientation="horizontal"
+            app:layout_gravity="fill_vertical"
+            app:layout_columnWeight="1">
+
+            <TextView
+                android:id="@+id/text_streak_year_low"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/column_item_text_size"
+                android:textColor="@color/white"
+                android:text="33 days"
+                tools:text="33 days"/>
+
+            <ImageView
+                style="@style/StreakArrow"
+                android:id="@+id/image_streak_arrow_year_low"
+                android:layout_width="@dimen/stock_arrow_size_normal"
+                android:layout_height="@dimen/stock_arrow_size_normal"
+                android:contentDescription="@string/content_description_stock_arrow"
+                android:src="@drawable/ic_streak_down"
+                tools:src="@drawable/ic_streak_down"/>
+        </LinearLayout>
+
+        <android.support.v7.widget.Space
+            app:layout_columnSpan="2"/>
 
     </android.support.v7.widget.GridLayout>
 </RelativeLayout>

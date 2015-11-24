@@ -10,33 +10,35 @@
         android:id="@+id/swipe_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/list_item_selector"
-        android:padding="@dimen/list_item_padding"
+        android:paddingTop="@dimen/list_item_vertical_padding"
+        android:paddingBottom="@dimen/list_item_vertical_padding"
+        android:paddingLeft="@dimen/list_item_horizontal_padding"
+        android:paddingRight="@dimen/list_item_horizontal_padding"
         app:columnCount="4">
 
         <TextView
+            style="@style/ListItemFirstRow"
             android:id="@+id/text_symbol"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:textAppearanceLarge"
-            app:layout_columnWeight="5"
+            app:layout_columnWeight="6"
             android:text="GPRO"
             tools:text="GPRO"/>
 
         <TextView
+            style="@style/ListItemFirstRow"
             android:id="@+id/text_prev_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:textAppearanceLarge"
             app:layout_columnWeight="1"
             android:text="$263.26"
             tools:text="$263.26"/>
 
         <TextView
+            style="@style/ListItemFirstRow"
             android:id="@+id/text_streak"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:textAppearanceLarge"
             android:text="33d"
             tools:text="33d"/>
 
@@ -53,7 +55,6 @@
             android:id="@+id/text_full_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textColor="@color/secondary_text"
             android:singleLine="true"
             android:ellipsize="end"
@@ -65,7 +66,6 @@
             android:id="@+id/text_change_amt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             app:layout_columnWeight="1"
             app:layout_columnSpan="3"
             android:text="$-220.00 (-393.44%)"

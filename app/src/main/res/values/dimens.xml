@@ -1,4 +1,5 @@
 <!-- default values to fall back on if not defined in other dimen files-->
+<!--I think default dimens is sw320dp. I don't think there are any devices smaller than that -->
 <resources>
     <!-- Logo -->
     <dimen name="logo_font_size">36dp</dimen>
@@ -25,6 +26,7 @@
     <dimen name="detail_extras_section_top_padding">15dp</dimen>
     <dimen name="detail_extras_section_bottom_padding">25dp</dimen>
     <dimen name="detail_extras_section_horizontal_padding">20dp</dimen>
+    <item name="detail_center_vertical" type="dimen" format="boolean">false</item>
 
     <!-- Values for the cardView detail view in tablets-->
     <dimen name="appbar_elevation">4dp</dimen>
@@ -35,5 +37,6 @@
     <!--End Detail fragment-->
 
     <!--list_item-->
-    <dimen name="list_item_padding">10dp</dimen>
+    <dimen name="list_item_vertical_padding">10dp</dimen>
+    <dimen name="list_item_horizontal_padding">@dimen/list_item_vertical_padding</dimen>
 </resources>
