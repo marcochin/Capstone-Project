@@ -13,11 +13,12 @@
 
     <!-- list_item_first.xml TextView style -->
     <style name="ListItemFirstTextLarge">
-        <item name="android:textSize">28sp</item>
+        <item name="android:textSize">@dimen/list_item_first_main_info_text_size</item>
+        <item name="android:textColor">@color/black</item>
     </style>
 
     <!-- list_item.xml TextView style for the first row-->
-    <style name="ListItemFirstRow">
+    <style name="ListItemBlackText">
         <item name="android:textSize">20sp</item>
         <item name="android:textColor">@color/black</item>
     </style>

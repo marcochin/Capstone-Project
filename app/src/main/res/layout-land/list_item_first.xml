@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:outlineProvider="bounds"
+    android:elevation="4dp">
+
+    <android.support.v7.widget.GridLayout
+        android:id="@+id/swipe_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="15dp"
+        android:background="@color/white"
+        app:columnCount="3">
+
+        <TextView
+            android:id="@+id/text_date_updated"
+            android:layout_width="0dp"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="sans-serif"
+            android:gravity="center_horizontal"
+            android:textColor="@color/secondary_text"
+            app:layout_columnSpan="3"
+            app:layout_columnWeight="1"
+            android:text="Updated: Thursday, April 03 @ 4:00pm"
+            tools:text="Updated: Thursday, April 03 @ 4:00pm" />
+
+        <TextView
+            android:id="@+id/text_full_name"
+            android:layout_width="0dp"
+            android:gravity="center_horizontal"
+            android:textColor="@color/secondary_text"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textSize="@dimen/full_name_text_size"
+            app:layout_columnSpan="3"
+            app:layout_columnWeight="1"
+            android:text="GoPro, Inc."
+            tools:text="GoPro, Inc."/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:gravity="center_horizontal"
+            app:layout_columnSpan="3"
+            app:layout_columnWeight="1">
+
+            <TextView
+                android:id="@+id/text_symbol"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:textAppearance="@style/ListItemFirstTextLarge"
+                android:text="GPRO"
+                tools:text="GPRO"/>
+
+            <Space
+                android:layout_width="@dimen/list_item_first_main_info_spacing"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/text_prev_close"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:textAppearance="@style/ListItemFirstTextLarge"
+                android:text="$220.23"
+                tools:text="$220.23"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:gravity="center_horizontal"
+            app:layout_columnSpan="3"
+            app:layout_columnWeight="1">
+
+            <TextView
+                android:id="@+id/text_change_dollar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/ListItemFirstTextLarge"
+                tools:textColor="@color/stock_down_red"
+                android:text="$-282.91"
+                tools:text="$-282.91"/>
+
+            <Space
+                android:layout_width="@dimen/list_item_first_main_info_spacing"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/text_change_percent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/ListItemFirstTextLarge"
+                tools:textColor="@color/stock_down_red"
+                android:text="-120.23%"
+                tools:text="-120.23%"/>
+
+            <Space
+                android:layout_width="@dimen/list_item_first_main_info_spacing"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/text_streak"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/ListItemFirstTextLarge"
+                    android:text="33 days"
+                    tools:text="33 days"/>
+
+                <ImageView
+                    style="@style/StreakArrow"
+                    android:id="@+id/image_streak_arrow"
+                    android:layout_width="@dimen/stock_arrow_size_first"
+                    android:layout_height="@dimen/stock_arrow_size_first"
+                    android:contentDescription="@string/content_description_stock_arrow"
+                    android:src="@drawable/ic_streak_down"
+                    tools:src="@drawable/ic_streak_down"/>
+            </LinearLayout>
+        </LinearLayout>
+
+    </android.support.v7.widget.GridLayout>
+</FrameLayout>

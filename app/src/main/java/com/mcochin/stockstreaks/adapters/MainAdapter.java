@@ -139,7 +139,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override
     public void onBindViewHolder(final MainViewHolder holder, int position) {
-        Log.d(TAG, "onBind");
+//        Log.d(TAG, "onBind");
 //        Stock stock = mListManipulator.getItem(position);
 //
 //        holder.mSymbol.setText(stock.getSymbol());
@@ -168,6 +168,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         }
 
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            //TODO list_item_first has its own padding so need to account for that
             holder.mContainer.setPadding(mListItemHorizontalPadding, mListItemVerticalPadding,
                     mListItemHorizontalPadding, mListItemVerticalPadding);
         }
@@ -194,7 +195,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // SwipeableItemAdapter
     public SwipeResultAction onSwipeItem(MainViewHolder holder, int position, int result) {
-        Log.d(TAG, "onSwipeItem(position = " + position + ", result = " + result + ")");
+//        Log.d(TAG, "onSwipeItem(position = " + position + ", result = " + result + ")");
 
         switch (result) {
             // swipe right
@@ -213,7 +214,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override // SwipeableItemAdapter
     public int onGetSwipeReactionType(MainViewHolder holder, int position, int x, int y) {
-        Log.d(TAG, "onGetSwipeReactionType");
+//        Log.d(TAG, "onGetSwipeReactionType");
 
         // THis is what enables swiping
         return Swipeable.REACTION_CAN_SWIPE_BOTH_H;

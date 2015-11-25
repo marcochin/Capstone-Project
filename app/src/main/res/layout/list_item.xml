@@ -17,7 +17,7 @@
         app:columnCount="4">
 
         <TextView
-            style="@style/ListItemFirstRow"
+            style="@style/ListItemBlackText"
             android:id="@+id/text_symbol"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -26,7 +26,7 @@
             tools:text="GPRO"/>
 
         <TextView
-            style="@style/ListItemFirstRow"
+            style="@style/ListItemBlackText"
             android:id="@+id/text_prev_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -35,7 +35,7 @@
             tools:text="$263.26"/>
 
         <TextView
-            style="@style/ListItemFirstRow"
+            style="@style/ListItemBlackText"
             android:id="@+id/text_streak"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

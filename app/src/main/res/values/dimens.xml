@@ -10,7 +10,7 @@
     <dimen name="stock_arrow_size_first">16dp</dimen>
     <dimen name="stock_arrow_margin_left">2dp</dimen>
 
-    <!-- Detail fragment-->
+    <!--Detail fragment-->
     <dimen name="full_name_text_size">16sp</dimen>
     <dimen name="symbol_text_size">32sp</dimen>
 
@@ -35,6 +35,11 @@
 
     <dimen name="card_view_margin">@dimen/abc_list_item_padding_horizontal_material</dimen>
     <!--End Detail fragment-->
+
+    <!--list_item_first-->
+    <dimen name="list_item_first_main_info_text_size">24sp</dimen>
+    <!-- Phones WILL use list_item_first-->
+    <item name="list_item_first" type="dimen" format="boolean">true</item>
 
     <!--list_item-->
     <dimen name="list_item_vertical_padding">10dp</dimen>
