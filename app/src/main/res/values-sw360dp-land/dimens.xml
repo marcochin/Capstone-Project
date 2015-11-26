@@ -4,5 +4,5 @@
     <dimen name="symbol_text_size">24sp</dimen>
 
     <!-- list item -->
-    <dimen name="list_item_horizontal_padding">104dp</dimen>
+    <dimen name="list_item_horizontal_padding">@dimen/list_item_long_horizontal_padding</dimen>
 </resources>

@@ -1,64 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootView"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:focusableInTouchMode="true">
 
-    <com.mcochin.stockstreaks.custom.LogoTextView
-        android:id="@+id/logo"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="?attr/listPreferredItemHeight"
-        android:layout_alignParentTop="true"
-        android:gravity="center"
-        android:background="@color/colorPrimary"
-        android:textColor="@android:color/white"
-        android:textSize="@dimen/logo_font_size"
-        android:text="@string/app_name"
-        app:fontName="@string/logo_font_name"/>
+        android:layout_height="match_parent">
 
-    <com.quinny898.library.persistentsearch.SearchBox
-        android:id="@+id/appBar"
-        android:layout_width="wrap_content"
-        android:layout_height="@dimen/app_bar_height"
-        android:layout_below="@+id/logo"
-        android:background="@color/colorPrimary"
-        app:hintText="@string/search_hint"/>
+        <com.mcochin.stockstreaks.custom.LogoTextView
+            android:id="@+id/logo"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/listPreferredItemHeight"
+            android:layout_alignParentTop="true"
+            android:gravity="center"
+            android:background="@color/colorPrimary"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/logo_font_size"
+            android:text="@string/app_name"
+            app:fontName="@string/logo_font_name"/>
 
-    <!-- This view provides a little square used to give the illusion of overlapping
-    by the cardView-->
-    <View
-        android:layout_width="@dimen/card_view_margin"
-        android:layout_height="@dimen/details_app_bar_overlap"
-        android:background="@color/colorPrimary"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/appBar" />
+        <com.quinny898.library.persistentsearch.SearchBox
+            android:id="@+id/appBar"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/app_bar_height"
+            android:layout_below="@+id/logo"
+            android:background="@color/colorPrimary"
+            app:hintText="@string/search_hint"/>
 
-    <include
-        layout="@layout/activity_main_card_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/appBar"
-        android:layout_marginLeft="@dimen/abc_list_item_padding_horizontal_material"
-        android:layout_marginRight="@dimen/abc_list_item_padding_horizontal_material"
-        tools:layout_height="360dp"/>
+        <!-- This view provides a little square used to give the illusion of overlapping
+        by the cardView-->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/details_app_bar_overlap"
+            android:background="@color/colorPrimary"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/appBar" />
 
-    <!-- This view provides a little square used to give the illusion of overlapping
-    by the cardView-->
-    <View
-        android:layout_width="@dimen/card_view_margin"
-        android:layout_height="@dimen/details_app_bar_overlap"
-        android:background="@color/colorPrimary"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_below="@+id/appBar" />
+        <include
+            layout="@layout/activity_main_card_view"
+            android:layout_width="match_parent"
+            android:layout_height="360dp"
+            android:layout_below="@+id/appBar"
+            android:layout_marginLeft="@dimen/card_view_horizontal_margin"
+            android:layout_marginRight="@dimen/card_view_horizontal_margin"
+            tools:layout_height="360dp"/>
 
-    <include layout="@layout/activity_main_recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/detail_container"
-        android:layout_marginLeft="@dimen/card_view_margin"
-        android:layout_marginRight="@dimen/card_view_margin"/>
-</RelativeLayout>
+        <include layout="@layout/activity_main_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/detail_container" />
+    </RelativeLayout>
+
+</android.support.design.widget.CoordinatorLayout>

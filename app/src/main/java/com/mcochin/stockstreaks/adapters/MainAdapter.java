@@ -1,9 +1,9 @@
 package com.mcochin.stockstreaks.adapters;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.os.Build;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -43,6 +43,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     //http://stackoverflow.com/questions/10095196/whered-padding-go-when-setting-background-drawable
     private int mListItemVerticalPadding;
     private int mListItemHorizontalPadding;
+    private int mListItemFirstPadding;
+
+    private boolean mIsPhone;
 
     // Our ViewHolder class
     public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
@@ -108,19 +111,21 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     private interface Swipeable extends SwipeableItemConstants {
     }
 
-    // MainAdapter methods start here
-    public MainAdapter (Context context, EventListener eventListener,
-                        RecyclerViewDragDropManager dragDropManager, ListManipulator listManipulator){
+    // Constructor
+    public MainAdapter (Context context, RecyclerViewDragDropManager dragDropManager,
+                        ListManipulator listManipulator, EventListener eventListener){
 
         mEventListener = eventListener;
         mDragDropManager = dragDropManager;
         mListManipulator = listManipulator;
         mListManipulator.setCursor(null); //TODO remove this, only for debugging
 
-        mListItemVerticalPadding = context.getResources()
-                .getDimensionPixelSize(R.dimen.list_item_vertical_padding);
-        mListItemHorizontalPadding = context.getResources()
-                .getDimensionPixelSize(R.dimen.list_item_horizontal_padding);
+        Resources resources = context.getResources();
+        mListItemVerticalPadding = resources.getDimensionPixelSize(R.dimen.list_item_vertical_padding);
+        mListItemHorizontalPadding = resources.getDimensionPixelSize(R.dimen.list_item_horizontal_padding);
+        mListItemFirstPadding = resources.getDimensionPixelSize(R.dimen.list_item_first_padding);
+
+        mIsPhone = resources.getBoolean(R.bool.is_phone);
 
         // DraggableItemAdapter and SwipeableItemAdapter require stable IDs, and also
         // have to implement the getItemId() method appropriately.
@@ -131,7 +136,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public MainViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
 
-        int layoutId = viewType == LIST_ITEM_FIRST ? R.layout.list_item_first : R.layout.list_item;
+        int layoutId = viewType == LIST_ITEM_FIRST && mIsPhone
+                ? R.layout.list_item_first : R.layout.list_item;
 
         View v = inflater.inflate(layoutId, parent, false);
         return new MainViewHolder(v);
@@ -158,7 +164,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             // ACTIVE flags is the one being acted upon
             if ((dragState & Draggable.STATE_FLAG_IS_ACTIVE) != 0) {
                 bgResId = R.drawable.bg_item_dragging_active_state;
-            } else if (position == 0){
+            } else if (position == 0 && mIsPhone){
                 bgResId = R.drawable.list_item_first_selector;
             } else{
                 bgResId = R.drawable.list_item_selector;
@@ -168,9 +174,13 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         }
 
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            //TODO list_item_first has its own padding so need to account for that
-            holder.mContainer.setPadding(mListItemHorizontalPadding, mListItemVerticalPadding,
-                    mListItemHorizontalPadding, mListItemVerticalPadding);
+            if(position == 0 && mIsPhone){
+                holder.mContainer.setPadding(mListItemFirstPadding, mListItemFirstPadding,
+                        mListItemFirstPadding, mListItemFirstPadding);
+            } else {
+                holder.mContainer.setPadding(mListItemHorizontalPadding, mListItemVerticalPadding,
+                        mListItemHorizontalPadding, mListItemVerticalPadding);
+            }
         }
 
         // Set swiping properties

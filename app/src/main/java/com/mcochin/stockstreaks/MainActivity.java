@@ -256,6 +256,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         //Create adapter
         final MainAdapter mainAdapter = new MainAdapter(
                 this,
+                mDragDropManager,
+                getListManipulator(),
                 new MainAdapter.EventListener() {
                     @Override
                     public void onItemClick(MainAdapter.MainViewHolder holder) {
@@ -274,14 +276,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                                 mRootView,
                                 getString(R.string.snackbar_main_text, holder.getSymbol()),
                                 Snackbar.LENGTH_LONG)
-                        .setAction(
-                                R.string.snackbar_action_text,
-                                mSnackBarActionListener)
-                        .show();
+                                .setAction(
+                                        R.string.snackbar_action_text,
+                                        mSnackBarActionListener)
+                                .show();
                     }
-                },
-                mDragDropManager,
-                getListManipulator());
+                });
 
         mAdapter = mainAdapter;
         mWrappedAdapter = mDragDropManager.createWrappedAdapter(mainAdapter);  // Wrap for dragging
@@ -319,7 +319,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private void configureAppBarDynamicElevation(){
         // When recyclerView is scrolled all the way to the top, appbar elevation will disappear.
         // When you start scrolling down elevation will reappear.
-        if (mAppBar != null) {
+        if (!mTwoPane) {
             ViewCompat.setElevation(mAppBar, 0);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {

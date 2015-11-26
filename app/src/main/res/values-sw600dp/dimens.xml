@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tablets will NOT use list_item_first-->
-    <item name="list_item_first" type="dimen" format="boolean">false</item>
+
+    <!-- Values for the cardView detail view in tablets-->
+    <dimen name="details_app_bar_overlap">24dp</dimen>
+    <dimen name="detail_card_elevation">6dp</dimen>
+
+    <dimen name="card_view_horizontal_margin">24dp</dimen>
+    <dimen name="card_view_vertical_margin">12dp</dimen>
+
+    <!--list_item-->
+    <dimen name="list_item_vertical_padding">15dp</dimen>
+    <dimen name="list_item_horizontal_padding">88dp</dimen>
 </resources>

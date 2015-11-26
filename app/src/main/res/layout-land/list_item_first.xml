@@ -12,7 +12,7 @@
         android:id="@+id/swipe_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="15dp"
+        android:padding="@dimen/list_item_first_padding"
         android:background="@color/white"
         app:columnCount="3">
 

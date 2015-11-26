@@ -5,6 +5,9 @@
     <dimen name="logo_font_size">36dp</dimen>
     <dimen name="app_bar_height">68dp</dimen>
 
+    <!--Appbar for phones-->
+    <dimen name="appbar_elevation">4dp</dimen>
+
     <!-- Stock arrow size-->
     <dimen name="stock_arrow_size_normal">12dp</dimen>
     <dimen name="stock_arrow_size_first">16dp</dimen>
@@ -27,19 +30,11 @@
     <dimen name="detail_extras_section_bottom_padding">25dp</dimen>
     <dimen name="detail_extras_section_horizontal_padding">20dp</dimen>
     <item name="detail_center_vertical" type="dimen" format="boolean">false</item>
-
-    <!-- Values for the cardView detail view in tablets-->
-    <dimen name="appbar_elevation">4dp</dimen>
-    <dimen name="details_app_bar_overlap">24dp</dimen>
-    <dimen name="detail_card_elevation">6dp</dimen>
-
-    <dimen name="card_view_margin">@dimen/abc_list_item_padding_horizontal_material</dimen>
     <!--End Detail fragment-->
 
     <!--list_item_first-->
+    <dimen name="list_item_first_padding">15dp</dimen>
     <dimen name="list_item_first_main_info_text_size">24sp</dimen>
-    <!-- Phones WILL use list_item_first-->
-    <item name="list_item_first" type="dimen" format="boolean">true</item>
 
     <!--list_item-->
     <dimen name="list_item_vertical_padding">10dp</dimen>
