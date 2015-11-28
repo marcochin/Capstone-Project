@@ -3,6 +3,7 @@ package com.mcochin.stockstreaks.data;
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.OperationApplicationException;
 import android.content.UriMatcher;
@@ -11,6 +12,7 @@ import android.database.SQLException;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 public class StockProvider extends ContentProvider {
     private StockDbHelper mStockDbHelper;
     private static final UriMatcher sUriMatcher = buildUriMatcher();
+    private static final String TAG = StockProvider.class.getSimpleName();
 
     private static final int UPDATE_DATE = 100;
     private static final int STOCKS = 200;
@@ -35,8 +38,15 @@ public class StockProvider extends ContentProvider {
     private static final String STOCK_SYMBOL_SELECTION =
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_SYMBOL + " = ?";
 
+    /**
+     * This boolean prevents content://com.mcochin.stockstreaks/stocks from being queried
+     * if only an item was notified.
+     */
+    private boolean mPreventStocksQuery;
+
     @Override
     public boolean onCreate() {
+        Log.d(TAG, "contentProvider create");
         mStockDbHelper = new StockDbHelper(getContext());
         return true;
     }
@@ -77,6 +87,12 @@ public class StockProvider extends ContentProvider {
                 break;
 
             case STOCKS:
+                if(mPreventStocksQuery){
+                    mPreventStocksQuery = false;
+                    return null;
+                }
+
+                Log.d(TAG, "stocksquery");
                 retCursor = mStockDbHelper.getWritableDatabase().query(
                         StockEntry.TABLE_NAME,
                         projection,
@@ -87,6 +103,7 @@ public class StockProvider extends ContentProvider {
                         sortOrder);
                 break;
             case STOCKS_WITH_SYMBOL:
+                Log.d(TAG, "symbolquery");
                 String symbol = StockContract.getSymbolFromUri(uri);
 
                 retCursor = mStockDbHelper.getWritableDatabase().query(
@@ -124,6 +141,7 @@ public class StockProvider extends ContentProvider {
                 break;
 
             case STOCKS_WITH_SYMBOL:
+                mPreventStocksQuery = true;
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(StockEntry.TABLE_NAME, null, values);
                 break;

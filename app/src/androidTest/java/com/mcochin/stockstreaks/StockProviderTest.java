@@ -10,7 +10,6 @@ import android.test.ProviderTestCase2;
 
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.data.StockDbHelper;
 import com.mcochin.stockstreaks.data.StockProvider;
 
 import java.util.ArrayList;
@@ -19,23 +18,35 @@ import java.util.ArrayList;
  * Test for ContentProvider
  */
 public class StockProviderTest extends ProviderTestCase2<StockProvider> {
-    private String mSymbol = "GPRO";
-    private String mFullName = "GoPro Inc.";
-    private float mRecentClose = 20.00f;
-    private int mStreak = 2;
-    private float mChangeDollar = 21.00f;
-    private float mChangePercent = 22.00f;
-    private int mDayCoverage = 3;
-    private float mPrevStreakEndPrice = 23.00f;
-    private long mPrevStreakEndDate = 1349333576093L;
-    private long mPrevStreak = 4;
-    private long mYearStreakHigh = 5;
-    private long mYearStreakLow = -6;
-
-    private Uri mUri = StockEntry.buildUri(mSymbol);
+    // NOTE: These are the column indexes if your return all columns in your projection
+    public static final int INDEX_SYMBOL = 1;
+    public static final int INDEX_FULL_NAME = INDEX_SYMBOL + 1;
+    public static final int INDEX_RECENT_CLOSE = INDEX_FULL_NAME + 1;
+    public static final int INDEX_CHANGE_DOLLAR = INDEX_RECENT_CLOSE + 1;
+    public static final int INDEX_CHANGE_PERCENT = INDEX_CHANGE_DOLLAR + 1;
+    public static final int INDEX_STREAK = INDEX_CHANGE_PERCENT + 1;
+    public static final int COLUMN_PREV_STREAK_END_DATE = INDEX_STREAK + 1;
+    public static final int INDEX_PREV_STREAK_END_PRICE = COLUMN_PREV_STREAK_END_DATE + 1;
+    public static final int INDEX_PREV_STREAK = INDEX_PREV_STREAK_END_PRICE + 1;
+    public static final int INDEX_STREAK_YEAR_HIGH = INDEX_PREV_STREAK + 1;
+    public static final int INDEX_STREAK_YEAR_LOW = INDEX_STREAK_YEAR_HIGH + 1;
 
     private static final String CURSOR_NULL = "Cursor is null";
     private static final String CURSOR_NO_FIRST = "Cursor could not move to first";
+
+    private static final String SYMBOL = "GPRO";
+    private static final String FULL_NAME = "GoPro Inc.";
+    private static final float RECENT_CLOSE = 20.00f;
+    private static final int STREAK = 2;
+    private static final float CHANGE_DOLLAR = 21.00f;
+    private static final float CHANGE_PERCENT = 22.00f;
+    private static final float PREV_STREAK_END_PRICE = 23.00f;
+    private static final long PREV_STREAK_END_DATE = 1349333576093L;
+    private static final long PREV_STREAK = 4;
+    private static final long YEAR_STREAK_HIGH = 5;
+    private static final long YEAR_STREAK_LOW = -6;
+
+    private Uri mUri = StockEntry.buildUri(SYMBOL);
 
     public StockProviderTest() {
         super(StockProvider.class, StockContract.CONTENT_AUTHORITY);
@@ -51,15 +62,14 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
         try {
 
             ContentValues values = new ContentValues();
-            values.put(StockEntry.COLUMN_SYMBOL, mSymbol);
-            values.put(StockEntry.COLUMN_FULL_NAME, mFullName);
-            values.put(StockEntry.COLUMN_RECENT_CLOSE, mRecentClose);
-            values.put(StockEntry.COLUMN_STREAK, mStreak);
-            values.put(StockEntry.COLUMN_CHANGE_DOLLAR, mChangeDollar);
-            values.put(StockEntry.COLUMN_CHANGE_PERCENT, mChangePercent);
-            values.put(StockEntry.COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE, mDayCoverage);
-            values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, mPrevStreakEndPrice);
-            values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, mPrevStreakEndDate);
+            values.put(StockEntry.COLUMN_SYMBOL, SYMBOL);
+            values.put(StockEntry.COLUMN_FULL_NAME, FULL_NAME);
+            values.put(StockEntry.COLUMN_RECENT_CLOSE, RECENT_CLOSE);
+            values.put(StockEntry.COLUMN_STREAK, STREAK);
+            values.put(StockEntry.COLUMN_CHANGE_DOLLAR, CHANGE_DOLLAR);
+            values.put(StockEntry.COLUMN_CHANGE_PERCENT, CHANGE_PERCENT);
+            values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, PREV_STREAK_END_PRICE);
+            values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, PREV_STREAK_END_DATE);
 
             // Insert mock data
             getMockContentResolver().insert(mUri, values);
@@ -71,19 +81,18 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
                 fail(CURSOR_NULL);
             } else{
                 if(cursor.moveToFirst()){
-                    assertEquals(mSymbol, cursor.getString(StockDbHelper.INDEX_SYMBOL));
-                    assertEquals(mFullName, cursor.getString(StockDbHelper.INDEX_FULL_NAME));
-                    assertEquals(mRecentClose, cursor.getFloat(StockDbHelper.INDEX_RECENT_CLOSE));
-                    assertEquals(mStreak, cursor.getInt(StockDbHelper.INDEX_STREAK));
-                    assertEquals(mChangeDollar, cursor.getFloat(StockDbHelper.INDEX_CHANGE_DOLLAR));
-                    assertEquals(mChangePercent, cursor.getFloat(StockDbHelper.INDEX_CHANGE_PERCENT));
-                    assertEquals(mDayCoverage, cursor.getInt(StockDbHelper.COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE));
-                    assertEquals(mPrevStreakEndPrice, cursor.getFloat(StockDbHelper.INDEX_PREV_STREAK_END_PRICE));
-                    assertEquals(mPrevStreakEndDate, cursor.getLong(StockDbHelper.COLUMN_PREV_STREAK_END_DATE));
+                    assertEquals(SYMBOL, cursor.getString(INDEX_SYMBOL));
+                    assertEquals(FULL_NAME, cursor.getString(INDEX_FULL_NAME));
+                    assertEquals(RECENT_CLOSE, cursor.getFloat(INDEX_RECENT_CLOSE));
+                    assertEquals(STREAK, cursor.getInt(INDEX_STREAK));
+                    assertEquals(CHANGE_DOLLAR, cursor.getFloat(INDEX_CHANGE_DOLLAR));
+                    assertEquals(CHANGE_PERCENT, cursor.getFloat(INDEX_CHANGE_PERCENT));
+                    assertEquals(PREV_STREAK_END_PRICE, cursor.getFloat(INDEX_PREV_STREAK_END_PRICE));
+                    assertEquals(PREV_STREAK_END_DATE, cursor.getLong(COLUMN_PREV_STREAK_END_DATE));
 
-                    assertEquals(0, cursor.getInt(StockDbHelper.INDEX_PREV_STREAK));
-                    assertEquals(0, cursor.getInt(StockDbHelper.INDEX_STREAK_YEAR_HIGH));
-                    assertEquals(0, cursor.getInt(StockDbHelper.INDEX_STREAK_YEAR_LOW));
+                    assertEquals(0, cursor.getInt(INDEX_PREV_STREAK));
+                    assertEquals(0, cursor.getInt(INDEX_STREAK_YEAR_HIGH));
+                    assertEquals(0, cursor.getInt(INDEX_STREAK_YEAR_LOW));
 
                 }else{
                     fail(CURSOR_NO_FIRST);
@@ -98,7 +107,7 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
 
     public void testDelete(){
         // Insert an entry
-        ContentValues values = createBareMinimumValues(mSymbol, mFullName);
+        ContentValues values = createBareMinimumValues(SYMBOL, FULL_NAME);
         getMockContentResolver().insert(mUri, values);
 
         int rowDeleted = getMockContentResolver().delete(mUri, null, null);
@@ -110,13 +119,13 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
 
         try {
             // Insert an entry
-            ContentValues values = createBareMinimumValues(mSymbol, mFullName);
+            ContentValues values = createBareMinimumValues(SYMBOL, FULL_NAME);
             getMockContentResolver().insert(mUri, values);
 
             ContentValues updateValues = new ContentValues();
-            updateValues.put(StockEntry.COLUMN_PREV_STREAK, mPrevStreak);
-            updateValues.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, mYearStreakHigh);
-            updateValues.put(StockEntry.COLUMN_STREAK_YEAR_LOW, mYearStreakLow);
+            updateValues.put(StockEntry.COLUMN_PREV_STREAK, PREV_STREAK);
+            updateValues.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, YEAR_STREAK_HIGH);
+            updateValues.put(StockEntry.COLUMN_STREAK_YEAR_LOW, YEAR_STREAK_LOW);
 
             // Update values
             getMockContentResolver().update(mUri, updateValues, null, null);
@@ -130,9 +139,9 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
 
                 // Test to see if updated values are what is expected
                 if (cursor.moveToFirst()) {
-                    assertEquals(mPrevStreak, cursor.getInt(StockDbHelper.INDEX_PREV_STREAK));
-                    assertEquals(mYearStreakHigh, cursor.getInt(StockDbHelper.INDEX_STREAK_YEAR_HIGH));
-                    assertEquals(mYearStreakLow, cursor.getInt(StockDbHelper.INDEX_STREAK_YEAR_LOW));
+                    assertEquals(PREV_STREAK, cursor.getInt(INDEX_PREV_STREAK));
+                    assertEquals(YEAR_STREAK_HIGH, cursor.getInt(INDEX_STREAK_YEAR_HIGH));
+                    assertEquals(YEAR_STREAK_LOW, cursor.getInt(INDEX_STREAK_YEAR_LOW));
                 } else {
                     fail(CURSOR_NO_FIRST);
                 }
@@ -159,7 +168,7 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
         int streak = 5;
 
         // Create out insert operations for GPRO, NKE, and UA
-        ContentValues valuesGpro = createBareMinimumValues(mSymbol, mFullName);
+        ContentValues valuesGpro = createBareMinimumValues(SYMBOL, FULL_NAME);
         ContentValues valuesNke = createBareMinimumValues(symbolNke, fullNameNke);
         ContentValues valuesUa = createBareMinimumValues(symbolUa, fullNameUa);
 
@@ -194,7 +203,7 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
             } else {
                 // Assert updated rows are what is expected
                 while(cursor.moveToNext()){
-                    assertEquals(streak, cursor.getInt(StockDbHelper.INDEX_STREAK));
+                    assertEquals(streak, cursor.getInt(INDEX_STREAK));
                 }
             }
         }catch (RemoteException | OperationApplicationException e){
@@ -212,7 +221,7 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
 
         try {
             // Insert an entry
-            ContentValues values = createBareMinimumValues(mSymbol, mFullName);
+            ContentValues values = createBareMinimumValues(SYMBOL, FULL_NAME);
             getMockContentResolver().insert(mUri, values);
 
             // Query it to see if it exists

@@ -16,13 +16,13 @@ import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
-import com.h6ah4i.android.widget.advrecyclerview.decoration.ItemShadowDecorator;
 import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
 import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.RecyclerViewSwipeManager;
@@ -35,6 +35,7 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
 import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
 import com.mcochin.stockstreaks.services.NetworkService;
+import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
@@ -45,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
     private static final int ID_LOADER_UPDATE_DATE = 0;
     private static final int ID_LOADER_STOCKS = 1;
+    private static final int ID_LOADER_STOCK_WITH_SYMBOL = 2;
 
     private RecyclerView mRecyclerView;
     private MyLinearLayoutManager mLayoutManager;
@@ -117,18 +119,29 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             @Override
             public void onSearch(String query) {
-                // TODO start service, start cursor loader when service fetches data and uses
-                // TODO content provider to put in the db.
-                // TODO Cursor loader will detect it and then update ui.
-                if(TextUtils.isEmpty(query)){
+                query = query.toUpperCase(Locale.US);
+
+                if (TextUtils.isEmpty(query)) {
                     Toast.makeText(MainActivity.this,
                             R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
                     return;
                 }
 
+                if(Utility.isEntryExist(query, getContentResolver())){
+                    Toast.makeText(MainActivity.this,
+                            R.string.toast_symbol_exists, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                //Start service to retrieve stock info
                 Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
-                serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query.toUpperCase(Locale.US));
+                serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query);
+                serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
                 startService(serviceIntent);
+
+                //Start cursor loader to load the newly added stock
+                getSupportLoaderManager().restartLoader(ID_LOADER_STOCK_WITH_SYMBOL,
+                        null, MainActivity.this);
             }
 
             @Override
@@ -139,6 +152,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         configureRecyclerView();
         configureAppBarDynamicElevation();
+
+        //fetch the stock list
+        getSupportLoaderManager().initLoader(ID_LOADER_STOCKS, null, this);
     }
 
     @Override
@@ -149,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 loader = new CursorLoader(
                         MainActivity.this,
                         UpdateDateEntry.CONTENT_URI,
-                        null,
+                        new String[]{UpdateDateEntry.COLUMN_TIME_IN_MILLI},
                         null,
                         null,
                         null);
@@ -158,7 +174,17 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 loader = new CursorLoader(
                         MainActivity.this,
                         StockEntry.CONTENT_URI,
+                        ListManipulator.STOCK_PROJECTION,
                         null,
+                        null,
+                        null);
+                break;
+            case ID_LOADER_STOCK_WITH_SYMBOL:
+                loader = new CursorLoader(
+                        MainActivity.this,
+                        StockEntry.buildUri(mSearchEditText.getText().toString()
+                                .toUpperCase(Locale.US)),
+                        ListManipulator.STOCK_PROJECTION,
                         null,
                         null,
                         null);
@@ -169,16 +195,24 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if (!data.moveToFirst()) {
+        if(data == null || data.getCount() == 0){
             return;
         }
+
         int id = loader.getId();
 
         switch(id){
             case ID_LOADER_UPDATE_DATE:
+                Log.d(TAG, "loader update_date");
                 break;
             case ID_LOADER_STOCKS:
+                Log.d(TAG, "loader stock_list");
                 getListManipulator().setCursor(data);
+                mAdapter.notifyDataSetChanged();
+                break;
+            case ID_LOADER_STOCK_WITH_SYMBOL:
+                // TODO Cursor loader will detect it and then update ui.
+                Log.d(TAG, "loader stock_with_symbol");
                 break;
         }
     }
@@ -263,6 +297,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     public void onItemClick(MainAdapter.MainViewHolder holder) {
                         if(mTwoPane){
                             //If tablet insert fragment into container
+
                         }else{
                             //If phone open activity
                             Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);

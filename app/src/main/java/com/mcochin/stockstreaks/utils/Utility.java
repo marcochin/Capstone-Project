@@ -1,8 +1,12 @@
 package com.mcochin.stockstreaks.utils;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+
+import com.mcochin.stockstreaks.data.StockContract;
 
 import java.util.Calendar;
 
@@ -31,5 +35,21 @@ public class Utility {
         calendar.set(Calendar.MILLISECOND, 0);
 
         return calendar;
+    }
+
+    public static boolean isEntryExist(String symbol, ContentResolver cr){
+        Cursor cursor = null;
+        try{
+            cursor = cr.query(StockContract.StockEntry.buildUri(symbol), null, null, null, null);
+            if(cursor != null){
+                return cursor.moveToFirst();
+            }
+
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
+        }
+        return false;
     }
 }

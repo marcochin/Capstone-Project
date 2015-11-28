@@ -60,6 +60,7 @@
                 android:layout_alignParentStart="true"
                 android:layout_marginLeft="54dp"
                 android:layout_marginStart="54dp"
+                android:digits="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
                 android:background="@null"
                 android:ems="10"
                 android:textColor="@color/search_box_black"

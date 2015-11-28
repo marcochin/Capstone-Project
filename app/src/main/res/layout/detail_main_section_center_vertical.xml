@@ -58,7 +58,7 @@
 
         <TextView
             style="@style/DetailColumnsCommon.TextSize.DetailRight"
-            android:id="@+id/text_prev_close"
+            android:id="@+id/text_recent_close"
             android:layout_width="0dp"
             android:textColor="@color/black"
             app:layout_gravity="fill_vertical"

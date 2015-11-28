@@ -78,7 +78,6 @@ public class StockContract {
         public static final String COLUMN_CHANGE_DOLLAR = "change_dollar";
         public static final String COLUMN_CHANGE_PERCENT = "change_percent";
         public static final String COLUMN_STREAK = "streak";
-        public static final String COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE = "streak_absolute_day_coverage";
         public static final String COLUMN_PREV_STREAK_END_DATE = "prev_streak_end_date";
         public static final String COLUMN_PREV_STREAK_END_PRICE = "prev_streak_end_price";
         public static final String COLUMN_PREV_STREAK= "prev_streak";

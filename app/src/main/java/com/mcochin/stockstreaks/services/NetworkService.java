@@ -31,18 +31,14 @@ import yahoofinance.quotes.stock.StockQuote;
  */
 public class NetworkService extends IntentService {
     private static final String TAG = NetworkService.class.getSimpleName();
-    public static String KEY_SEARCH_QUERY ="searchQuery";
-    private static String ACTION_ITEM_QUERY = "actionItemQuery";
-    private static String ACTION_LIST_QUERY = "actionListQuery";
+    public static final String KEY_SEARCH_QUERY ="searchQuery";
+    public static final String ACTION_STOCKS = "actionStocks";
+    public static final String ACTION_STOCK_WITH_SYMBOL = "actionStockWithSymbol";
+    public static final String ACTION_DETAILS = "actionDetails";
 
     //needs to be 32 and 366 since we need to compare closing to prev day's closing price
     private static final int MONTH = 32;
     private static final int YEAR = 366;
-
-    private static final int REG_HOURS_START_HOUR = 9;
-    private static final int REG_HOURS_START_MINUTE = 29;
-    private static final int REG_HOURS_END_HOUR = 4;
-    private static final int REG_HOURS_END_MINUTE = 30;
 
     private static final String NOT_AVAILABLE = "N/A";
     private static final String NASDAQ = "NMS";
@@ -63,21 +59,27 @@ public class NetworkService extends IntentService {
                 showToast(getString(R.string.toast_no_network));
                 return;
             }
+            String action = intent.getAction();
 
-            calculateStreakRelatedInfo(query);
+            switch(action) {
+                case ACTION_STOCK_WITH_SYMBOL:
+                    ContentValues values = calculateMainInfo(query);
 
-//           // Put stock into the database
-//            getContentResolver().insert(StockEntry.buildUri(query), values);
-
+                    if(values == null){
+                        return;
+                    }
+                    // Put stock into the database
+                    getContentResolver().insert(StockEntry.buildUri(query), values);
+                    break;
+            }
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
             showToast(getString(R.string.toast_error_retrieving_data));
         }
     }
 
-    private ContentValues calculateStreakRelatedInfo(String symbol) throws IOException{
+    private ContentValues calculateMainInfo(String symbol) throws IOException{
         int streak = 0;
-        int streakAbsoluteDayCoverage = 0;
         long prevStreakEndDate = 0;
         float prevStreakEndPrice = 0;
         float recentClose = 0;
@@ -92,21 +94,19 @@ public class NetworkService extends IntentService {
         } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getStockExchange().equals(NASDAQ)
                 && !stock.getStockExchange().equals(NYSE))) {
             showToast(getString(R.string.toast_symbol_not_found));
-
         } else{
-            Log.d(TAG, "Symbol: " + stock.getSymbol()
-                    + " Full name: " + stock.getName()
-                    + " Exchange: " + stock.getStockExchange()
-                    + " Prev. Close: " + stock.getQuote().getPreviousClose()
-                    + " Open: " + stock.getQuote().getOpen()
-                    + " Current Stock Price: " + stock.getQuote().getPrice()
-                    + " Change $: " + stock.getQuote().getChange()
-                    + " Change %: " + stock.getQuote().getChangeInPercent());
-
+//            Log.d(TAG, "Symbol: " + stock.getSymbol()
+//                    + " Full name: " + stock.getName()
+//                    + " Exchange: " + stock.getStockExchange()
+//                    + " Prev. Close: " + stock.getQuote().getPreviousClose()
+//                    + " Open: " + stock.getQuote().getOpen()
+//                    + " Current Stock Price: " + stock.getQuote().getPrice()
+//                    + " Change $: " + stock.getQuote().getChange()
+//                    + " Change %: " + stock.getQuote().getChangeInPercent());
 
             Calendar nowCalendar = Calendar.getInstance(TimeZone.getTimeZone(TIMEZONE_NEW_YORK));
             Calendar fromCalendar = Calendar.getInstance(TimeZone.getTimeZone(TIMEZONE_NEW_YORK));
-            fromCalendar.add(Calendar.DAY_OF_MONTH, -MONTH); // We want one month of data
+            fromCalendar.add(Calendar.DAY_OF_MONTH, -MONTH); // We want 1 month of history
 
             // Download history from Yahoo
             List<HistoricalQuote> historyList =
@@ -125,21 +125,18 @@ public class NetworkService extends IntentService {
                     streak--;
                 }
                 recentClose = stock.getQuote().getPrice().floatValue();
-
-                //increase absolute day coverage whether stock is up or down or no change
-                streakAbsoluteDayCoverage++;
             }
 
             for (int i = 0; i < historyList.size(); i++) {
                 HistoricalQuote history = historyList.get(i);
 
-                Log.d(TAG, "Date: " + history.getDate().get(Calendar.MONTH)
-                        + history.getDate().get(Calendar.DAY_OF_MONTH)
-                        + history.getDate().get(Calendar.YEAR)
-                        + " Hour: " + history.getDate().get(Calendar.HOUR_OF_DAY)
-                        + " Minute: " + history.getDate().get(Calendar.MINUTE)
-                        + " Close: " + history.getClose()
-                        + " Adjusted close: " + history.getAdjClose());
+//                Log.d(TAG, "Date: " + history.getDate().get(Calendar.MONTH)
+//                        + history.getDate().get(Calendar.DAY_OF_MONTH)
+//                        + history.getDate().get(Calendar.YEAR)
+//                        + " Hour: " + history.getDate().get(Calendar.HOUR_OF_DAY)
+//                        + " Minute: " + history.getDate().get(Calendar.MINUTE)
+//                        + " Close: " + history.getClose()
+//                        + " Adjusted close: " + history.getAdjClose());
 
                 if (recentClose == 0) {
                     // Retrieves most recent close if not already retrieved.
@@ -177,21 +174,18 @@ public class NetworkService extends IntentService {
                     prevStreakEndPrice = historyAdjClose;
                     break;
                 }
-                //increase absolute day coverage whether stock is up or down or no change
-                streakAbsoluteDayCoverage++;
             }
 
-            Log.d(TAG, "streak " + streak
-                    + " recentClose " + recentClose
-                    + " absoluteDayCoverage " + streakAbsoluteDayCoverage
-                    + " prevStreakEndDate " + prevStreakEndDate
-                    + " prevStreakEndPrice " + prevStreakEndPrice);
+//            Log.d(TAG, "streak " + streak
+//                    + " recentClose " + recentClose
+//                    + " prevStreakEndDate " + prevStreakEndDate
+//                    + " prevStreakEndPrice " + prevStreakEndPrice);
 
             Pair changeDollarAndPercentage =
                     calculateChange(recentClose, prevStreakEndPrice);
 
-            Log.d(TAG, "change dollar " + String.format("%.2f", changeDollarAndPercentage.first)
-                    + " change percent  " + String.format("%.2f", changeDollarAndPercentage.second));
+//            Log.d(TAG, "change dollar " + String.format("%.2f", changeDollarAndPercentage.first)
+//                    + " change percent  " + String.format("%.2f", changeDollarAndPercentage.second));
 
             values = new ContentValues();
             values.put(StockEntry.COLUMN_SYMBOL, symbol);
@@ -200,7 +194,6 @@ public class NetworkService extends IntentService {
             values.put(StockEntry.COLUMN_STREAK, streak);
             values.put(StockEntry.COLUMN_CHANGE_DOLLAR, (float)changeDollarAndPercentage.first);
             values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float)changeDollarAndPercentage.second);
-            values.put(StockEntry.COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE, streakAbsoluteDayCoverage);
             values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, prevStreakEndPrice);
             values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, prevStreakEndDate);
         }
@@ -219,17 +212,16 @@ public class NetworkService extends IntentService {
 
         try {
             //projection
-            final String[] projection = new String[]{StockEntry.COLUMN_PREV_STREAK_END_DATE,
-                    StockEntry.COLUMN_STREAK_ABSOLUTE_DAY_COVERAGE,
-                    StockEntry.COLUMN_STREAK};
+            final String[] projection = new String[]{
+                    StockEntry.COLUMN_PREV_STREAK_END_DATE,
+                    StockEntry.COLUMN_STREAK
+            };
 
             //indexes for the projection
             final int indexPrevStreakEndDate = 0;
-            final int indexAbsoluteDayCoverage = 1;
-            final int indexStreak = 2;
+            final int indexStreak = 1;
 
             long prevStreakEndDate = 0;
-            int absoluteDayCoverage = 0;
 
             cursor = getContentResolver().query(
                     StockContract.StockEntry.buildUri(symbol),
@@ -240,7 +232,6 @@ public class NetworkService extends IntentService {
 
             if (cursor != null && !cursor.moveToFirst()) {
                 prevStreakEndDate = cursor.getLong(indexPrevStreakEndDate);
-                absoluteDayCoverage = cursor.getInt(indexAbsoluteDayCoverage);
                 int streak = cursor.getInt(indexStreak);
 
                 //set its current streak to yearHigh or yearLow
@@ -252,7 +243,7 @@ public class NetworkService extends IntentService {
             }
 
             Calendar fromCalendar = Calendar.getInstance();
-            fromCalendar.add(Calendar.DAY_OF_MONTH, -YEAR + absoluteDayCoverage);
+            fromCalendar.add(Calendar.DAY_OF_MONTH, -YEAR); //We want 1 year of history
             Calendar toCalendar = Calendar.getInstance();
             toCalendar.setTimeInMillis(prevStreakEndDate);
 
@@ -302,11 +293,11 @@ public class NetworkService extends IntentService {
                     historyStreak = 0;
                 }
             }
-
             values = new ContentValues();
             values.put(StockEntry.COLUMN_PREV_STREAK, prevStreak);
             values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, yearStreakHigh);
             values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, yearStreakLow);
+
         }finally {
             if (cursor != null){
                 cursor.close();

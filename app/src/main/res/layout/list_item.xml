@@ -22,16 +22,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_columnWeight="6"
-            android:text="GPRO"
             tools:text="GPRO"/>
 
         <TextView
             style="@style/ListItemBlackText"
-            android:id="@+id/text_prev_close"
+            android:id="@+id/text_recent_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_columnWeight="1"
-            android:text="$263.26"
             tools:text="$263.26"/>
 
         <TextView
@@ -39,7 +37,6 @@
             android:id="@+id/text_streak"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="33d"
             tools:text="33d"/>
 
         <ImageView
@@ -48,7 +45,6 @@
             android:layout_width="@dimen/stock_arrow_size_normal"
             android:layout_height="@dimen/stock_arrow_size_normal"
             android:contentDescription="@string/content_description_stock_arrow"
-            android:src="@drawable/ic_streak_down"
             tools:src="@drawable/ic_streak_down"/>
 
         <TextView
@@ -59,7 +55,6 @@
             android:singleLine="true"
             android:ellipsize="end"
             app:layout_columnWeight="5"
-            android:text="GoPro, Inc."
             tools:text="GoPro, Inc."/>
 
         <TextView
@@ -68,7 +63,6 @@
             android:layout_height="wrap_content"
             app:layout_columnWeight="1"
             app:layout_columnSpan="3"
-            android:text="$-220.00 (-393.44%)"
             tools:text="$-220.00 (-393.44%)"
             tools:textColor="@color/stock_down_red"/>
 

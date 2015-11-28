@@ -25,7 +25,6 @@
             android:textColor="@color/secondary_text"
             app:layout_columnSpan="3"
             app:layout_columnWeight="1"
-            android:text="Updated: Thursday, April 03 @ 4:00pm"
             tools:text="Updated: Thursday, April 03 @ 4:00pm" />
 
         <TextView
@@ -38,7 +37,6 @@
             android:textSize="@dimen/full_name_text_size"
             app:layout_columnSpan="3"
             app:layout_columnWeight="1"
-            android:text="GoPro, Inc."
             tools:text="GoPro, Inc."/>
 
         <LinearLayout
@@ -53,7 +51,6 @@
                 android:layout_height="wrap_content"
                 android:gravity="right"
                 android:textAppearance="@style/ListItemFirstTextLarge"
-                android:text="GPRO"
                 tools:text="GPRO"/>
 
             <Space
@@ -61,12 +58,11 @@
                 android:layout_height="wrap_content" />
 
             <TextView
-                android:id="@+id/text_prev_close"
+                android:id="@+id/text_recent_close"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="right"
+                android:gravity="end"
                 android:textAppearance="@style/ListItemFirstTextLarge"
-                android:text="$220.23"
                 tools:text="$220.23"/>
 
         </LinearLayout>
@@ -83,7 +79,6 @@
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/ListItemFirstTextLarge"
                 tools:textColor="@color/stock_down_red"
-                android:text="$-282.91"
                 tools:text="$-282.91"/>
 
             <Space
@@ -96,7 +91,6 @@
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/ListItemFirstTextLarge"
                 tools:textColor="@color/stock_down_red"
-                android:text="-120.23%"
                 tools:text="-120.23%"/>
 
             <Space
@@ -112,7 +106,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/ListItemFirstTextLarge"
-                    android:text="33 days"
                     tools:text="33 days"/>
 
                 <ImageView
@@ -121,7 +114,6 @@
                     android:layout_width="@dimen/stock_arrow_size_first"
                     android:layout_height="@dimen/stock_arrow_size_first"
                     android:contentDescription="@string/content_description_stock_arrow"
-                    android:src="@drawable/ic_streak_down"
                     tools:src="@drawable/ic_streak_down"/>
             </LinearLayout>
         </LinearLayout>

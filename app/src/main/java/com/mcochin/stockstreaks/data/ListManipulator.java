@@ -1,8 +1,10 @@
 package com.mcochin.stockstreaks.data;
 
 import android.database.Cursor;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,11 +14,30 @@ import java.util.List;
  * to manipulate that list.
  */
 public class ListManipulator {
-    static final String[] FRUITS = new String[] { "Apple", "Avocado", "Banana",
-            "Blueberry", "Coconut", "Durian", "Guava", "Kiwi", "Jackfruit", "Mango",
-            "Olive", "Pear", "Sugar-apple", "Orange", "Strawberry", "Pineapple",
-            "Watermelon", "Grape", "PassionFruit", "DragonFruit", "Honey-dew",
-            "Cantaloupe", "Papaya"};
+    private static final String TAG = ListManipulator.class.getSimpleName();
+
+//    private static final String[] FRUITS = new String[] { "Apple", "Avocado", "Banana",
+//            "Blueberry", "Coconut", "Durian", "Guava", "Kiwi", "Jackfruit", "Mango",
+//            "Olive", "Pear", "Sugar-apple", "Orange", "Strawberry", "Pineapple",
+//            "Watermelon", "Grape", "PassionFruit", "DragonFruit", "Honey-dew",
+//            "Cantaloupe", "Papaya"};
+
+    public static final String[] STOCK_PROJECTION = new String[]{
+            StockEntry.COLUMN_SYMBOL,
+            StockEntry.COLUMN_FULL_NAME,
+            StockEntry.COLUMN_RECENT_CLOSE,
+            StockEntry.COLUMN_CHANGE_DOLLAR,
+            StockEntry.COLUMN_CHANGE_PERCENT,
+            StockEntry.COLUMN_STREAK
+    };
+
+    //index must match projection
+    private static final int INDEX_SYMBOL = 0;
+    private static final int INDEX_FULL_NAME = 1;
+    private static final int INDEX_RECENT_CLOSE = 2;
+    private static final int INDEX_CHANGE_DOLLAR = 3;
+    private static final int INDEX_CHANGE_PERCENT = 4;
+    private static final int INDEX_STREAK = 5;
 
     private List<Stock> mData = new ArrayList<>();
     private Stock mLastRemovedItem = null;
@@ -24,39 +45,44 @@ public class ListManipulator {
     private int uniqueId = 0;
 
     public void setCursor(Cursor data){
-        uniqueId = 0;
-        mData.clear();
-
-        //TODO remove this, Using fruits array just to debug
-        for(String fruit : FRUITS){
-            Stock stock = new Stock();
-            stock.setSymbol(fruit);
-            stock.setId(uniqueId);
-
-            mData.add(stock);
-            uniqueId++;
-        }
-
-//        while(data.moveToNext()){
-//            String symbol = data.getString(StockDbHelper.INDEX_SYMBOL);
-//            String fullName = data.getString(StockDbHelper.INDEX_FULL_NAME);
-//            float prevClose = data.getFloat(StockDbHelper.INDEX_PREV_CLOSE);
-//            float changeDollar = data.getFloat(StockDbHelper.INDEX_CHANGE_DOLLAR);
-//            float changePercent = data.getFloat(StockDbHelper.INDEX_CHANGE_PERCENT);
-//            int streak = data.getInt(StockDbHelper.INDEX_STREAK);
-//
+    //TODO remove this, Using fruits array just to debug
+//        for(String fruit : FRUITS){
 //            Stock stock = new Stock();
+//            stock.setSymbol(fruit);
 //            stock.setId(uniqueId);
-//            stock.setSymbol(symbol);
-//            stock.setFullName(fullName);
-//            stock.setPrevClose(prevClose);
-//            stock.setChangeDollar(changeDollar);
-//            stock.setChangePercent(changePercent);
-//            stock.setStreak(streak);
 //
 //            mData.add(stock);
 //            uniqueId++;
 //        }
+
+        if(data == null) {
+            return;
+        }
+
+        uniqueId = 0;
+        mData.clear();
+
+        while(data.moveToNext()){
+            String symbol = data.getString(INDEX_SYMBOL);
+            String fullName = data.getString(INDEX_FULL_NAME);
+            float recentClose = data.getFloat(INDEX_RECENT_CLOSE);
+            float changeDollar = data.getFloat(INDEX_CHANGE_DOLLAR);
+            float changePercent = data.getFloat(INDEX_CHANGE_PERCENT);
+            int streak = data.getInt(INDEX_STREAK);
+
+
+            Stock stock = new Stock();
+            stock.setId(uniqueId);
+            stock.setSymbol(symbol);
+            stock.setFullName(fullName);
+            stock.setRecentClose(recentClose);
+            stock.setChangeDollar(changeDollar);
+            stock.setChangePercent(changePercent);
+            stock.setStreak(streak);
+
+            mData.add(stock);
+            uniqueId++;
+        }
     }
 
     public int getCount(){

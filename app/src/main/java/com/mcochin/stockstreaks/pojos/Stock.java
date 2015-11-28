@@ -7,7 +7,7 @@ public class Stock {
     private int mId;
     private String mSymbol;
     private String mFullName;
-    private float mPrevClose;
+    private float mRecentClose;
     private int mStreak;
     private float mChangeDollar;
     private float mChangePercent;
@@ -40,12 +40,12 @@ public class Stock {
         this.mFullName = mFullName;
     }
 
-    public float getPrevClose() {
-        return mPrevClose;
+    public float getRecentClose() {
+        return mRecentClose;
     }
 
-    public void setPrevClose(float mPrevClose) {
-        this.mPrevClose = mPrevClose;
+    public void setRecentClose(float mRecentCLose) {
+        this.mRecentClose = mRecentCLose;
     }
 
     public int getStreak() {

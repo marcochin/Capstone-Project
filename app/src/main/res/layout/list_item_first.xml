@@ -25,7 +25,6 @@
             android:textColor="@color/secondary_text"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
-            android:text="Updated: Thursday, April 03 \n @ 4:00pm"
             tools:text="Updated: Thursday, April 03 \n @ 4:00pm" />
 
         <TextView
@@ -38,7 +37,6 @@
             android:textSize="@dimen/full_name_text_size"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
-            android:text="GoPro, Inc."
             tools:text="GoPro, Inc."/>
 
         <TextView
@@ -47,7 +45,6 @@
             android:gravity="center_horizontal"
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
-            android:text="GPRO"
             tools:text="GPRO"/>
 
         <TextView
@@ -57,16 +54,14 @@
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
-            android:text="$-282.91"
             tools:text="$-282.91"/>
 
         <TextView
-            android:id="@+id/text_prev_close"
+            android:id="@+id/text_recent_close"
             android:layout_width="0dp"
             android:gravity="center_horizontal"
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
-            android:text="$220.23"
             tools:text="$220.23"/>
 
         <TextView
@@ -76,7 +71,6 @@
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
-            android:text="-120.23%"
             tools:text="-120.23%"/>
 
         <LinearLayout
@@ -99,7 +93,6 @@
                 android:layout_width="@dimen/stock_arrow_size_first"
                 android:layout_height="@dimen/stock_arrow_size_first"
                 android:contentDescription="@string/content_description_stock_arrow"
-                android:src="@drawable/ic_streak_down"
                 tools:src="@drawable/ic_streak_down"/>
         </LinearLayout>
     </android.support.v7.widget.GridLayout>

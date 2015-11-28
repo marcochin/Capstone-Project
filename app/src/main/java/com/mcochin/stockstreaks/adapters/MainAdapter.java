@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -20,6 +21,7 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultAct
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeableItemViewHolder;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
+import com.mcochin.stockstreaks.pojos.Stock;
 
 /**
  * This is the adapter for <code>MainFragment</code>
@@ -35,6 +37,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
     private RecyclerViewDragDropManager mDragDropManager;
+    private Context mContext;
 
     /**
      * On devices < KITKAT, the list items lost their padding for some reason. Read somewhere
@@ -52,9 +55,10 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             implements View.OnClickListener, View.OnTouchListener {
         TextView mSymbol;
         TextView mFullName;
-        TextView mPrevClose;
+        TextView mRecentClose;
         TextView mChangeDollar;
         TextView mChangePercent;
+        TextView mChangeAmt;
         TextView mStreak;
         ViewGroup mContainer;
 
@@ -63,9 +67,10 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             mContainer = (ViewGroup) itemView.findViewById(R.id.swipe_container);
             mSymbol = (TextView) itemView.findViewById(R.id.text_symbol);
             mFullName = (TextView) itemView.findViewById(R.id.text_full_name);
-            mPrevClose = (TextView) itemView.findViewById(R.id.text_prev_close);
+            mRecentClose = (TextView) itemView.findViewById(R.id.text_recent_close);
             mChangeDollar = (TextView) itemView.findViewById(R.id.text_change_dollar);
             mChangePercent = (TextView) itemView.findViewById(R.id.text_change_percent);
+            mChangeAmt = (TextView) itemView.findViewById(R.id.text_change_amt);
             mStreak = (TextView) itemView.findViewById(R.id.text_streak);
             itemView.setOnClickListener(this);
             itemView.setOnTouchListener(this);
@@ -118,9 +123,10 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         mEventListener = eventListener;
         mDragDropManager = dragDropManager;
         mListManipulator = listManipulator;
-        mListManipulator.setCursor(null); //TODO remove this, only for debugging
+        mContext = context;
+//        mListManipulator.setCursor(null); //TODO remove this, only for debugging
 
-        Resources resources = context.getResources();
+        Resources resources = mContext.getResources();
         mListItemVerticalPadding = resources.getDimensionPixelSize(R.dimen.list_item_vertical_padding);
         mListItemHorizontalPadding = resources.getDimensionPixelSize(R.dimen.list_item_horizontal_padding);
         mListItemFirstPadding = resources.getDimensionPixelSize(R.dimen.list_item_first_padding);
@@ -145,15 +151,23 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override
     public void onBindViewHolder(final MainViewHolder holder, int position) {
-//        Log.d(TAG, "onBind");
-//        Stock stock = mListManipulator.getItem(position);
-//
-//        holder.mSymbol.setText(stock.getSymbol());
-//        holder.mFullName.setText(stock.getFullName());
-//        holder.mPrevClose.setText(String.format("%.2f", stock.getPrevClose()));
-//        holder.mChangeDollar.setText(String.format("%.2f", stock.getChangeDollar()));
-//        holder.mChangePercent.setText(String.format("%.2f", stock.getChangePercent()));
-//        holder.mStreak.setText(String.format("%d", stock.getStreak()));
+        Log.d(TAG, "onBind");
+        Stock stock = mListManipulator.getItem(position);
+
+        holder.mSymbol.setText(stock.getSymbol());
+        holder.mFullName.setText(stock.getFullName());
+        holder.mRecentClose.setText(String.format("%.2f", stock.getRecentClose()));
+        holder.mStreak.setText(String.format("%d", stock.getStreak()));
+
+        String changeDollar = String.format("%.2f", stock.getChangeDollar());
+        String changePercent = String.format("%.2f", stock.getChangePercent());
+        if(position == 0) {
+            holder.mChangeDollar.setText(changeDollar);
+            holder.mChangePercent.setText(changePercent);
+        } else{
+            holder.mChangeAmt.setText(mContext.getResources()
+                    .getString(R.string.change_amt, changeDollar, changePercent));
+        }
 
         // set background resource (target view ID: container)
         final int dragState = holder.getDragStateFlags();
@@ -276,6 +290,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public void release(){
         mDragDropManager = null;
         mListManipulator = null;
+        mContext = null;
     }
 
     private static class SwipeResultAction extends SwipeResultActionRemoveItem {
