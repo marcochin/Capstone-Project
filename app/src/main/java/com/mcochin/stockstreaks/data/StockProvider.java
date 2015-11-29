@@ -3,7 +3,6 @@ package com.mcochin.stockstreaks.data;
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.OperationApplicationException;
 import android.content.UriMatcher;
@@ -39,10 +38,13 @@ public class StockProvider extends ContentProvider {
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_SYMBOL + " = ?";
 
     /**
-     * This boolean prevents content://com.mcochin.stockstreaks/stocks from being queried
-     * if only an item was notified.
+     * This boolean "prevents" a directory uri from being notified, if only an item was notified.
      */
-    private boolean mPreventStocksQuery;
+    private boolean mPreventDirectoryQuery;
+    /**
+     * This boolean "prevents" a item uri from being notified, if only an directory was notified.
+     */
+    private boolean mPreventItemQuery;
 
     @Override
     public boolean onCreate() {
@@ -87,12 +89,12 @@ public class StockProvider extends ContentProvider {
                 break;
 
             case STOCKS:
-                if(mPreventStocksQuery){
-                    mPreventStocksQuery = false;
+                Log.d(TAG, "stocksquery");
+                if(mPreventDirectoryQuery){
+                    mPreventDirectoryQuery = false;
                     return null;
                 }
 
-                Log.d(TAG, "stocksquery");
                 retCursor = mStockDbHelper.getWritableDatabase().query(
                         StockEntry.TABLE_NAME,
                         projection,
@@ -104,6 +106,11 @@ public class StockProvider extends ContentProvider {
                 break;
             case STOCKS_WITH_SYMBOL:
                 Log.d(TAG, "symbolquery");
+                if(mPreventItemQuery){
+                    mPreventItemQuery = false;
+                    return null;
+                }
+
                 String symbol = StockContract.getSymbolFromUri(uri);
 
                 retCursor = mStockDbHelper.getWritableDatabase().query(
@@ -141,9 +148,10 @@ public class StockProvider extends ContentProvider {
                 break;
 
             case STOCKS_WITH_SYMBOL:
-                mPreventStocksQuery = true;
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(StockEntry.TABLE_NAME, null, values);
+
+                mPreventDirectoryQuery = true;
                 break;
 
             default:
@@ -171,6 +179,8 @@ public class StockProvider extends ContentProvider {
 
                 rowsDeleted = mStockDbHelper.getWritableDatabase().delete(
                         StockEntry.TABLE_NAME, STOCK_SYMBOL_SELECTION, new String[]{symbol});
+
+                mPreventDirectoryQuery = true;
                 break;
 
             default:
@@ -198,15 +208,15 @@ public class StockProvider extends ContentProvider {
                         null);
                 break;
 
-            case STOCKS_WITH_SYMBOL:
-                String symbol = StockContract.getSymbolFromUri(uri);
-
-                mStockDbHelper.getWritableDatabase().update(
-                        StockEntry.TABLE_NAME,
-                        values,
-                        STOCK_SYMBOL_SELECTION,
-                        new String[]{symbol});
-                break;
+//            case STOCKS_WITH_SYMBOL:
+//                String symbol = StockContract.getSymbolFromUri(uri);
+//
+//                mStockDbHelper.getWritableDatabase().update(
+//                        StockEntry.TABLE_NAME,
+//                        values,
+//                        STOCK_SYMBOL_SELECTION,
+//                        new String[]{symbol});
+//                break;
 
             default:
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);
@@ -226,6 +236,7 @@ public class StockProvider extends ContentProvider {
         ContentProviderResult[] results =  super.applyBatch(operations);
 
         if(getContext()!= null) {
+            mPreventItemQuery = true;
             getContext().getContentResolver().notifyChange(StockEntry.CONTENT_URI, null);
         }
 

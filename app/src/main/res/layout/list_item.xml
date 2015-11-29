@@ -21,23 +21,23 @@
             android:id="@+id/text_symbol"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_columnWeight="6"
+            app:layout_columnWeight="5"
             tools:text="GPRO"/>
 
         <TextView
             style="@style/ListItemBlackText"
             android:id="@+id/text_recent_close"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_columnWeight="1"
-            tools:text="$263.26"/>
+            tools:text="$6333.26"/>
 
         <TextView
             style="@style/ListItemBlackText"
             android:id="@+id/text_streak"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            tools:text="33d"/>
+            tools:text="-33d"/>
 
         <ImageView
             style="@style/StreakArrow"
@@ -59,11 +59,11 @@
 
         <TextView
             android:id="@+id/text_change_amt"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_columnWeight="1"
+            app:layout_columnWeight="@dimen/text_change_amt_column_weight"
             app:layout_columnSpan="3"
-            tools:text="$-220.00 (-393.44%)"
+            tools:text="$-2222.00 (-2223.44%)"
             tools:textColor="@color/stock_down_red"/>
 
     </android.support.v7.widget.GridLayout>

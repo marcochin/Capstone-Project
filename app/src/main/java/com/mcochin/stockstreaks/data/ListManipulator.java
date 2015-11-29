@@ -44,7 +44,7 @@ public class ListManipulator {
     private int mLastRemovedPosition = -1;
     private int uniqueId = 0;
 
-    public void setCursor(Cursor data){
+    public void setCursor(Cursor cursor){
     //TODO remove this, Using fruits array just to debug
 //        for(String fruit : FRUITS){
 //            Stock stock = new Stock();
@@ -55,33 +55,19 @@ public class ListManipulator {
 //            uniqueId++;
 //        }
 
-        if(data == null) {
+        if(cursor == null) {
             return;
         }
 
-        uniqueId = 0;
-        mData.clear();
+        if(cursor.moveToNext()) {
+            uniqueId = 0;
+            mData.clear();
 
-        while(data.moveToNext()){
-            String symbol = data.getString(INDEX_SYMBOL);
-            String fullName = data.getString(INDEX_FULL_NAME);
-            float recentClose = data.getFloat(INDEX_RECENT_CLOSE);
-            float changeDollar = data.getFloat(INDEX_CHANGE_DOLLAR);
-            float changePercent = data.getFloat(INDEX_CHANGE_PERCENT);
-            int streak = data.getInt(INDEX_STREAK);
-
-
-            Stock stock = new Stock();
-            stock.setId(uniqueId);
-            stock.setSymbol(symbol);
-            stock.setFullName(fullName);
-            stock.setRecentClose(recentClose);
-            stock.setChangeDollar(changeDollar);
-            stock.setChangePercent(changePercent);
-            stock.setStreak(streak);
-
-            mData.add(stock);
-            uniqueId++;
+            do{
+                Stock stock = getStockFromCursor(cursor);
+                mData.add(stock);
+                uniqueId++;
+            }while(cursor.moveToNext());
         }
     }
 
@@ -89,10 +75,18 @@ public class ListManipulator {
         return mData.size();
     }
 
+    public void addCursorItem(Cursor cursorItem){
+        if(cursorItem.moveToFirst()){
+            Stock stock = getStockFromCursor(cursorItem);
+            //need to set id or the added item will contain text from the previous last item
+            stock.setId(uniqueId++);
+            mData.add(stock);
+        }
+    }
+
     public void addItem(Stock stock){
-        mData.add(stock);
-        //need to set id or the added item will contain text from the previous last item
         stock.setId(uniqueId++);
+        mData.add(stock);
     }
 
     public Stock getItem(int index) {
@@ -136,4 +130,24 @@ public class ListManipulator {
         }
     }
 
+    private Stock getStockFromCursor(Cursor cursor){
+        String symbol = cursor.getString(INDEX_SYMBOL);
+        String fullName = cursor.getString(INDEX_FULL_NAME);
+        float recentClose = cursor.getFloat(INDEX_RECENT_CLOSE);
+        float changeDollar = cursor.getFloat(INDEX_CHANGE_DOLLAR);
+        float changePercent = cursor.getFloat(INDEX_CHANGE_PERCENT);
+        int streak = cursor.getInt(INDEX_STREAK);
+
+
+        Stock stock = new Stock();
+        stock.setId(uniqueId);
+        stock.setSymbol(symbol);
+        stock.setFullName(fullName);
+        stock.setRecentClose(recentClose);
+        stock.setChangeDollar(changeDollar);
+        stock.setChangePercent(changePercent);
+        stock.setStreak(streak);
+
+        return stock;
+    }
 }

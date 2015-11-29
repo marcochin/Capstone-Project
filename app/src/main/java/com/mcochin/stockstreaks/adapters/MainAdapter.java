@@ -3,12 +3,13 @@ package com.mcochin.stockstreaks.adapters;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter;
@@ -53,6 +54,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     // Our ViewHolder class
     public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
             implements View.OnClickListener, View.OnTouchListener {
+        ViewGroup mContainer;
         TextView mSymbol;
         TextView mFullName;
         TextView mRecentClose;
@@ -60,7 +62,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         TextView mChangePercent;
         TextView mChangeAmt;
         TextView mStreak;
-        ViewGroup mContainer;
+        ImageView mStreakArrow;
 
         public MainViewHolder(View itemView) {
             super(itemView);
@@ -72,6 +74,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             mChangePercent = (TextView) itemView.findViewById(R.id.text_change_percent);
             mChangeAmt = (TextView) itemView.findViewById(R.id.text_change_amt);
             mStreak = (TextView) itemView.findViewById(R.id.text_streak);
+            mStreakArrow = (ImageView)itemView.findViewById(R.id.image_streak_arrow);
+
             itemView.setOnClickListener(this);
             itemView.setOnTouchListener(this);
         }
@@ -151,27 +155,53 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override
     public void onBindViewHolder(final MainViewHolder holder, int position) {
-        Log.d(TAG, "onBind");
+//        Log.d(TAG, "onBind");
         Stock stock = mListManipulator.getItem(position);
+        Resources resources = mContext.getResources();
 
+        // Set our symbol, fullName, and recent close
         holder.mSymbol.setText(stock.getSymbol());
         holder.mFullName.setText(stock.getFullName());
-        holder.mRecentClose.setText(String.format("%.2f", stock.getRecentClose()));
-        holder.mStreak.setText(String.format("%d", stock.getStreak()));
 
-        String changeDollar = String.format("%.2f", stock.getChangeDollar());
-        String changePercent = String.format("%.2f", stock.getChangePercent());
-        if(position == 0) {
-            holder.mChangeDollar.setText(changeDollar);
-            holder.mChangePercent.setText(changePercent);
-        } else{
-            holder.mChangeAmt.setText(mContext.getResources()
-                    .getString(R.string.change_amt, changeDollar, changePercent));
+        String recentClose = String.format("%.2f", stock.getRecentClose());
+        holder.mRecentClose.setText(resources.getString(R.string.placeholder_dollar, recentClose));
+
+        // Convert change amount float values to Strings
+        String changeDollar = resources.getString(
+                R.string.placeholder_dollar, String.format("%.2f", stock.getChangeDollar()));
+        String changePercent = resources.getString(
+                R.string.placeholder_percent, String.format("%.2f", stock.getChangePercent()));
+        String streak = String.format("%d", stock.getStreak());
+
+        // Get our change colors and set our stock arrow ImageView
+        int color;
+        if(stock.getChangeDollar() > 0){
+            color = ContextCompat.getColor(mContext, R.color.stock_up_green);
+            holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_up);
+        }else if (stock.getChangeDollar() < 0){
+            color = ContextCompat.getColor(mContext, R.color.stock_down_red);
+            holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_down);
+        }else{
+            color = ContextCompat.getColor(mContext, R.color.stock_neutral);
         }
 
-        // set background resource (target view ID: container)
-        final int dragState = holder.getDragStateFlags();
+        // Set our change amounts, change color, and streak
+        if(position == 0) { //list_first_item
+            holder.mChangeDollar.setText(changeDollar);
+            holder.mChangeDollar.setTextColor(color);
+            holder.mChangePercent.setText(changePercent);
+            holder.mChangePercent.setTextColor(color);
+            holder.mStreak.setText(mContext.getString(R.string.placeholder_days, streak));
 
+        } else{ //list_item
+            holder.mChangeAmt.setText(resources.getString(
+                    R.string.placeholder_change_amt, changeDollar, changePercent));
+            holder.mChangeAmt.setTextColor(color);
+            holder.mStreak.setText(mContext.getString(R.string.placeholder_d, streak));
+        }
+
+        // Set background resource (target view ID: container)
+        final int dragState = holder.getDragStateFlags();
         if (((dragState & Draggable.STATE_FLAG_IS_UPDATED) != 0)){
             int bgResId;
 
@@ -187,6 +217,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             holder.mContainer.setBackgroundResource(bgResId);
         }
 
+        // Restore back padding for pre-kitkat list_items
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
             if(position == 0 && mIsPhone){
                 holder.mContainer.setPadding(mListItemFirstPadding, mListItemFirstPadding,
@@ -197,8 +228,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             }
         }
 
-        // Set swiping properties
-        // This sets the horizontal offset of the items
+        // Set swiping properties. This sets the horizontal offset of the items
         holder.setSwipeItemHorizontalSlideAmount(0);
     }
 

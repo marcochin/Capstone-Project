@@ -67,25 +67,27 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Find our views from xml layouts
         mTwoPane = findViewById(R.id.detail_container) != null;
-
         mRootView = findViewById(R.id.rootView);
         mAppBar = (SearchBox)findViewById(R.id.appBar);
         mSearchEditText = (EditText)findViewById(R.id.search);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
 
         if (savedInstanceState == null) {
-            //Initialize the fragment that stores the list
+            // Initialize the fragment that stores the list
             getSupportFragmentManager().beginTransaction()
                     .add(new ListManipulatorFragment(), ListManipulatorFragment.TAG).commit();
 
             getSupportFragmentManager().executePendingTransactions();
         } else{
+            // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mAppBar.toggleSearch();
             }
         }
 
+        // Initialize our snack bar action button listener
         mSnackBarActionListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -95,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         };
 
+        // Initialize our searchBox overflow menu and search callbacks
         mAppBar.setOverflowMenu(R.menu.menu_main);
         mAppBar.setSearchListener(new SearchBox.SearchListener() {
             @Override
@@ -127,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     return;
                 }
 
-                if(Utility.isEntryExist(query, getContentResolver())){
+                if (Utility.isEntryExist(query, getContentResolver())) {
                     Toast.makeText(MainActivity.this,
                             R.string.toast_symbol_exists, Toast.LENGTH_SHORT).show();
                     return;
@@ -153,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         configureRecyclerView();
         configureAppBarDynamicElevation();
 
-        //fetch the stock list
+        // Fetch the stock list
         getSupportLoaderManager().initLoader(ID_LOADER_STOCKS, null, this);
     }
 
@@ -211,8 +214,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 mAdapter.notifyDataSetChanged();
                 break;
             case ID_LOADER_STOCK_WITH_SYMBOL:
-                // TODO Cursor loader will detect it and then update ui.
                 Log.d(TAG, "loader stock_with_symbol");
+                ListManipulator listManipulator = getListManipulator();
+                listManipulator.addCursorItem(data);
+                mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
+                mRecyclerView.smoothScrollToPosition(listManipulator.getCount()-1);
                 break;
         }
     }
@@ -309,7 +315,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     public void onItemRemoved(MainAdapter.MainViewHolder holder) {
                         Snackbar.make(
                                 mRootView,
-                                getString(R.string.snackbar_main_text, holder.getSymbol()),
+                                getString(R.string.placeholder_snackbar_main_text, holder.getSymbol()),
                                 Snackbar.LENGTH_LONG)
                                 .setAction(
                                         R.string.snackbar_action_text,

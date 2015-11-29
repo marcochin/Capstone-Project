@@ -34,10 +34,14 @@
     <string name="streak_year_low">365 Day\nStreak Low:</string>
 
     <!-- Snackbar -->
-    <string name="snackbar_main_text">%1$s removed</string>
+    <string name="placeholder_snackbar_main_text">%1$s removed</string>
     <string name="snackbar_action_text">UNDO</string>
 
     <!--MainAdapter-->
-    <string name="change_amt">%1$s(%2$s%%)</string>
+    <string name="placeholder_change_amt">%1$s(%2$s)</string>
+    <string name="placeholder_dollar">$%1$s</string>
+    <string name="placeholder_percent">%1$s%%</string>
+    <string name="placeholder_days">%1$s days</string>
+    <string name="placeholder_d">%1$sd</string>
 
 </resources>
