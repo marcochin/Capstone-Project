@@ -4,11 +4,8 @@ import android.app.IntentService;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.v4.util.Pair;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract;
@@ -18,7 +15,6 @@ import com.mcochin.stockstreaks.utils.Utility;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
-import java.util.TimeZone;
 
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
@@ -43,7 +39,6 @@ public class NetworkService extends IntentService {
     private static final String NOT_AVAILABLE = "N/A";
     private static final String NASDAQ = "NMS";
     private static final String NYSE = "NYQ";
-    private static final String TIMEZONE_NEW_YORK = "America/New_York";
 
     public NetworkService(){
         super(TAG);
@@ -56,13 +51,25 @@ public class NetworkService extends IntentService {
         try {
             // check for internet
             if(!Utility.isNetworkAvailable(this)){
-                showToast(getString(R.string.toast_no_network));
+                Utility.showToast(this, getString(R.string.toast_no_network));
                 return;
             }
             String action = intent.getAction();
 
             switch(action) {
+                case ACTION_STOCKS:
+                    //TODO check if you can update
+                    //TODO if so, get a list of all symbols
+                    //TODO do query
+                    //TODO bulk update db
+                    break;
+
                 case ACTION_STOCK_WITH_SYMBOL:
+                    // Check if symbol already exists in database
+                    if (Utility.isEntryExist(query, getContentResolver())) {
+                        Utility.showToast(this, getString(R.string.toast_symbol_exists));
+                        return;
+                    }
                     ContentValues values = calculateMainInfo(query);
 
                     if(values == null){
@@ -74,7 +81,7 @@ public class NetworkService extends IntentService {
             }
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
-            showToast(getString(R.string.toast_error_retrieving_data));
+            Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
         }
     }
 
@@ -89,11 +96,11 @@ public class NetworkService extends IntentService {
         Stock stock = YahooFinance.get(symbol);
 
         if(stock == null){
-            showToast(getString(R.string.toast_error_retrieving_data));
+            Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
 
         } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getStockExchange().equals(NASDAQ)
                 && !stock.getStockExchange().equals(NYSE))) {
-            showToast(getString(R.string.toast_symbol_not_found));
+            Utility.showToast(this, getString(R.string.toast_symbol_not_found));
         } else{
 //            Log.d(TAG, "Symbol: " + stock.getSymbol()
 //                    + " Full name: " + stock.getName()
@@ -104,8 +111,8 @@ public class NetworkService extends IntentService {
 //                    + " Change $: " + stock.getQuote().getChange()
 //                    + " Change %: " + stock.getQuote().getChangeInPercent());
 
-            Calendar nowCalendar = Calendar.getInstance(TimeZone.getTimeZone(TIMEZONE_NEW_YORK));
-            Calendar fromCalendar = Calendar.getInstance(TimeZone.getTimeZone(TIMEZONE_NEW_YORK));
+            Calendar nowCalendar = Utility.getNewYorkCalendarInstance();
+            Calendar fromCalendar = Utility.getNewYorkCalendarInstance();
             fromCalendar.add(Calendar.DAY_OF_MONTH, -MONTH); // We want 1 month of history
 
             // Download history from Yahoo
@@ -322,15 +329,5 @@ public class NetworkService extends IntentService {
         float changePercent = changeDollar / prevStreakEndPrice * 100;
 
         return new Pair<>(changeDollar, changePercent);
-    }
-
-    private void showToast(final String toastMsg) {
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(NetworkService.this, toastMsg, Toast.LENGTH_LONG).show();
-            }
-        });
     }
 }

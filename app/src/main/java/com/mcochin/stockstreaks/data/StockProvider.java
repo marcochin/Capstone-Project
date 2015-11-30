@@ -208,15 +208,15 @@ public class StockProvider extends ContentProvider {
                         null);
                 break;
 
-//            case STOCKS_WITH_SYMBOL:
-//                String symbol = StockContract.getSymbolFromUri(uri);
-//
-//                mStockDbHelper.getWritableDatabase().update(
-//                        StockEntry.TABLE_NAME,
-//                        values,
-//                        STOCK_SYMBOL_SELECTION,
-//                        new String[]{symbol});
-//                break;
+            case STOCKS_WITH_SYMBOL:
+                String symbol = StockContract.getSymbolFromUri(uri);
+
+                mStockDbHelper.getWritableDatabase().update(
+                        StockEntry.TABLE_NAME,
+                        values,
+                        STOCK_SYMBOL_SELECTION,
+                        new String[]{symbol});
+                break;
 
             default:
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);

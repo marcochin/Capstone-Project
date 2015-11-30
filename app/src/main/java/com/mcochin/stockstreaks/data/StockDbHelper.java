@@ -19,8 +19,6 @@ public class StockDbHelper extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    public static final int INDEX_TIME_IN_MILLI = 1;
-
     @Override
     public void onCreate(SQLiteDatabase db) {
         final String SQL_CREATE_UPDATE_DATE_TABLE = "CREATE TABLE " + UpdateDateEntry.TABLE_NAME + " (" +

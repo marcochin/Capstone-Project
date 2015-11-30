@@ -13,6 +13,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.ViewCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -35,13 +36,13 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
 import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
 import com.mcochin.stockstreaks.services.NetworkService;
-import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
+        SearchBox.SearchListener, MainAdapter.EventListener, SwipeRefreshLayout.OnRefreshListener{
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
     private static final int ID_LOADER_UPDATE_DATE = 0;
@@ -55,9 +56,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private RecyclerViewDragDropManager mDragDropManager;
     private RecyclerViewSwipeManager mSwipeManager;
     private RecyclerViewTouchActionGuardManager mTouchActionGuardManager;
-    private SearchBox mAppBar;
+
+
     private EditText mSearchEditText;
+    private SearchBox mAppBar;
+    private SwipeRefreshLayout mSwipeToRefresh;
     private View mRootView;
+
     private View.OnClickListener mSnackBarActionListener;
 
     private boolean mTwoPane;
@@ -72,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mRootView = findViewById(R.id.rootView);
         mAppBar = (SearchBox)findViewById(R.id.appBar);
         mSearchEditText = (EditText)findViewById(R.id.search);
+        mSwipeToRefresh = (SwipeRefreshLayout)findViewById(R.id.swipe_to_refresh);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
 
         if (savedInstanceState == null) {
@@ -97,61 +103,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         };
 
+        // Set our refresh listener for swiping down to refresh
+        mSwipeToRefresh.setOnRefreshListener(this);
+
         // Initialize our searchBox overflow menu and search callbacks
         mAppBar.setOverflowMenu(R.menu.menu_main);
-        mAppBar.setSearchListener(new SearchBox.SearchListener() {
-            @Override
-            public void onSearchOpened() {
-
-            }
-
-            @Override
-            public void onSearchCleared() {
-
-            }
-
-            @Override
-            public void onSearchClosed() {
-
-            }
-
-            @Override
-            public void onSearchTermChanged(String term) {
-
-            }
-
-            @Override
-            public void onSearch(String query) {
-                query = query.toUpperCase(Locale.US);
-
-                if (TextUtils.isEmpty(query)) {
-                    Toast.makeText(MainActivity.this,
-                            R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                if (Utility.isEntryExist(query, getContentResolver())) {
-                    Toast.makeText(MainActivity.this,
-                            R.string.toast_symbol_exists, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                //Start service to retrieve stock info
-                Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
-                serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query);
-                serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
-                startService(serviceIntent);
-
-                //Start cursor loader to load the newly added stock
-                getSupportLoaderManager().restartLoader(ID_LOADER_STOCK_WITH_SYMBOL,
-                        null, MainActivity.this);
-            }
-
-            @Override
-            public void onResultClick(SearchResult result) {
-
-            }
-        });
+        mAppBar.setSearchListener(this);
 
         configureRecyclerView();
         configureAppBarDynamicElevation();
@@ -160,7 +117,61 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         getSupportLoaderManager().initLoader(ID_LOADER_STOCKS, null, this);
     }
 
+    @Override // SearchBox.SearchListener
+    public void onSearchOpened() {
+
+    }
+
+    @Override // SearchBox.SearchListener
+    public void onSearchCleared() {
+
+    }
+
+    @Override // SearchBox.SearchListener
+    public void onSearchClosed() {
+
+    }
+
+    @Override // SearchBox.SearchListener
+    public void onSearchTermChanged(String term) {
+
+    }
+
+    @Override // SearchBox.SearchListener
+    public void onResultClick(SearchResult result) {
+
+    }
+
+    @Override // SearchBox.SearchListener
+    public void onSearch(String query) {
+        query = query.toUpperCase(Locale.US);
+
+        if (TextUtils.isEmpty(query)) {
+            Toast.makeText(MainActivity.this,
+                    R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        //Start service to retrieve stock info
+        Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
+        serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query);
+        serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
+        startService(serviceIntent);
+
+        //Start cursor loader to load the newly added stock
+        getSupportLoaderManager().restartLoader(ID_LOADER_STOCK_WITH_SYMBOL,
+                null, MainActivity.this);
+    }
+
     @Override
+    public void onRefresh() {
+        // Start service to refresh stock list info
+        Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
+        serviceIntent.setAction(NetworkService.ACTION_STOCKS);
+        startService(serviceIntent);
+    }
+
+    @Override // LoaderManager.LoaderCallbacks<Cursor>
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         CursorLoader loader = null;
         switch(id){
@@ -196,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         return loader;
     }
 
-    @Override
+    @Override // LoaderManager.LoaderCallbacks<Cursor>
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         if(data == null || data.getCount() == 0){
             return;
@@ -223,9 +234,31 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
-    @Override
+    @Override // LoaderManager.LoaderCallbacks<Cursor>
     public void onLoaderReset(Loader<Cursor> loader) {
 
+    }
+
+    @Override // MainAdapter.EventListener
+    public void onItemClick(MainAdapter.MainViewHolder holder) {
+        if(mTwoPane){
+            //If tablet insert fragment into container
+
+        }else{
+            //If phone open activity
+            Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
+            startActivity(openDetail);
+        }
+    }
+
+    @Override // MainAdapter.EventListener
+    public void onItemRemoved(MainAdapter.MainViewHolder holder) {
+        Snackbar.make(
+                mRootView,
+                getString(R.string.placeholder_snackbar_main_text, holder.getSymbol()),
+                    Snackbar.LENGTH_LONG)
+                .setAction(R.string.snackbar_action_text, mSnackBarActionListener)
+                .show();
     }
 
     @Override
@@ -298,31 +331,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 this,
                 mDragDropManager,
                 getListManipulator(),
-                new MainAdapter.EventListener() {
-                    @Override
-                    public void onItemClick(MainAdapter.MainViewHolder holder) {
-                        if(mTwoPane){
-                            //If tablet insert fragment into container
-
-                        }else{
-                            //If phone open activity
-                            Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
-                            startActivity(openDetail);
-                        }
-                    }
-
-                    @Override
-                    public void onItemRemoved(MainAdapter.MainViewHolder holder) {
-                        Snackbar.make(
-                                mRootView,
-                                getString(R.string.placeholder_snackbar_main_text, holder.getSymbol()),
-                                Snackbar.LENGTH_LONG)
-                                .setAction(
-                                        R.string.snackbar_action_text,
-                                        mSnackBarActionListener)
-                                .show();
-                    }
-                });
+                this);
 
         mAdapter = mainAdapter;
         mWrappedAdapter = mDragDropManager.createWrappedAdapter(mainAdapter);  // Wrap for dragging
