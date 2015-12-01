@@ -21,8 +21,6 @@ import yahoofinance.YahooFinance;
  * Utility class containing general helper methods for this application
  */
 public class Utility {
-    private static final String[] UPDATE_TIME_PROJECTION = new String[]{UpdateDateEntry.COLUMN_TIME_IN_MILLI};
-    private static final int INDEX_TIME_IN_MILLI = 0;
     private static final int STOCK_MARKET_UPDATE_HOUR = 16;
     private static final int STOCK_MARKET_UPDATE_MINUTE = 30;
     private static final int STOCK_MARKET_OPEN_HOUR = 9;
@@ -93,6 +91,11 @@ public class Utility {
         return false;
     }
 
+    /**
+     * Checks if the current time is between trading hours, regardless if stock market is closed or
+     * not.
+     * @return
+     */
     public static boolean isDuringTradingHours(){
         //9:30am
         Calendar stockMarketOpen = getNewYorkCalendarInstance();
@@ -107,7 +110,6 @@ public class Utility {
         stockMarketClose.set(Calendar.MILLISECOND, 0);
 
         Calendar nowTime = getNewYorkCalendarInstance();
-        int dayOfWeek = nowTime.get(Calendar.DAY_OF_WEEK);
 
         // If nowTime is between 9:30am EST and 4:30 pm EST
         // assume it is trading hours
@@ -118,10 +120,17 @@ public class Utility {
         return false;
     }
 
-    public static boolean canRefreshList(ContentResolver cr){
+    /**
+     * Checks to see if the stock list is up to date, if not then update
+     * @param cr ContentResolver to query db for the previous update time
+     * @return true if list can be updated, else false
+     */
+    public static boolean canUpdateList(ContentResolver cr){
+        final String[] updateTimeProjection = new String[]{UpdateDateEntry.COLUMN_TIME_IN_MILLI};
+        final int indexTimeInMilli = 0;
         Cursor cursor = null;
         try{
-            cursor = cr.query(UpdateDateEntry.CONTENT_URI, UPDATE_TIME_PROJECTION, null, null, null);
+            cursor = cr.query(UpdateDateEntry.CONTENT_URI, updateTimeProjection, null, null, null);
 
             if(cursor != null){
                 //Update Time doesn't exist yet so update
@@ -136,7 +145,7 @@ public class Utility {
                 fourThirtyTime.set(Calendar.MILLISECOND, 0);
 
                 Calendar lastUpdateTime  = Calendar.getInstance();
-                long lastUpdateTimeInMilli  = cursor.getLong(INDEX_TIME_IN_MILLI);
+                long lastUpdateTimeInMilli  = cursor.getLong(indexTimeInMilli);
                 lastUpdateTime.setTimeInMillis(lastUpdateTimeInMilli);
 
                 int dayOfWeek = nowTime.get(Calendar.DAY_OF_WEEK);

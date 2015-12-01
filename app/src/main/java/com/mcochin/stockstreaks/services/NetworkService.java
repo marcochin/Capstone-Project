@@ -1,20 +1,26 @@
 package com.mcochin.stockstreaks.services;
 
 import android.app.IntentService;
+import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.OperationApplicationException;
 import android.database.Cursor;
+import android.os.RemoteException;
 import android.support.v4.util.Pair;
 import android.util.Log;
 
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
@@ -58,25 +64,11 @@ public class NetworkService extends IntentService {
 
             switch(action) {
                 case ACTION_STOCKS:
-                    //TODO check if you can update
-                    //TODO if so, get a list of all symbols
-                    //TODO do query
-                    //TODO bulk update db
+                    performActionStocks();
                     break;
 
                 case ACTION_STOCK_WITH_SYMBOL:
-                    // Check if symbol already exists in database
-                    if (Utility.isEntryExist(query, getContentResolver())) {
-                        Utility.showToast(this, getString(R.string.toast_symbol_exists));
-                        return;
-                    }
-                    ContentValues values = calculateMainInfo(query);
-
-                    if(values == null){
-                        return;
-                    }
-                    // Put stock into the database
-                    getContentResolver().insert(StockEntry.buildUri(query), values);
+                    performActionStockWithSymbol(query);
                     break;
             }
         } catch (IOException e) {
@@ -85,15 +77,102 @@ public class NetworkService extends IntentService {
         }
     }
 
-    private ContentValues calculateMainInfo(String symbol) throws IOException{
+    private void performActionStocks() throws IOException{
+        //Check if you can update first
+        if(!Utility.canUpdateList(getContentResolver())){
+            Utility.showToast(this, getString(R.string.toast_already_up_to_date));
+            return;
+        }
+
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+
+        Map<String, Stock> stockList = fetchStockList();
+        if(stockList != null) {
+            for (Stock stock : stockList.values()) {
+                ContentValues values = getMainValues(stock);
+                ops.add(ContentProviderOperation
+                        .newUpdate(StockEntry.buildUri(stock.getSymbol()))
+                        .withValues(values)
+                        .withYieldAllowed(true)
+                        .build());
+            }
+            try {
+                getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
+            }catch (RemoteException | OperationApplicationException e){
+                Log.e(TAG, Log.getStackTraceString(e));
+                Utility.showToast(this, getString(R.string.toast_error_updating_list));
+            }
+
+            updateUpdateDate();
+        }
+    }
+
+    private void performActionStockWithSymbol(String symbol)throws IOException{
+        // Check if symbol already exists in database
+        if (Utility.isEntryExist(symbol, getContentResolver())) {
+            Utility.showToast(this, getString(R.string.toast_symbol_exists));
+            return;
+        }
+
+        Stock stock = fetchStockItem(symbol);
+        ContentValues values = getMainValues(stock);
+
+        if(values == null){
+            return;
+        }
+        // Put stock into the database
+        getContentResolver().insert(StockEntry.buildUri(symbol), values);
+    }
+
+    private Map<String, Stock> fetchStockList() throws IOException{
+        Cursor cursor = null;
+        try{
+            final String[] projection = new String[] {StockEntry.COLUMN_SYMBOL};
+            final int indexSymbol = 0;
+
+            // Get all symbols in the table
+            cursor = getContentResolver().query(StockEntry.CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    null);
+
+            if(cursor != null){
+                int cursorCount = cursor.getCount();
+                if(cursorCount == 0){
+                    return null;
+                }
+
+                String[] symbolsList = new String[cursorCount];
+
+                int i = 0;
+                while(cursor.moveToNext()){
+                    symbolsList[i] = cursor.getString(indexSymbol);
+                    i++;
+                }
+
+                return YahooFinance.get(symbolsList);
+            }
+
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
+        }
+        return null;
+    }
+
+    private Stock fetchStockItem(String symbol) throws IOException{
+        // Query the stock from Yahoo
+        return YahooFinance.get(symbol);
+    }
+
+    private ContentValues getMainValues(Stock stock) throws IOException{
         int streak = 0;
         long prevStreakEndDate = 0;
         float prevStreakEndPrice = 0;
         float recentClose = 0;
         ContentValues values = null;
-
-        // Query the stock from Yahoo
-        Stock stock = YahooFinance.get(symbol);
 
         if(stock == null){
             Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
@@ -111,20 +190,28 @@ public class NetworkService extends IntentService {
 //                    + " Change $: " + stock.getQuote().getChange()
 //                    + " Change %: " + stock.getQuote().getChangeInPercent());
 
+            // Get history from a month ago to today!
             Calendar nowCalendar = Utility.getNewYorkCalendarInstance();
             Calendar fromCalendar = Utility.getNewYorkCalendarInstance();
-            fromCalendar.add(Calendar.DAY_OF_MONTH, -MONTH); // We want 1 month of history
+            fromCalendar.add(Calendar.DAY_OF_MONTH, -MONTH);
 
             // Download history from Yahoo
             List<HistoricalQuote> historyList =
                     stock.getHistory(fromCalendar, nowCalendar, Interval.DAILY);
 
+
             StockQuote quote = stock.getQuote();
             Calendar lastTradeDate = Utility.calendarTimeReset(quote.getLastTradeTime());
             Calendar firstHistoricalDate = Utility.calendarTimeReset(historyList.get(0).getDate());
 
-            if(!lastTradeDate.equals(firstHistoricalDate)){
-                Log.d(TAG, "quote");
+            // "nowTimeDay > lastTradeDay" will cover holidays and weekends in which history has
+            // not updated yet!
+            int nowTimeDay = nowCalendar.get(Calendar.DAY_OF_MONTH);
+            int lastTradeDay = lastTradeDate.get(Calendar.DAY_OF_MONTH);
+
+            if(!lastTradeDate.equals(firstHistoricalDate)
+                    && (nowTimeDay > lastTradeDay || !Utility.isDuringTradingHours())){
+                Log.d(TAG, "using stock price");
                 if (quote.getChange().floatValue() > 0) {
                     streak++;
 
@@ -195,7 +282,7 @@ public class NetworkService extends IntentService {
 //                    + " change percent  " + String.format("%.2f", changeDollarAndPercentage.second));
 
             values = new ContentValues();
-            values.put(StockEntry.COLUMN_SYMBOL, symbol);
+            values.put(StockEntry.COLUMN_SYMBOL, stock.getSymbol());
             values.put(StockEntry.COLUMN_FULL_NAME, stock.getName());
             values.put(StockEntry.COLUMN_RECENT_CLOSE, recentClose);
             values.put(StockEntry.COLUMN_STREAK, streak);
@@ -203,12 +290,15 @@ public class NetworkService extends IntentService {
             values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float)changeDollarAndPercentage.second);
             values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, prevStreakEndPrice);
             values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, prevStreakEndDate);
+            values.put(StockEntry.COLUMN_PREV_STREAK, 0);
+            values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, 0);
+            values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
         }
 
         return values;
     }
 
-    private ContentValues calculateDetailInfo(String symbol) throws IOException{
+    private ContentValues getDetailValues(String symbol) throws IOException{
         Cursor cursor = null;
         int historyStreak = 0;
         int prevStreak = 0;
@@ -230,6 +320,7 @@ public class NetworkService extends IntentService {
 
             long prevStreakEndDate = 0;
 
+            // Get streak end date and streak from the specified symbol
             cursor = getContentResolver().query(
                     StockContract.StockEntry.buildUri(symbol),
                     projection,
@@ -237,7 +328,7 @@ public class NetworkService extends IntentService {
                     null,
                     null);
 
-            if (cursor != null && !cursor.moveToFirst()) {
+            if (cursor != null && cursor.moveToFirst()) {
                 prevStreakEndDate = cursor.getLong(indexPrevStreakEndDate);
                 int streak = cursor.getInt(indexStreak);
 
@@ -312,6 +403,26 @@ public class NetworkService extends IntentService {
         }
 
         return values;
+    }
+
+    private ContentValues getUpdateDateValues(){
+        ContentValues values = new ContentValues();
+        values.put(UpdateDateEntry.COLUMN_TIME_IN_MILLI, System.currentTimeMillis());
+
+        return values;
+    }
+
+    private void updateUpdateDate(){
+        //Update updateDate if exists, if not insert
+        ContentValues updateDateValues = getUpdateDateValues();
+        int rowsAffected = getContentResolver().update(
+                UpdateDateEntry.CONTENT_URI,
+                updateDateValues,
+                null,
+                null);
+        if(rowsAffected == 0){
+            getContentResolver().insert(UpdateDateEntry.CONTENT_URI, updateDateValues);
+        }
     }
 
     /**

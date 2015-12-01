@@ -42,16 +42,6 @@ public class StockContract {
 
         public static final String TABLE_NAME = PATH_UPDATE_DATE;
         public static final String COLUMN_TIME_IN_MILLI = "time_in_milli";
-
-        /**
-         * This will serve as the return URI for something like inserting a row.
-         * @param id The id of the row
-         * @return The URI of the row of the recent transaction.
-         * e.g. content://com.mcochin.stockstreaks/update_date/123
-         */
-        public static Uri buildUri(long id) {
-            return ContentUris.withAppendedId(CONTENT_URI, id);
-        }
     }
 
     /** Inner class that defines the table contents of the update_date table */

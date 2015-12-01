@@ -227,9 +227,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             case ID_LOADER_STOCK_WITH_SYMBOL:
                 Log.d(TAG, "loader stock_with_symbol");
                 ListManipulator listManipulator = getListManipulator();
+                int position = listManipulator.getCount() - 1;
+
                 listManipulator.addCursorItem(data);
-                mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
-                mRecyclerView.smoothScrollToPosition(listManipulator.getCount()-1);
+                mAdapter.notifyItemInserted(position);
+                mRecyclerView.smoothScrollToPosition(position);
                 break;
         }
     }

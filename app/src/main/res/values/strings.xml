@@ -16,6 +16,8 @@
     <string name="toast_symbol_exists">Symbol already exists</string>
     <string name="toast_empty_search">Please enter a symbol</string>
     <string name="toast_no_network">No Network Connection</string>
+    <string name="toast_already_up_to_date">Already up to date</string>
+    <string name="toast_error_updating_list">Error updating list</string>
 
     <!--Content Provider-->
     <string name="unknown_uri">Unknown Uri: %1$s</string>
