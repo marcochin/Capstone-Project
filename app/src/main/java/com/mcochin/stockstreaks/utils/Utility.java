@@ -21,10 +21,10 @@ import yahoofinance.YahooFinance;
  * Utility class containing general helper methods for this application
  */
 public class Utility {
-    private static final int STOCK_MARKET_UPDATE_HOUR = 16;
-    private static final int STOCK_MARKET_UPDATE_MINUTE = 30;
-    private static final int STOCK_MARKET_OPEN_HOUR = 9;
-    private static final int STOCK_MARKET_OPEN_MINUTE = 30;
+    public static final int STOCK_MARKET_UPDATE_HOUR = 16;
+    public static final int STOCK_MARKET_UPDATE_MINUTE = 30;
+    public static final int STOCK_MARKET_OPEN_HOUR = 9;
+    public static final int STOCK_MARKET_OPEN_MINUTE = 30;
 
     /**
      * Returns true if the network is available or about to become available.
@@ -68,6 +68,29 @@ public class Utility {
         return calendar;
     }
 
+    public static Calendar getCalendarQuickSetup(int hourOfDay, int minute, int milli) {
+        Calendar calendar = getNewYorkCalendarInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.MILLISECOND, milli);
+
+        return calendar;
+    }
+
+    public static Calendar getCalendarQuickSetup(int hourOfDay, int minute, int milli, int month,
+                                           int dayOfMonth, int year) {
+        // we are changing the month, day, and year so new york instance doesn't matter
+        Calendar calendar = getNewYorkCalendarInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.MILLISECOND, milli);
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month);
+        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+        return calendar;
+    }
+
 
     /**
      * Used to determine is a symbol already exists in the database
@@ -98,16 +121,16 @@ public class Utility {
      */
     public static boolean isDuringTradingHours(){
         //9:30am
-        Calendar stockMarketOpen = getNewYorkCalendarInstance();
-        stockMarketOpen.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_OPEN_HOUR);
-        stockMarketOpen.set(Calendar.MINUTE, STOCK_MARKET_OPEN_MINUTE);
-        stockMarketOpen.set(Calendar.MILLISECOND, 0);
+        Calendar stockMarketOpen = Utility.getCalendarQuickSetup(
+                Utility.STOCK_MARKET_OPEN_HOUR,
+                Utility.STOCK_MARKET_OPEN_MINUTE,
+                0);
 
         //4:30pm
-        Calendar stockMarketClose = getNewYorkCalendarInstance();
-        stockMarketClose.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_UPDATE_HOUR);
-        stockMarketClose.set(Calendar.MINUTE, STOCK_MARKET_UPDATE_MINUTE);
-        stockMarketClose.set(Calendar.MILLISECOND, 0);
+        Calendar stockMarketClose = Utility.getCalendarQuickSetup(
+                Utility.STOCK_MARKET_UPDATE_HOUR,
+                Utility.STOCK_MARKET_UPDATE_MINUTE,
+                0);
 
         Calendar nowTime = getNewYorkCalendarInstance();
 
@@ -139,10 +162,10 @@ public class Utility {
                 }
 
                 Calendar nowTime = getNewYorkCalendarInstance();
-                Calendar fourThirtyTime = getNewYorkCalendarInstance();
-                fourThirtyTime.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_UPDATE_HOUR);
-                fourThirtyTime.set(Calendar.MINUTE, STOCK_MARKET_UPDATE_MINUTE);
-                fourThirtyTime.set(Calendar.MILLISECOND, 0);
+                Calendar fourThirtyTime = Utility.getCalendarQuickSetup(
+                        Utility.STOCK_MARKET_UPDATE_HOUR,
+                        Utility.STOCK_MARKET_UPDATE_MINUTE,
+                        0);
 
                 Calendar lastUpdateTime  = Calendar.getInstance();
                 long lastUpdateTimeInMilli  = cursor.getLong(indexTimeInMilli);
@@ -151,28 +174,28 @@ public class Utility {
                 int dayOfWeek = nowTime.get(Calendar.DAY_OF_WEEK);
 
                 // ALGORITHM:
-                // If nowTime is sunday or monday && < 4:30pm EST,
-                // check if lastUpdateTime was before last Friday @ 4:30pm EST, if so update.
-                // If nowTime < 4:30pm EST,
-                // check if lastUpdateTime was before yesterday @ 4:30pm EST, if so update.
+                // If nowTime is sunday or saturday
+                // check if lastUpdateTime was before LAST FRIDAY @ 4:30pm EST, if so update.
+                // If nowTime is monday < 4:30pm EST,
+                // check if lastUpdateTime was before LAST LAST FRIDAY @ 4:30pm EST, if so update.
+                // If nowTime(not monday) < 4:30pm EST,
+                // check if lastUpdateTime was before YESTERDAY @ 4:30pm EST, if so update.
                 // If nowTime >= 4:30pm EST,
-                // check if lastUpdateTime was before today @ 4:30pmEST, if so update.
-                // If nowTime is saturday && >= 4:30pm EST
-                // check if lastUpdateTime was before last Friday @ 4:30pmEST, if so update.
-                if(nowTime.before(fourThirtyTime)) {
-                    if ((dayOfWeek == Calendar.SUNDAY)) {
-                        // 2 days ago from Sunday is last Friday @ 4:30pm EST
-                        fourThirtyTime.add(Calendar.DAY_OF_MONTH, -2);
-                    } else if (dayOfWeek == Calendar.MONDAY) {
+                // check if lastUpdateTime was before TODAY @ 4:30pmEST, if so update.
+                if ((dayOfWeek == Calendar.SATURDAY)) {
+                    // 1 days ago from Saturday is last Friday @ 4:30pm EST
+                    fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
+
+                } else if ((dayOfWeek == Calendar.SUNDAY)) {
+                    // 2 days ago from Sunday is last Friday @ 4:30pm EST
+                    fourThirtyTime.add(Calendar.DAY_OF_MONTH, -2);
+
+                } else if(nowTime.before(fourThirtyTime)) {
+                    if (dayOfWeek == Calendar.MONDAY) {
                         // 3 days ago from Monday is last Friday @ 4:30pm EST
                         fourThirtyTime.add(Calendar.DAY_OF_MONTH, -3);
                     } else{
                         // 1 day ago is yesterday @ 4:30pm EST
-                        fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
-                    }
-                } else {
-                    if ((dayOfWeek == Calendar.SATURDAY)) {
-                        // 1 days ago from Saturday is last Friday @ 4:30pm EST
                         fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
                     }
                 }

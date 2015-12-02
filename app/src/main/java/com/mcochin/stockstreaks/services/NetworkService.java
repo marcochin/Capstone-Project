@@ -340,9 +340,9 @@ public class NetworkService extends IntentService {
                 }
             }
 
-            Calendar fromCalendar = Calendar.getInstance();
+            Calendar fromCalendar = Utility.getNewYorkCalendarInstance();
             fromCalendar.add(Calendar.DAY_OF_MONTH, -YEAR); //We want 1 year of history
-            Calendar toCalendar = Calendar.getInstance();
+            Calendar toCalendar = Utility.getNewYorkCalendarInstance();
             toCalendar.setTimeInMillis(prevStreakEndDate);
 
             Stock stock = new Stock(symbol);
