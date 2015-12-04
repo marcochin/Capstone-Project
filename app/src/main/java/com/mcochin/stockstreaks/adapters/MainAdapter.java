@@ -128,7 +128,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         mDragDropManager = dragDropManager;
         mListManipulator = listManipulator;
         mContext = context;
-//        mListManipulator.setCursor(null); //TODO remove this, only for debugging
+//        mListManipulator.setShownListCursor(null); //TODO remove this, only for debugging
 
         Resources resources = mContext.getResources();
         mListItemVerticalPadding = resources.getDimensionPixelSize(R.dimen.list_item_vertical_padding);

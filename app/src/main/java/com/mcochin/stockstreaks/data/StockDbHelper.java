@@ -12,7 +12,7 @@ import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
  */
 public class StockDbHelper extends SQLiteOpenHelper {
     // If you change the database schema, you must increment the database version.
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 1;
     static final String DATABASE_NAME = "stocks.db";
 
     public StockDbHelper(Context context) {
@@ -31,7 +31,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 // Why no AutoIncrement?
                 // Unique keys will be auto-generated in either case. AutoIncrement just makes sure
                 // the id will be greater than previous id. We don't need that feature.
-                StockEntry._ID + " INTEGER PRIMARY KEY," +
+                StockEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 StockEntry.COLUMN_SYMBOL + " TEXT NOT NULL, " +
                 StockEntry.COLUMN_FULL_NAME + " TEXT NOT NULL, " +
                 StockEntry.COLUMN_RECENT_CLOSE + " REAL, " +

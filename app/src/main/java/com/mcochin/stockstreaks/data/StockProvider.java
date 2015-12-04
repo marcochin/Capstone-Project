@@ -252,7 +252,13 @@ public class StockProvider extends ContentProvider {
 
         if(getContext()!= null) {
             mPreventItemQuery = true;
-            getContext().getContentResolver().notifyChange(StockEntry.CONTENT_URI, null);
+
+            for(ContentProviderResult cpr: results) {
+                getContext().getContentResolver().notifyChange(cpr.uri, null);
+                // TODO instead of notifyingChange send a broadcast to the list manipulator to query
+                // TODO the data and show it. THe reason is because we don't have any observers for
+                // TODO every uri.
+            }
         }
 
         return results;

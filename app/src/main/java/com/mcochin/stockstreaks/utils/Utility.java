@@ -9,8 +9,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
 
+import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
+import com.mcochin.stockstreaks.pojos.Stock;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -212,5 +214,25 @@ public class Utility {
         }
 
         return false;
+    }
+
+    public static Stock getStockFromCursor(Cursor cursor){
+        String symbol = cursor.getString(ListManipulator.INDEX_SYMBOL);
+        String fullName = cursor.getString(ListManipulator.INDEX_FULL_NAME);
+        float recentClose = cursor.getFloat(ListManipulator.INDEX_RECENT_CLOSE);
+        float changeDollar = cursor.getFloat(ListManipulator.INDEX_CHANGE_DOLLAR);
+        float changePercent = cursor.getFloat(ListManipulator.INDEX_CHANGE_PERCENT);
+        int streak = cursor.getInt(ListManipulator.INDEX_STREAK);
+
+
+        Stock stock = new Stock();
+        stock.setSymbol(symbol);
+        stock.setFullName(fullName);
+        stock.setRecentClose(recentClose);
+        stock.setChangeDollar(changeDollar);
+        stock.setChangePercent(changePercent);
+        stock.setStreak(streak);
+
+        return stock;
     }
 }

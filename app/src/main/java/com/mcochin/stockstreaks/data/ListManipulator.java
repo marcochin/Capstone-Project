@@ -1,10 +1,10 @@
 package com.mcochin.stockstreaks.data;
 
 import android.database.Cursor;
-import android.util.Log;
 
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,68 +32,61 @@ public class ListManipulator {
     };
 
     //index must match projection
-    private static final int INDEX_SYMBOL = 0;
-    private static final int INDEX_FULL_NAME = 1;
-    private static final int INDEX_RECENT_CLOSE = 2;
-    private static final int INDEX_CHANGE_DOLLAR = 3;
-    private static final int INDEX_CHANGE_PERCENT = 4;
-    private static final int INDEX_STREAK = 5;
+    public static final int INDEX_SYMBOL = 0;
+    public static final int INDEX_FULL_NAME = 1;
+    public static final int INDEX_RECENT_CLOSE = 2;
+    public static final int INDEX_CHANGE_DOLLAR = 3;
+    public static final int INDEX_CHANGE_PERCENT = 4;
+    public static final int INDEX_STREAK = 5;
 
-    private List<Stock> mData = new ArrayList<>();
+    private List<Stock> mShownList = new ArrayList<>();
+    private String[] mLoadList;
+
     private Stock mLastRemovedItem = null;
     private int mLastRemovedPosition = -1;
     private int uniqueId = 0;
 
-    public void setCursor(Cursor cursor){
+    public void setShownListCursor(Cursor shownListCursor){
     //TODO remove this, Using fruits array just to debug
 //        for(String fruit : FRUITS){
 //            Stock stock = new Stock();
 //            stock.setSymbol(fruit);
 //            stock.setId(uniqueId);
 //
-//            mData.add(stock);
+//            mShownList.add(stock);
 //            uniqueId++;
 //        }
 
-        if(cursor == null) {
-            return;
-        }
-
-        if(cursor.moveToNext()) {
+        if(shownListCursor.moveToNext()) {
             uniqueId = 0;
-            mData.clear();
+            mShownList.clear();
 
             do{
-                Stock stock = getStockFromCursor(cursor);
-                mData.add(stock);
+                Stock stock = Utility.getStockFromCursor(shownListCursor);
+                mShownList.add(stock);
                 uniqueId++;
-            }while(cursor.moveToNext());
+            }while(shownListCursor.moveToNext());
         }
+    }
+
+    public void setLoadList(String[] loadList){
+        mLoadList = loadList;
     }
 
     public int getCount(){
-        return mData.size();
-    }
-
-    public void addCursorItem(Cursor cursorItem){
-        if(cursorItem.moveToFirst()){
-            Stock stock = getStockFromCursor(cursorItem);
-            //need to set id or the added item will contain text from the previous last item
-            stock.setId(uniqueId++);
-            mData.add(stock);
-        }
+        return mShownList.size();
     }
 
     public void addItem(Stock stock){
         stock.setId(uniqueId++);
-        mData.add(stock);
+        mShownList.add(stock);
     }
 
     public Stock getItem(int index) {
         if (index < 0 || index >= getCount()) {
             throw new IndexOutOfBoundsException("index = " + index);
         }
-        return mData.get(index);
+        return mShownList.get(index);
     }
 
     public void moveItem(int fromPosition, int toPosition) {
@@ -101,25 +94,25 @@ public class ListManipulator {
             return;
         }
 
-        Stock stock = mData.remove(fromPosition);
-        mData.add(toPosition, stock);
+        Stock stock = mShownList.remove(fromPosition);
+        mShownList.add(toPosition, stock);
     }
 
     public void removeItem(int position) {
-        mLastRemovedItem = mData.remove(position);
+        mLastRemovedItem = mShownList.remove(position);
         mLastRemovedPosition = position;
     }
 
     public int undoLastRemoveItem() {
         if (mLastRemovedItem != null) {
             int insertedPosition;
-            if (mLastRemovedPosition >= 0 && mLastRemovedPosition < mData.size()) {
+            if (mLastRemovedPosition >= 0 && mLastRemovedPosition < mShownList.size()) {
                 insertedPosition = mLastRemovedPosition;
             } else {
-                insertedPosition = mData.size();
+                insertedPosition = mShownList.size();
             }
 
-            mData.add(insertedPosition, mLastRemovedItem);
+            mShownList.add(insertedPosition, mLastRemovedItem);
 
             mLastRemovedItem = null;
             mLastRemovedPosition = -1;
@@ -128,26 +121,5 @@ public class ListManipulator {
         } else {
             return -1;
         }
-    }
-
-    private Stock getStockFromCursor(Cursor cursor){
-        String symbol = cursor.getString(INDEX_SYMBOL);
-        String fullName = cursor.getString(INDEX_FULL_NAME);
-        float recentClose = cursor.getFloat(INDEX_RECENT_CLOSE);
-        float changeDollar = cursor.getFloat(INDEX_CHANGE_DOLLAR);
-        float changePercent = cursor.getFloat(INDEX_CHANGE_PERCENT);
-        int streak = cursor.getInt(INDEX_STREAK);
-
-
-        Stock stock = new Stock();
-        stock.setId(uniqueId);
-        stock.setSymbol(symbol);
-        stock.setFullName(fullName);
-        stock.setRecentClose(recentClose);
-        stock.setChangeDollar(changeDollar);
-        stock.setChangePercent(changePercent);
-        stock.setStreak(streak);
-
-        return stock;
     }
 }

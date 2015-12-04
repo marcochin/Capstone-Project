@@ -34,6 +34,8 @@ import yahoofinance.quotes.stock.StockQuote;
 public class NetworkService extends IntentService {
     private static final String TAG = NetworkService.class.getSimpleName();
     public static final String KEY_SEARCH_QUERY ="searchQuery";
+    public static final String KEY_LOAD_A_FEW_QUERY ="searchQuery";
+
     public static final String ACTION_STOCKS = "actionStocks";
     public static final String ACTION_STOCK_WITH_SYMBOL = "actionStockWithSymbol";
     public static final String ACTION_DETAILS = "actionDetails";
@@ -52,7 +54,6 @@ public class NetworkService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String query = intent.getStringExtra(KEY_SEARCH_QUERY);
 
         try {
             // check for internet
@@ -64,11 +65,13 @@ public class NetworkService extends IntentService {
 
             switch(action) {
                 case ACTION_STOCKS:
-                    performActionStocks();
+                    String[] symbols = intent.getStringArrayExtra(KEY_LOAD_A_FEW_QUERY);
+                    performActionStocks(symbols);
                     break;
 
                 case ACTION_STOCK_WITH_SYMBOL:
-                    performActionStockWithSymbol(query);
+                    String symbol = intent.getStringExtra(KEY_SEARCH_QUERY);
+                    performActionStockWithSymbol(symbol);
                     break;
             }
         } catch (IOException e) {
@@ -76,20 +79,15 @@ public class NetworkService extends IntentService {
             Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
         }
     }
-
-    private void performActionStocks() throws IOException{
-        //Check if you can update first
-        if(!Utility.canUpdateList(getContentResolver())){
-            Utility.showToast(this, getString(R.string.toast_already_up_to_date));
-            return;
-        }
-
+    private void performActionStocks(String[] symbolsToLoad) throws IOException{
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
-        Map<String, Stock> stockList = fetchStockList();
+        Map<String, Stock> stockList =  YahooFinance.get(symbolsToLoad);
         if(stockList != null) {
             for (Stock stock : stockList.values()) {
                 ContentValues values = getMainValues(stock);
+
+                // Add update operations to list
                 ops.add(ContentProviderOperation
                         .newUpdate(StockEntry.buildUri(stock.getSymbol()))
                         .withValues(values)
@@ -97,6 +95,7 @@ public class NetworkService extends IntentService {
                         .build());
             }
             try {
+                // Apply operations
                 getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
             }catch (RemoteException | OperationApplicationException e){
                 Log.e(TAG, Log.getStackTraceString(e));
@@ -107,6 +106,37 @@ public class NetworkService extends IntentService {
         }
     }
 
+
+//    private void performActionStocks() throws IOException{
+//        //Check if you can update first
+//        if(!Utility.canUpdateList(getContentResolver())){
+//            Utility.showToast(this, getString(R.string.toast_already_up_to_date));
+//            return;
+//        }
+//
+//        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+//
+//        Map<String, Stock> stockList = fetchStockList();
+//        if(stockList != null) {
+//            for (Stock stock : stockList.values()) {
+//                ContentValues values = getMainValues(stock);
+//                ops.add(ContentProviderOperation
+//                        .newUpdate(StockEntry.buildUri(stock.getSymbol()))
+//                        .withValues(values)
+//                        .withYieldAllowed(true)
+//                        .build());
+//            }
+//            try {
+//                getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
+//            }catch (RemoteException | OperationApplicationException e){
+//                Log.e(TAG, Log.getStackTraceString(e));
+//                Utility.showToast(this, getString(R.string.toast_error_updating_list));
+//            }
+//
+//            updateUpdateDate();
+//        }
+//    }
+
     private void performActionStockWithSymbol(String symbol)throws IOException{
         // Check if symbol already exists in database
         if (Utility.isEntryExist(symbol, getContentResolver())) {
@@ -114,7 +144,7 @@ public class NetworkService extends IntentService {
             return;
         }
 
-        Stock stock = fetchStockItem(symbol);
+        Stock stock = YahooFinance.get(symbol);
         ContentValues values = getMainValues(stock);
 
         if(values == null){
@@ -124,48 +154,48 @@ public class NetworkService extends IntentService {
         getContentResolver().insert(StockEntry.buildUri(symbol), values);
     }
 
-    private Map<String, Stock> fetchStockList() throws IOException{
-        Cursor cursor = null;
-        try{
-            final String[] projection = new String[] {StockEntry.COLUMN_SYMBOL};
-            final int indexSymbol = 0;
+//    private Map<String, Stock> fetchStockList() throws IOException{
+//        Cursor cursor = null;
+//        try{
+//            final String[] projection = new String[] {StockEntry.COLUMN_SYMBOL};
+//            final int indexSymbol = 0;
+//
+//            // Get all symbols in the table
+//            cursor = getContentResolver().query(StockEntry.CONTENT_URI,
+//                    projection,
+//                    null,
+//                    null,
+//                    null);
+//
+//            if(cursor != null){
+//                int cursorCount = cursor.getCount();
+//                if(cursorCount == 0){
+//                    return null;
+//                }
+//
+//                String[] symbolsList = new String[cursorCount];
+//
+//                int i = 0;
+//                while(cursor.moveToNext()){
+//                    symbolsList[i] = cursor.getString(indexSymbol);
+//                    i++;
+//                }
+//
+//                return YahooFinance.get(symbolsList);
+//            }
+//
+//        }finally {
+//            if(cursor != null){
+//                cursor.close();
+//            }
+//        }
+//        return null;
+//    }
 
-            // Get all symbols in the table
-            cursor = getContentResolver().query(StockEntry.CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    null);
-
-            if(cursor != null){
-                int cursorCount = cursor.getCount();
-                if(cursorCount == 0){
-                    return null;
-                }
-
-                String[] symbolsList = new String[cursorCount];
-
-                int i = 0;
-                while(cursor.moveToNext()){
-                    symbolsList[i] = cursor.getString(indexSymbol);
-                    i++;
-                }
-
-                return YahooFinance.get(symbolsList);
-            }
-
-        }finally {
-            if(cursor != null){
-                cursor.close();
-            }
-        }
-        return null;
-    }
-
-    private Stock fetchStockItem(String symbol) throws IOException{
-        // Query the stock from Yahoo
-        return YahooFinance.get(symbol);
-    }
+//    private Stock fetchStockItem(String symbol) throws IOException{
+//        // Query the stock from Yahoo
+//        return YahooFinance.get(symbol);
+//    }
 
     private ContentValues getMainValues(Stock stock) throws IOException{
         int streak = 0;

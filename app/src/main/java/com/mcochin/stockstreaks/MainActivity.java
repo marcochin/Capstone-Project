@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.drawable.NinePatchDrawable;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -35,7 +36,9 @@ import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
 import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
+import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.NetworkService;
+import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
@@ -114,7 +117,17 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         configureAppBarDynamicElevation();
 
         // Fetch the stock list
-        getSupportLoaderManager().initLoader(ID_LOADER_STOCKS, null, this);
+        fetchStockList();
+    }
+
+    private void fetchStockList(){
+        if(!Utility.canUpdateList(getContentResolver())) {
+            // Load the db data
+            getSupportLoaderManager().initLoader(ID_LOADER_STOCKS, null, this);
+        } else{
+            ((ListManipulatorFragment) getSupportFragmentManager()
+                    .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadList();
+        }
     }
 
     @Override // SearchBox.SearchListener
@@ -219,19 +232,24 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             case ID_LOADER_UPDATE_DATE:
                 Log.d(TAG, "loader update_date");
                 break;
+
             case ID_LOADER_STOCKS:
                 Log.d(TAG, "loader stock_list");
-                getListManipulator().setCursor(data);
+                getListManipulator().setShownListCursor(data);
                 mAdapter.notifyDataSetChanged();
                 break;
+
             case ID_LOADER_STOCK_WITH_SYMBOL:
                 Log.d(TAG, "loader stock_with_symbol");
                 ListManipulator listManipulator = getListManipulator();
-                int position = listManipulator.getCount() - 1;
 
-                listManipulator.addCursorItem(data);
+                if(data.moveToFirst()){
+                    listManipulator.addItem(Utility.getStockFromCursor(data));
+                }
+                int position = listManipulator.getCount() - 1;
                 mAdapter.notifyItemInserted(position);
                 mRecyclerView.smoothScrollToPosition(position);
+
                 break;
         }
     }
@@ -391,8 +409,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     public ListManipulator getListManipulator() {
-        Fragment fragment = getSupportFragmentManager()
-                .findFragmentByTag(ListManipulatorFragment.TAG);
-        return ((ListManipulatorFragment) fragment).getListManipulator();
+        return ((ListManipulatorFragment) getSupportFragmentManager()
+                .findFragmentByTag(ListManipulatorFragment.TAG)).getListManipulator();
     }
 }
