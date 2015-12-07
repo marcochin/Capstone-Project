@@ -28,9 +28,9 @@ public class StockDbHelper extends SQLiteOpenHelper {
 
         final String SQL_CREATE_STOCKS_TABLE = "CREATE TABLE " + StockEntry.TABLE_NAME + " (" +
 
-                // Why no AutoIncrement?
+                // Why AutoIncrement?
                 // Unique keys will be auto-generated in either case. AutoIncrement just makes sure
-                // the id will be greater than previous id. We don't need that feature.
+                // the id will be greater than previous id.
                 StockEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                 StockEntry.COLUMN_SYMBOL + " TEXT NOT NULL, " +
                 StockEntry.COLUMN_FULL_NAME + " TEXT NOT NULL, " +

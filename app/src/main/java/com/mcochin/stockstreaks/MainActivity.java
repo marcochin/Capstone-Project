@@ -4,11 +4,9 @@ import android.annotation.TargetApi;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.drawable.NinePatchDrawable;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.CursorLoader;
@@ -35,8 +33,8 @@ import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
+import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
-import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.NetworkService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
@@ -45,7 +43,8 @@ import com.quinny898.library.persistentsearch.SearchResult;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
-        SearchBox.SearchListener, MainAdapter.EventListener, SwipeRefreshLayout.OnRefreshListener{
+        SearchBox.SearchListener, MainAdapter.EventListener, SwipeRefreshLayout.OnRefreshListener,
+        ListManipulatorFragment.EventListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
     private static final int ID_LOADER_UPDATE_DATE = 0;
@@ -96,6 +95,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         }
 
+        ((ListManipulatorFragment) getSupportFragmentManager()
+                .findFragmentByTag(ListManipulatorFragment.TAG)).setEventListener(this);
+
         // Initialize our snack bar action button listener
         mSnackBarActionListener = new View.OnClickListener() {
             @Override
@@ -121,13 +123,25 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private void fetchStockList(){
+        ListManipulatorFragment listManipulatorFragment =
+                ((ListManipulatorFragment) getSupportFragmentManager()
+                        .findFragmentByTag(ListManipulatorFragment.TAG));
+
         if(!Utility.canUpdateList(getContentResolver())) {
-            // Load the db data
-            getSupportLoaderManager().initLoader(ID_LOADER_STOCKS, null, this);
+            listManipulatorFragment.initLoadAllFromDb();
         } else{
-            ((ListManipulatorFragment) getSupportFragmentManager()
-                    .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadList();
+            listManipulatorFragment.initLoadAFew();
         }
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onLoadNextFewFinished() {
+        mAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onLoadAllFromDbFinished() {// ListManipulatorFragment.EventListener
+        mAdapter.notifyDataSetChanged();
     }
 
     @Override // SearchBox.SearchListener
@@ -176,12 +190,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 null, MainActivity.this);
     }
 
-    @Override
+    @Override // SwipeRefreshLayout.OnRefreshListener
     public void onRefresh() {
-        // Start service to refresh stock list info
-        Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
-        serviceIntent.setAction(NetworkService.ACTION_STOCKS);
-        startService(serviceIntent);
+        ((ListManipulatorFragment) getSupportFragmentManager()
+                .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew();
     }
 
     @Override // LoaderManager.LoaderCallbacks<Cursor>
@@ -197,15 +209,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         null,
                         null);
                 break;
-            case ID_LOADER_STOCKS:
-                loader = new CursorLoader(
-                        MainActivity.this,
-                        StockEntry.CONTENT_URI,
-                        ListManipulator.STOCK_PROJECTION,
-                        null,
-                        null,
-                        null);
-                break;
+
             case ID_LOADER_STOCK_WITH_SYMBOL:
                 loader = new CursorLoader(
                         MainActivity.this,
@@ -228,15 +232,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         int id = loader.getId();
 
-        switch(id){
+        switch (id) {
             case ID_LOADER_UPDATE_DATE:
                 Log.d(TAG, "loader update_date");
-                break;
-
-            case ID_LOADER_STOCKS:
-                Log.d(TAG, "loader stock_list");
-                getListManipulator().setShownListCursor(data);
-                mAdapter.notifyDataSetChanged();
                 break;
 
             case ID_LOADER_STOCK_WITH_SYMBOL:

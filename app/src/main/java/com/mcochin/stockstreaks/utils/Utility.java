@@ -14,6 +14,7 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
 import com.mcochin.stockstreaks.pojos.Stock;
 
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -93,6 +94,25 @@ public class Utility {
         return calendar;
     }
 
+    public static Stock getStockFromCursor(Cursor cursor){
+        String symbol = cursor.getString(ListManipulator.INDEX_SYMBOL);
+        String fullName = cursor.getString(ListManipulator.INDEX_FULL_NAME);
+        float recentClose = cursor.getFloat(ListManipulator.INDEX_RECENT_CLOSE);
+        float changeDollar = cursor.getFloat(ListManipulator.INDEX_CHANGE_DOLLAR);
+        float changePercent = cursor.getFloat(ListManipulator.INDEX_CHANGE_PERCENT);
+        int streak = cursor.getInt(ListManipulator.INDEX_STREAK);
+
+
+        Stock stock = new Stock();
+        stock.setSymbol(symbol);
+        stock.setFullName(fullName);
+        stock.setRecentClose(recentClose);
+        stock.setChangeDollar(changeDollar);
+        stock.setChangePercent(changePercent);
+        stock.setStreak(streak);
+
+        return stock;
+    }
 
     /**
      * Used to determine is a symbol already exists in the database
@@ -114,6 +134,38 @@ public class Utility {
             }
         }
         return false;
+    }
+
+    /**
+     * Gets last update time from db
+     * @param cr
+     * @return returns the lastUpdateTime or null if not yet exist
+     */
+    public static Calendar getLastUpdateTime(ContentResolver cr) {
+        Cursor cursor = null;
+        Calendar lastUpdateTime = null;
+        try {
+            final String[] projection = {UpdateDateEntry.COLUMN_TIME_IN_MILLI};
+            final int indexTimeInMilli = 0;
+
+            cursor = cr.query(
+                    UpdateDateEntry.CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    null);
+
+            if (cursor != null && cursor.moveToFirst()) {
+                lastUpdateTime = Utility.getNewYorkCalendarInstance();
+                long updateTimeInMilli = cursor.getLong(indexTimeInMilli);
+                lastUpdateTime.setTimeInMillis(updateTimeInMilli);
+            }
+        }finally {
+            if(cursor!=null){
+                cursor.close();
+            }
+        }
+        return lastUpdateTime;
     }
 
     /**
@@ -151,88 +203,87 @@ public class Utility {
      * @return true if list can be updated, else false
      */
     public static boolean canUpdateList(ContentResolver cr){
-        final String[] updateTimeProjection = new String[]{UpdateDateEntry.COLUMN_TIME_IN_MILLI};
-        final int indexTimeInMilli = 0;
-        Cursor cursor = null;
-        try{
-            cursor = cr.query(UpdateDateEntry.CONTENT_URI, updateTimeProjection, null, null, null);
 
-            if(cursor != null){
-                //Update Time doesn't exist yet so update
-                if(!cursor.moveToFirst()){
-                    return true;
-                }
+        Calendar lastUpdateTime = getLastUpdateTime(cr);
+        if(lastUpdateTime == null) {
+            return true;
+        }
 
-                Calendar nowTime = getNewYorkCalendarInstance();
-                Calendar fourThirtyTime = Utility.getCalendarQuickSetup(
-                        Utility.STOCK_MARKET_UPDATE_HOUR,
-                        Utility.STOCK_MARKET_UPDATE_MINUTE,
-                        0);
+        Calendar nowTime = getNewYorkCalendarInstance();
+        Calendar fourThirtyTime = Utility.getCalendarQuickSetup(
+                Utility.STOCK_MARKET_UPDATE_HOUR,
+                Utility.STOCK_MARKET_UPDATE_MINUTE,
+                0);
 
-                Calendar lastUpdateTime  = Calendar.getInstance();
-                long lastUpdateTimeInMilli  = cursor.getLong(indexTimeInMilli);
-                lastUpdateTime.setTimeInMillis(lastUpdateTimeInMilli);
+        int dayOfWeek = nowTime.get(Calendar.DAY_OF_WEEK);
 
-                int dayOfWeek = nowTime.get(Calendar.DAY_OF_WEEK);
+        // ALGORITHM:
+        // Check to see if updateTime was before the last possible recent close. If so, update.
+        // If nowTime is sunday or saturday
+        // check if lastUpdateTime was before LAST FRIDAY @ 4:30pm EST, if so update.
+        // If nowTime is monday < 4:30pm EST,
+        // check if lastUpdateTime was before LAST LAST FRIDAY @ 4:30pm EST, if so update.
+        // If nowTime(not monday) < 4:30pm EST,
+        // check if lastUpdateTime was before YESTERDAY @ 4:30pm EST, if so update.
+        // If nowTime >= 4:30pm EST,
+        // check if lastUpdateTime was before TODAY @ 4:30pmEST, if so update.
+        if ((dayOfWeek == Calendar.SATURDAY)) {
+            // 1 days ago from Saturday is last Friday @ 4:30pm EST
+            fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
 
-                // ALGORITHM:
-                // If nowTime is sunday or saturday
-                // check if lastUpdateTime was before LAST FRIDAY @ 4:30pm EST, if so update.
-                // If nowTime is monday < 4:30pm EST,
-                // check if lastUpdateTime was before LAST LAST FRIDAY @ 4:30pm EST, if so update.
-                // If nowTime(not monday) < 4:30pm EST,
-                // check if lastUpdateTime was before YESTERDAY @ 4:30pm EST, if so update.
-                // If nowTime >= 4:30pm EST,
-                // check if lastUpdateTime was before TODAY @ 4:30pmEST, if so update.
-                if ((dayOfWeek == Calendar.SATURDAY)) {
-                    // 1 days ago from Saturday is last Friday @ 4:30pm EST
-                    fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
+        } else if ((dayOfWeek == Calendar.SUNDAY)) {
+            // 2 days ago from Sunday is last Friday @ 4:30pm EST
+            fourThirtyTime.add(Calendar.DAY_OF_MONTH, -2);
 
-                } else if ((dayOfWeek == Calendar.SUNDAY)) {
-                    // 2 days ago from Sunday is last Friday @ 4:30pm EST
-                    fourThirtyTime.add(Calendar.DAY_OF_MONTH, -2);
-
-                } else if(nowTime.before(fourThirtyTime)) {
-                    if (dayOfWeek == Calendar.MONDAY) {
-                        // 3 days ago from Monday is last Friday @ 4:30pm EST
-                        fourThirtyTime.add(Calendar.DAY_OF_MONTH, -3);
-                    } else{
-                        // 1 day ago is yesterday @ 4:30pm EST
-                        fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
-                    }
-                }
-
-                //if lastUpdateTime is before the recentClose time, then update.
-                if(lastUpdateTime.before(fourThirtyTime)){
-                    return true;
-                }
+        } else if(nowTime.before(fourThirtyTime)) {
+            if (dayOfWeek == Calendar.MONDAY) {
+                // 3 days ago from Monday is last Friday @ 4:30pm EST
+                fourThirtyTime.add(Calendar.DAY_OF_MONTH, -3);
+            } else{
+                // 1 day ago is yesterday @ 4:30pm EST
+                fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
             }
-        }finally {
-            if(cursor != null){
-                cursor.close();
-            }
+        }
+
+        //if lastUpdateTime is before the recentClose time, then update.
+        if(lastUpdateTime.before(fourThirtyTime)){
+            return true;
         }
 
         return false;
     }
 
-    public static Stock getStockFromCursor(Cursor cursor){
-        String symbol = cursor.getString(ListManipulator.INDEX_SYMBOL);
-        String fullName = cursor.getString(ListManipulator.INDEX_FULL_NAME);
-        float recentClose = cursor.getFloat(ListManipulator.INDEX_RECENT_CLOSE);
-        float changeDollar = cursor.getFloat(ListManipulator.INDEX_CHANGE_DOLLAR);
-        float changePercent = cursor.getFloat(ListManipulator.INDEX_CHANGE_PERCENT);
-        int streak = cursor.getInt(ListManipulator.INDEX_STREAK);
+    /**
+     * @return true is should load from non latest data, else false
+     * @throws IOException
+     */
+    public static boolean shouldLoadAFewNonLatest(ContentResolver cr) throws IOException{
 
+        yahoofinance.Stock stock = YahooFinance.get("GOOG");
+        Calendar recentCloseTime = stock.getQuote().getLastTradeTime();
+        recentCloseTime.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_UPDATE_HOUR);
+        recentCloseTime.set(Calendar.MINUTE, STOCK_MARKET_UPDATE_MINUTE);
+        recentCloseTime.set(Calendar.MILLISECOND, 0);
 
-        Stock stock = new Stock();
-        stock.setSymbol(symbol);
-        stock.setFullName(fullName);
-        stock.setRecentClose(recentClose);
-        stock.setChangeDollar(changeDollar);
-        stock.setChangePercent(changePercent);
-        stock.setStreak(streak);
+        Calendar lastUpdateTime = getLastUpdateTime(cr);
+        if(lastUpdateTime == null){
+            return false;
+        }
+        //If lastUpdateTime is before the most recent close time then get the non latest
+        return lastUpdateTime.before(recentCloseTime);
+    }
 
-        return stock;
+    /**
+     * Determines if the calendar is before 4:30pm of its respective day or not.
+     * @param calendar calendar to test
+     * @return
+     */
+    public static boolean isBeforeFourThirty(Calendar calendar){
+        Calendar fourThirtyTime = getNewYorkCalendarInstance();
+        fourThirtyTime.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_UPDATE_HOUR);
+        fourThirtyTime.set(Calendar.MINUTE, STOCK_MARKET_UPDATE_MINUTE);
+        fourThirtyTime.set(Calendar.MILLISECOND, 0);
+
+        return calendar.before(fourThirtyTime);
     }
 }

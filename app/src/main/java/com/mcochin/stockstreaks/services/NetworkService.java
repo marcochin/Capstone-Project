@@ -34,9 +34,9 @@ import yahoofinance.quotes.stock.StockQuote;
 public class NetworkService extends IntentService {
     private static final String TAG = NetworkService.class.getSimpleName();
     public static final String KEY_SEARCH_QUERY ="searchQuery";
-    public static final String KEY_LOAD_A_FEW_QUERY ="searchQuery";
+    public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
 
-    public static final String ACTION_STOCKS = "actionStocks";
+    public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_STOCK_WITH_SYMBOL = "actionStockWithSymbol";
     public static final String ACTION_DETAILS = "actionDetails";
 
@@ -64,10 +64,15 @@ public class NetworkService extends IntentService {
             String action = intent.getAction();
 
             switch(action) {
-                case ACTION_STOCKS:
+                case ACTION_LOAD_A_FEW: {
                     String[] symbols = intent.getStringArrayExtra(KEY_LOAD_A_FEW_QUERY);
-                    performActionStocks(symbols);
+                    if(Utility.shouldLoadAFewNonLatest(getContentResolver())){
+                        performActionLoadAFewNonLatest(symbols);
+                    } else {
+                        performActionLoadAFew(symbols);
+                    }
                     break;
+                }
 
                 case ACTION_STOCK_WITH_SYMBOL:
                     String symbol = intent.getStringExtra(KEY_SEARCH_QUERY);
@@ -79,7 +84,8 @@ public class NetworkService extends IntentService {
             Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
         }
     }
-    private void performActionStocks(String[] symbolsToLoad) throws IOException{
+
+    private void performActionLoadAFew(String[] symbolsToLoad) throws IOException{
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
         Map<String, Stock> stockList =  YahooFinance.get(symbolsToLoad);
@@ -101,41 +107,29 @@ public class NetworkService extends IntentService {
                 Log.e(TAG, Log.getStackTraceString(e));
                 Utility.showToast(this, getString(R.string.toast_error_updating_list));
             }
-
-            updateUpdateDate();
         }
+
+        //updateUpdateDate();
     }
 
+    private void performActionLoadAFewNonLatest(String[] symbolsToLoad) throws IOException {
+        Calendar lastUpdateTime = Utility.getLastUpdateTime(getContentResolver());
 
-//    private void performActionStocks() throws IOException{
-//        //Check if you can update first
-//        if(!Utility.canUpdateList(getContentResolver())){
-//            Utility.showToast(this, getString(R.string.toast_already_up_to_date));
-//            return;
-//        }
-//
-//        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-//
-//        Map<String, Stock> stockList = fetchStockList();
-//        if(stockList != null) {
-//            for (Stock stock : stockList.values()) {
-//                ContentValues values = getMainValues(stock);
-//                ops.add(ContentProviderOperation
-//                        .newUpdate(StockEntry.buildUri(stock.getSymbol()))
-//                        .withValues(values)
-//                        .withYieldAllowed(true)
-//                        .build());
-//            }
-//            try {
-//                getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
-//            }catch (RemoteException | OperationApplicationException e){
-//                Log.e(TAG, Log.getStackTraceString(e));
-//                Utility.showToast(this, getString(R.string.toast_error_updating_list));
-//            }
-//
-//            updateUpdateDate();
-//        }
-//    }
+        if(Utility.isBeforeFourThirty(lastUpdateTime)){
+            lastUpdateTime.add(Calendar.DAY_OF_MONTH, -1);
+        }
+
+        // Change symbols array to a stock array
+        Stock[] stocks = new Stock[symbolsToLoad.length];
+        for(int i = 0; i < symbolsToLoad.length; i++){
+            Stock stock = new Stock(symbolsToLoad[i]);
+            stocks[i] = stock;
+        }
+
+        for(Stock stock: stocks){
+
+        }
+    }
 
     private void performActionStockWithSymbol(String symbol)throws IOException{
         // Check if symbol already exists in database
@@ -154,49 +148,6 @@ public class NetworkService extends IntentService {
         getContentResolver().insert(StockEntry.buildUri(symbol), values);
     }
 
-//    private Map<String, Stock> fetchStockList() throws IOException{
-//        Cursor cursor = null;
-//        try{
-//            final String[] projection = new String[] {StockEntry.COLUMN_SYMBOL};
-//            final int indexSymbol = 0;
-//
-//            // Get all symbols in the table
-//            cursor = getContentResolver().query(StockEntry.CONTENT_URI,
-//                    projection,
-//                    null,
-//                    null,
-//                    null);
-//
-//            if(cursor != null){
-//                int cursorCount = cursor.getCount();
-//                if(cursorCount == 0){
-//                    return null;
-//                }
-//
-//                String[] symbolsList = new String[cursorCount];
-//
-//                int i = 0;
-//                while(cursor.moveToNext()){
-//                    symbolsList[i] = cursor.getString(indexSymbol);
-//                    i++;
-//                }
-//
-//                return YahooFinance.get(symbolsList);
-//            }
-//
-//        }finally {
-//            if(cursor != null){
-//                cursor.close();
-//            }
-//        }
-//        return null;
-//    }
-
-//    private Stock fetchStockItem(String symbol) throws IOException{
-//        // Query the stock from Yahoo
-//        return YahooFinance.get(symbol);
-//    }
-
     private ContentValues getMainValues(Stock stock) throws IOException{
         int streak = 0;
         long prevStreakEndDate = 0;
@@ -210,16 +161,8 @@ public class NetworkService extends IntentService {
         } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getStockExchange().equals(NASDAQ)
                 && !stock.getStockExchange().equals(NYSE))) {
             Utility.showToast(this, getString(R.string.toast_symbol_not_found));
-        } else{
-//            Log.d(TAG, "Symbol: " + stock.getSymbol()
-//                    + " Full name: " + stock.getName()
-//                    + " Exchange: " + stock.getStockExchange()
-//                    + " Prev. Close: " + stock.getQuote().getPreviousClose()
-//                    + " Open: " + stock.getQuote().getOpen()
-//                    + " Current Stock Price: " + stock.getQuote().getPrice()
-//                    + " Change $: " + stock.getQuote().getChange()
-//                    + " Change %: " + stock.getQuote().getChangeInPercent());
 
+        } else{
             // Get history from a month ago to today!
             Calendar nowCalendar = Utility.getNewYorkCalendarInstance();
             Calendar fromCalendar = Utility.getNewYorkCalendarInstance();
@@ -239,6 +182,7 @@ public class NetworkService extends IntentService {
             int nowTimeDay = nowCalendar.get(Calendar.DAY_OF_MONTH);
             int lastTradeDay = lastTradeDate.get(Calendar.DAY_OF_MONTH);
 
+            // Determine if we should use stock price
             if(!lastTradeDate.equals(firstHistoricalDate)
                     && (nowTimeDay > lastTradeDay || !Utility.isDuringTradingHours())){
                 Log.d(TAG, "using stock price");
@@ -253,14 +197,6 @@ public class NetworkService extends IntentService {
 
             for (int i = 0; i < historyList.size(); i++) {
                 HistoricalQuote history = historyList.get(i);
-
-//                Log.d(TAG, "Date: " + history.getDate().get(Calendar.MONTH)
-//                        + history.getDate().get(Calendar.DAY_OF_MONTH)
-//                        + history.getDate().get(Calendar.YEAR)
-//                        + " Hour: " + history.getDate().get(Calendar.HOUR_OF_DAY)
-//                        + " Minute: " + history.getDate().get(Calendar.MINUTE)
-//                        + " Close: " + history.getClose()
-//                        + " Adjusted close: " + history.getAdjClose());
 
                 if (recentClose == 0) {
                     // Retrieves most recent close if not already retrieved.
@@ -300,16 +236,9 @@ public class NetworkService extends IntentService {
                 }
             }
 
-//            Log.d(TAG, "streak " + streak
-//                    + " recentClose " + recentClose
-//                    + " prevStreakEndDate " + prevStreakEndDate
-//                    + " prevStreakEndPrice " + prevStreakEndPrice);
-
+            // Get change Dollar and change Percentage
             Pair changeDollarAndPercentage =
                     calculateChange(recentClose, prevStreakEndPrice);
-
-//            Log.d(TAG, "change dollar " + String.format("%.2f", changeDollarAndPercentage.first)
-//                    + " change percent  " + String.format("%.2f", changeDollarAndPercentage.second));
 
             values = new ContentValues();
             values.put(StockEntry.COLUMN_SYMBOL, stock.getSymbol());
@@ -326,6 +255,56 @@ public class NetworkService extends IntentService {
         }
 
         return values;
+    }
+
+    private MainHistory loopThroughMainHistory(List<HistoricalQuote> historyList, float recentClose,
+                                        int streak, long prevStreakEndDate, float prevStreakEndPrice){
+        for (int i = 0; i < historyList.size(); i++) {
+            HistoricalQuote history = historyList.get(i);
+
+            if (recentClose == 0) {
+                // Retrieves most recent close if not already retrieved.
+                recentClose = history.getAdjClose().floatValue();
+            }
+
+            float historyAdjClose = history.getAdjClose().floatValue();
+            boolean shouldBreak = false;
+
+            // Need to compare history adj close to its previous history's adj close.
+            // http://budgeting.thenest.com/adjusted-closing-price-vs-closing-price-32457.html
+            // If its the last day in the history we need to skip it because we have
+            // nothing to compare it to.
+            if (i + 1 < historyList.size()) {
+                float prevHistoryAdjClose = historyList.get(i + 1).getAdjClose().floatValue();
+
+                if (historyAdjClose > prevHistoryAdjClose) {
+                    // Down streak broken so break;
+                    if (streak < 0) {
+                        shouldBreak = true;
+                    } else {
+                        streak++;
+                    }
+                } else if (historyAdjClose < prevHistoryAdjClose) {
+                    // Up streak broken so break;
+                    if (streak > 0) {
+                        shouldBreak = true;
+                    } else {
+                        streak--;
+                    }
+                }
+            }
+            if (shouldBreak) {
+                prevStreakEndDate = history.getDate().getTimeInMillis();
+                prevStreakEndPrice = historyAdjClose;
+                break;
+            }
+        }
+
+        // Get change Dollar and change Percentage
+        Pair changeDollarAndPercentage =
+                calculateChange(recentClose, prevStreakEndPrice);
+
+        return null;
     }
 
     private ContentValues getDetailValues(String symbol) throws IOException{
@@ -348,7 +327,6 @@ public class NetworkService extends IntentService {
             final int indexPrevStreakEndDate = 0;
             final int indexStreak = 1;
 
-            long prevStreakEndDate = 0;
 
             // Get streak end date and streak from the specified symbol
             cursor = getContentResolver().query(
@@ -357,6 +335,8 @@ public class NetworkService extends IntentService {
                     null,
                     null,
                     null);
+
+            long prevStreakEndDate = 0;
 
             if (cursor != null && cursor.moveToFirst()) {
                 prevStreakEndDate = cursor.getLong(indexPrevStreakEndDate);
@@ -435,23 +415,18 @@ public class NetworkService extends IntentService {
         return values;
     }
 
-    private ContentValues getUpdateDateValues(){
+    private void updateUpdateDate(){
+        //Update updateDate if exists, if not insert
         ContentValues values = new ContentValues();
         values.put(UpdateDateEntry.COLUMN_TIME_IN_MILLI, System.currentTimeMillis());
 
-        return values;
-    }
-
-    private void updateUpdateDate(){
-        //Update updateDate if exists, if not insert
-        ContentValues updateDateValues = getUpdateDateValues();
         int rowsAffected = getContentResolver().update(
                 UpdateDateEntry.CONTENT_URI,
-                updateDateValues,
+                values,
                 null,
                 null);
         if(rowsAffected == 0){
-            getContentResolver().insert(UpdateDateEntry.CONTENT_URI, updateDateValues);
+            getContentResolver().insert(UpdateDateEntry.CONTENT_URI, values);
         }
     }
 
@@ -471,4 +446,120 @@ public class NetworkService extends IntentService {
 
         return new Pair<>(changeDollar, changePercent);
     }
+
+    private class MainHistory{
+        float mRecentClose;
+        long mPrevStreakEndDate;
+        float mPrevStreakEndPrice;
+        int mStreak;
+        float mChangeDollar;
+        float mChangePercent;
+
+        public MainHistory(float recentClose, int streak, long prevStreakEndDate,
+                           float prevStreakEndPrice, float changeDollar, float changePercent){
+            mRecentClose = recentClose;
+            mStreak = streak;
+            mPrevStreakEndDate = prevStreakEndDate;
+            mPrevStreakEndPrice = prevStreakEndPrice;
+        }
+
+        public float getRecentClose() {
+            return mRecentClose;
+        }
+
+        public float getPrevStreakEndPrice() {
+            return mPrevStreakEndPrice;
+        }
+
+        public long getPrevStreakEndDate() {
+            return mPrevStreakEndDate;
+        }
+
+        public int getStreak() {
+            return mStreak;
+        }
+
+        public float getChangePercent() {
+            return mChangePercent;
+        }
+
+        public float getChangeDollar() {
+            return mChangeDollar;
+        }
+    }
+
 }
+
+
+//    private void performActionLoadAFew() throws IOException{
+//        //Check if you can update first
+//        if(!Utility.canUpdateList(getContentResolver())){
+//            Utility.showToast(this, getString(R.string.toast_already_up_to_date));
+//            return;
+//        }
+//
+//        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+//
+//        Map<String, Stock> stockList = fetchStockList();
+//        if(stockList != null) {
+//            for (Stock stock : stockList.values()) {
+//                ContentValues values = getMainValues(stock);
+//                ops.add(ContentProviderOperation
+//                        .newUpdate(StockEntry.buildUri(stock.getSymbol()))
+//                        .withValues(values)
+//                        .withYieldAllowed(true)
+//                        .build());
+//            }
+//            try {
+//                getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
+//            }catch (RemoteException | OperationApplicationException e){
+//                Log.e(TAG, Log.getStackTraceString(e));
+//                Utility.showToast(this, getString(R.string.toast_error_updating_list));
+//            }
+//
+//            updateUpdateDate();
+//        }
+//    }
+
+//    private Map<String, Stock> fetchStockList() throws IOException{
+//        Cursor cursor = null;
+//        try{
+//            final String[] projection = new String[] {StockEntry.COLUMN_SYMBOL};
+//            final int indexSymbol = 0;
+//
+//            // Get all symbols in the table
+//            cursor = getContentResolver().query(StockEntry.CONTENT_URI,
+//                    projection,
+//                    null,
+//                    null,
+//                    null);
+//
+//            if(cursor != null){
+//                int cursorCount = cursor.getCount();
+//                if(cursorCount == 0){
+//                    return null;
+//                }
+//
+//                String[] symbolsList = new String[cursorCount];
+//
+//                int i = 0;
+//                while(cursor.moveToNext()){
+//                    symbolsList[i] = cursor.getString(indexSymbol);
+//                    i++;
+//                }
+//
+//                return YahooFinance.get(symbolsList);
+//            }
+//
+//        }finally {
+//            if(cursor != null){
+//                cursor.close();
+//            }
+//        }
+//        return null;
+//    }
+
+//    private Stock fetchStockItem(String symbol) throws IOException{
+//        // Query the stock from Yahoo
+//        return YahooFinance.get(symbol);
+//    }

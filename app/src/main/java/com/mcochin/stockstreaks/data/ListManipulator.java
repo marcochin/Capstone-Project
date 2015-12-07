@@ -1,10 +1,7 @@
 package com.mcochin.stockstreaks.data;
 
-import android.database.Cursor;
-
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +18,8 @@ public class ListManipulator {
 //            "Olive", "Pear", "Sugar-apple", "Orange", "Strawberry", "Pineapple",
 //            "Watermelon", "Grape", "PassionFruit", "DragonFruit", "Honey-dew",
 //            "Cantaloupe", "Papaya"};
+
+    public static final int A_FEW = 20;
 
     public static final String[] STOCK_PROJECTION = new String[]{
             StockEntry.COLUMN_SYMBOL,
@@ -39,54 +38,41 @@ public class ListManipulator {
     public static final int INDEX_CHANGE_PERCENT = 4;
     public static final int INDEX_STREAK = 5;
 
-    private List<Stock> mShownList = new ArrayList<>();
     private String[] mLoadList;
+    private int mLoadListPositionBookmark;
 
+    private List<Stock> mShownList = new ArrayList<>();
     private Stock mLastRemovedItem = null;
     private int mLastRemovedPosition = -1;
-    private int uniqueId = 0;
+    private int mUniqueId = 0;
 
-    public void setShownListCursor(Cursor shownListCursor){
+    public void setShownList(ArrayList<Stock> shownList){
     //TODO remove this, Using fruits array just to debug
 //        for(String fruit : FRUITS){
 //            Stock stock = new Stock();
 //            stock.setSymbol(fruit);
-//            stock.setId(uniqueId);
+//            stock.setId(mUniqueId);
 //
 //            mShownList.add(stock);
-//            uniqueId++;
+//            mUniqueId++;
 //        }
+        mUniqueId = 0;
+        mShownList = shownList;
 
-        if(shownListCursor.moveToNext()) {
-            uniqueId = 0;
-            mShownList.clear();
-
-            do{
-                Stock stock = Utility.getStockFromCursor(shownListCursor);
-                mShownList.add(stock);
-                uniqueId++;
-            }while(shownListCursor.moveToNext());
-        }
     }
 
     public void setLoadList(String[] loadList){
+        mLoadListPositionBookmark = 0;
         mLoadList = loadList;
     }
 
-    public int getCount(){
-        return mShownList.size();
+    public int generateUniqueId(){
+        return mUniqueId++;
     }
 
     public void addItem(Stock stock){
-        stock.setId(uniqueId++);
+        stock.setId(mUniqueId++);
         mShownList.add(stock);
-    }
-
-    public Stock getItem(int index) {
-        if (index < 0 || index >= getCount()) {
-            throw new IndexOutOfBoundsException("index = " + index);
-        }
-        return mShownList.get(index);
     }
 
     public void moveItem(int fromPosition, int toPosition) {
@@ -121,5 +107,48 @@ public class ListManipulator {
         } else {
             return -1;
         }
+    }
+
+    public int getCount(){
+        return mShownList.size();
+    }
+
+    public Stock getItem(int index) {
+        if (index < 0 || index >= getCount()) {
+            throw new IndexOutOfBoundsException("index = " + index);
+        }
+        return mShownList.get(index);
+    }
+
+    public String[] getAFewToLoad(){
+        if(!canLoadAFew()){
+            return null;
+        }
+
+        String [] nextFewToLoad;
+        boolean loadAFew;
+
+        int whatsLeftToLoad = mLoadList.length - mLoadListPositionBookmark;
+        if (whatsLeftToLoad > A_FEW){
+            nextFewToLoad = new String[A_FEW];
+            loadAFew = true;
+        } else{
+            nextFewToLoad = new String[whatsLeftToLoad];
+            loadAFew = false;
+        }
+
+        for(int i = 0; i < (loadAFew? A_FEW: whatsLeftToLoad); i++){
+            nextFewToLoad[i] = mLoadList[mLoadListPositionBookmark];
+            mLoadListPositionBookmark++;
+        }
+        return nextFewToLoad;
+    }
+
+    public boolean canLoadAFew(){
+        if(mLoadList != null) {
+            return mLoadListPositionBookmark < mLoadList.length;
+        }
+
+        return false;
     }
 }

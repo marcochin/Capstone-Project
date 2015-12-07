@@ -37,6 +37,9 @@ public class StockProvider extends ContentProvider {
     private static final String STOCK_SYMBOL_SELECTION =
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_SYMBOL + " = ?";
 
+    // We want last db item to be on top of the list
+    public static final String ORDER_BY_ID_DESC = "ORDER BY " + StockContract.StockEntry._ID + " DESC";
+
     /**
      * This boolean "prevents" a directory uri from being notified, if only an item was notified.
      */
