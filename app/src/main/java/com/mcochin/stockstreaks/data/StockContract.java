@@ -24,25 +24,7 @@ public class StockContract {
     /* Possible paths (appended to base content URI for possible URI's)
     For instance, content://com.mcochin.stockstreaks/stocks/ is a valid path for
     looking at stocks data. Simply put, these should be names of your tables! */
-    public static final String PATH_UPDATE_DATE = "update_date";
     public static final String PATH_STOCKS = "stocks";
-
-    /** Inner class that defines the table contents of the update_date table */
-    public static final class UpdateDateEntry implements BaseColumns {
-
-        // content://com.mcochin.stockstreaks/update_date
-        public static final Uri CONTENT_URI =
-                BASE_CONTENT_URI.buildUpon().appendPath(PATH_UPDATE_DATE).build();
-
-        // There will only be one item in the update date table and that is the time_in_milli
-        // "vnd.android.cursor.item/com.mcochin.stockstreaks/update_date
-        public static final String CONTENT_DIR_TYPE =
-                ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
-                        + CONTENT_AUTHORITY + "/" + PATH_UPDATE_DATE;
-
-        public static final String TABLE_NAME = PATH_UPDATE_DATE;
-        public static final String COLUMN_TIME_IN_MILLI = "time_in_milli";
-    }
 
     /** Inner class that defines the table contents of the update_date table */
     public static final class StockEntry implements BaseColumns {
@@ -53,13 +35,11 @@ public class StockContract {
 
         // "vnd.android.cursor.dir/com.mcochin.stockstreaks/stocks
         public static final String CONTENT_DIR_TYPE =
-                ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
-                        + CONTENT_AUTHORITY + "/" + PATH_STOCKS;
+                ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_STOCKS;
 
         // "vnd.android.cursor.item/com.mcochin.stockstreaks/stocks
         public static final String CONTENT_ITEM_TYPE =
-                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/"
-                        + CONTENT_AUTHORITY + "/" + PATH_STOCKS;
+                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_STOCKS;
 
         public static final String TABLE_NAME = PATH_STOCKS;
         public static final String COLUMN_SYMBOL = "symbol";
@@ -73,6 +53,7 @@ public class StockContract {
         public static final String COLUMN_PREV_STREAK= "prev_streak";
         public static final String COLUMN_STREAK_YEAR_HIGH = "streak_year_high";
         public static final String COLUMN_STREAK_YEAR_LOW = "streak_year_low";
+        public static final String COLUMN_UPDATE_TIME_IN_MILLI = "update_time_in_milli";
 
         /**
          * This will serve as the return URI for something like inserting a row.

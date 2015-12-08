@@ -1,7 +1,10 @@
 package com.mcochin.stockstreaks.data;
 
+import android.database.Cursor;
+
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +49,15 @@ public class ListManipulator {
     private int mLastRemovedPosition = -1;
     private int mUniqueId = 0;
 
-    public void setShownList(ArrayList<Stock> shownList){
+    public int generateUniqueId(){
+        return mUniqueId++;
+    }
+
+    public void syncLoadListBookmarkToShownList(){
+        mLoadListPositionBookmark = mShownList.size();
+    }
+
+    public void setShownListCursor(Cursor cursor){
     //TODO remove this, Using fruits array just to debug
 //        for(String fruit : FRUITS){
 //            Stock stock = new Stock();
@@ -57,21 +68,21 @@ public class ListManipulator {
 //            mUniqueId++;
 //        }
         mUniqueId = 0;
-        mShownList = shownList;
 
+        while(cursor.moveToNext()) {
+            Stock stock = Utility.getStockFromCursor(cursor);
+            stock.setId(generateUniqueId());
+            mShownList.add(stock);
+        }
     }
 
-    public void setLoadList(String[] loadList){
+    public void setLoadList(String[] loadList) {
         mLoadListPositionBookmark = 0;
         mLoadList = loadList;
     }
 
-    public int generateUniqueId(){
-        return mUniqueId++;
-    }
-
     public void addItem(Stock stock){
-        stock.setId(mUniqueId++);
+        stock.setId(generateUniqueId());
         mShownList.add(stock);
     }
 
@@ -129,7 +140,7 @@ public class ListManipulator {
         boolean loadAFew;
 
         int whatsLeftToLoad = mLoadList.length - mLoadListPositionBookmark;
-        if (whatsLeftToLoad > A_FEW){
+        if (whatsLeftToLoad >= A_FEW){
             nextFewToLoad = new String[A_FEW];
             loadAFew = true;
         } else{

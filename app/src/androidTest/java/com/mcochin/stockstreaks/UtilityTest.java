@@ -182,4 +182,12 @@ public class UtilityTest extends ActivityInstrumentationTestCase2<MainActivity> 
         }
         return false;
     }
+
+    public void testCalendarTimeInMilli() {
+        Calendar newYork = Utility.getNewYorkCalendarInstance();
+        Calendar myTime = Calendar.getInstance();
+
+        Log.d("Time", "TimeInMilli: newYOrk " + newYork.getTimeInMillis() + " " + newYork.get(Calendar.HOUR_OF_DAY));
+        Log.d("Time", "TimeInMilli: myTime " + myTime.getTimeInMillis()+ " " + myTime.get(Calendar.HOUR_OF_DAY));
+    }
 }

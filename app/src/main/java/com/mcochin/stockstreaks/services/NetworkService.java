@@ -13,7 +13,6 @@ import android.util.Log;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
@@ -91,7 +90,7 @@ public class NetworkService extends IntentService {
         Map<String, Stock> stockList =  YahooFinance.get(symbolsToLoad);
         if(stockList != null) {
             for (Stock stock : stockList.values()) {
-                ContentValues values = getMainValues(stock);
+                ContentValues values = getLatestMainValues(stock);
 
                 // Add update operations to list
                 ops.add(ContentProviderOperation
@@ -113,11 +112,7 @@ public class NetworkService extends IntentService {
     }
 
     private void performActionLoadAFewNonLatest(String[] symbolsToLoad) throws IOException {
-        Calendar lastUpdateTime = Utility.getLastUpdateTime(getContentResolver());
-
-        if(Utility.isBeforeFourThirty(lastUpdateTime)){
-            lastUpdateTime.add(Calendar.DAY_OF_MONTH, -1);
-        }
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
         // Change symbols array to a stock array
         Stock[] stocks = new Stock[symbolsToLoad.length];
@@ -126,8 +121,46 @@ public class NetworkService extends IntentService {
             stocks[i] = stock;
         }
 
-        for(Stock stock: stocks){
+        // Create "To" Time
+        Calendar lastUpdateTime = Utility.getLastUpdateTime(getContentResolver());
+        if(Utility.isBeforeFourThirty(lastUpdateTime)){
+            lastUpdateTime.add(Calendar.DAY_OF_MONTH, -1);
+        }
 
+        // Create "From" Time
+        Calendar fromTime = Utility.getNewYorkCalendarInstance();
+        fromTime.setTimeInMillis(lastUpdateTime.getTimeInMillis());
+        fromTime.add(Calendar.DAY_OF_MONTH, -MONTH);
+
+        //Loop through stocks to get their history to calculate main values
+        for(Stock stock: stocks){
+            List<HistoricalQuote> historyList = stock.getHistory(fromTime, lastUpdateTime, Interval.DAILY);
+            MainHistoryHolder mainHistoryHolder = loopThroughMainHistory(historyList, 0, 0);
+            // Create ContentValues and put in ops
+            ContentValues values = new ContentValues();
+            values.put(StockEntry.COLUMN_RECENT_CLOSE, mainHistoryHolder.getRecentClose());
+            values.put(StockEntry.COLUMN_STREAK, mainHistoryHolder.getStreak());
+            values.put(StockEntry.COLUMN_CHANGE_DOLLAR, mainHistoryHolder.getChangeDollar());
+            values.put(StockEntry.COLUMN_CHANGE_PERCENT, mainHistoryHolder.getChangePercent());
+            values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, mainHistoryHolder.getPrevStreakEndPrice());
+            values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, mainHistoryHolder.getPrevStreakEndDate());
+            values.put(StockEntry.COLUMN_PREV_STREAK, 0);
+            values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, 0);
+            values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
+
+            // Add update operations to list
+            ops.add(ContentProviderOperation
+                    .newUpdate(StockEntry.buildUri(stock.getSymbol()))
+                    .withValues(values)
+                    .withYieldAllowed(true)
+                    .build());
+        }
+        try {
+            // Apply operations
+            getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
+        }catch (RemoteException | OperationApplicationException e){
+            Log.e(TAG, Log.getStackTraceString(e));
+            Utility.showToast(this, getString(R.string.toast_error_updating_list));
         }
     }
 
@@ -139,7 +172,7 @@ public class NetworkService extends IntentService {
         }
 
         Stock stock = YahooFinance.get(symbol);
-        ContentValues values = getMainValues(stock);
+        ContentValues values = getLatestMainValues(stock);
 
         if(values == null){
             return;
@@ -148,10 +181,8 @@ public class NetworkService extends IntentService {
         getContentResolver().insert(StockEntry.buildUri(symbol), values);
     }
 
-    private ContentValues getMainValues(Stock stock) throws IOException{
+    private ContentValues getLatestMainValues(Stock stock) throws IOException{
         int streak = 0;
-        long prevStreakEndDate = 0;
-        float prevStreakEndPrice = 0;
         float recentClose = 0;
         ContentValues values = null;
 
@@ -164,26 +195,26 @@ public class NetworkService extends IntentService {
 
         } else{
             // Get history from a month ago to today!
-            Calendar nowCalendar = Utility.getNewYorkCalendarInstance();
-            Calendar fromCalendar = Utility.getNewYorkCalendarInstance();
-            fromCalendar.add(Calendar.DAY_OF_MONTH, -MONTH);
+            Calendar nowTime = Utility.getNewYorkCalendarInstance();
+            Calendar fromTime = Utility.getNewYorkCalendarInstance();
+            fromTime.add(Calendar.DAY_OF_MONTH, -MONTH);
 
             // Download history from Yahoo
             List<HistoricalQuote> historyList =
-                    stock.getHistory(fromCalendar, nowCalendar, Interval.DAILY);
+                    stock.getHistory(fromTime, nowTime, Interval.DAILY);
 
 
             StockQuote quote = stock.getQuote();
-            Calendar lastTradeDate = Utility.calendarTimeReset(quote.getLastTradeTime());
+            Calendar lastTradeTime = Utility.calendarTimeReset(quote.getLastTradeTime());
             Calendar firstHistoricalDate = Utility.calendarTimeReset(historyList.get(0).getDate());
 
             // "nowTimeDay > lastTradeDay" will cover holidays and weekends in which history has
             // not updated yet!
-            int nowTimeDay = nowCalendar.get(Calendar.DAY_OF_MONTH);
-            int lastTradeDay = lastTradeDate.get(Calendar.DAY_OF_MONTH);
+            int nowTimeDay = nowTime.get(Calendar.DAY_OF_MONTH);
+            int lastTradeDay = lastTradeTime.get(Calendar.DAY_OF_MONTH);
 
             // Determine if we should use stock price
-            if(!lastTradeDate.equals(firstHistoricalDate)
+            if(!lastTradeTime.equals(firstHistoricalDate)
                     && (nowTimeDay > lastTradeDay || !Utility.isDuringTradingHours())){
                 Log.d(TAG, "using stock price");
                 if (quote.getChange().floatValue() > 0) {
@@ -195,60 +226,18 @@ public class NetworkService extends IntentService {
                 recentClose = stock.getQuote().getPrice().floatValue();
             }
 
-            for (int i = 0; i < historyList.size(); i++) {
-                HistoricalQuote history = historyList.get(i);
-
-                if (recentClose == 0) {
-                    // Retrieves most recent close if not already retrieved.
-                    recentClose = history.getAdjClose().floatValue();
-                }
-
-                float historyAdjClose = history.getAdjClose().floatValue();
-                boolean shouldBreak = false;
-
-                // Need to compare history adj close to its previous history's adj close.
-                // http://budgeting.thenest.com/adjusted-closing-price-vs-closing-price-32457.html
-                // If its the last day in the history we need to skip it because we have
-                // nothing to compare it to.
-                if (i + 1 < historyList.size()) {
-                    float prevHistoryAdjClose = historyList.get(i + 1).getAdjClose().floatValue();
-
-                    if (historyAdjClose > prevHistoryAdjClose) {
-                        // Down streak broken so break;
-                        if (streak < 0) {
-                            shouldBreak = true;
-                        } else {
-                            streak++;
-                        }
-                    } else if (historyAdjClose < prevHistoryAdjClose) {
-                        // Up streak broken so break;
-                        if (streak > 0) {
-                            shouldBreak = true;
-                        } else {
-                            streak--;
-                        }
-                    }
-                }
-                if (shouldBreak) {
-                    prevStreakEndDate = history.getDate().getTimeInMillis();
-                    prevStreakEndPrice = historyAdjClose;
-                    break;
-                }
-            }
-
-            // Get change Dollar and change Percentage
-            Pair changeDollarAndPercentage =
-                    calculateChange(recentClose, prevStreakEndPrice);
+            MainHistoryHolder mainHistoryHolder =
+                    loopThroughMainHistory(historyList, recentClose, streak);
 
             values = new ContentValues();
             values.put(StockEntry.COLUMN_SYMBOL, stock.getSymbol());
             values.put(StockEntry.COLUMN_FULL_NAME, stock.getName());
-            values.put(StockEntry.COLUMN_RECENT_CLOSE, recentClose);
-            values.put(StockEntry.COLUMN_STREAK, streak);
-            values.put(StockEntry.COLUMN_CHANGE_DOLLAR, (float)changeDollarAndPercentage.first);
-            values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float)changeDollarAndPercentage.second);
-            values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, prevStreakEndPrice);
-            values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, prevStreakEndDate);
+            values.put(StockEntry.COLUMN_RECENT_CLOSE, mainHistoryHolder.getRecentClose());
+            values.put(StockEntry.COLUMN_STREAK, mainHistoryHolder.getStreak());
+            values.put(StockEntry.COLUMN_CHANGE_DOLLAR, mainHistoryHolder.getChangeDollar());
+            values.put(StockEntry.COLUMN_CHANGE_PERCENT, mainHistoryHolder.getChangePercent());
+            values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, mainHistoryHolder.getPrevStreakEndPrice());
+            values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, mainHistoryHolder.getPrevStreakEndDate());
             values.put(StockEntry.COLUMN_PREV_STREAK, 0);
             values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, 0);
             values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
@@ -257,8 +246,11 @@ public class NetworkService extends IntentService {
         return values;
     }
 
-    private MainHistory loopThroughMainHistory(List<HistoricalQuote> historyList, float recentClose,
-                                        int streak, long prevStreakEndDate, float prevStreakEndPrice){
+    private MainHistoryHolder loopThroughMainHistory(List<HistoricalQuote> historyList,
+                                                     float recentClose, int streak){
+        long prevStreakEndDate = 0;
+        float prevStreakEndPrice = 0;
+
         for (int i = 0; i < historyList.size(); i++) {
             HistoricalQuote history = historyList.get(i);
 
@@ -304,7 +296,12 @@ public class NetworkService extends IntentService {
         Pair changeDollarAndPercentage =
                 calculateChange(recentClose, prevStreakEndPrice);
 
-        return null;
+        return new MainHistoryHolder(recentClose,
+                streak,
+                prevStreakEndDate,
+                prevStreakEndPrice,
+                (float)changeDollarAndPercentage.first,
+                (float)changeDollarAndPercentage.second);
     }
 
     private ContentValues getDetailValues(String symbol) throws IOException{
@@ -415,21 +412,6 @@ public class NetworkService extends IntentService {
         return values;
     }
 
-    private void updateUpdateDate(){
-        //Update updateDate if exists, if not insert
-        ContentValues values = new ContentValues();
-        values.put(UpdateDateEntry.COLUMN_TIME_IN_MILLI, System.currentTimeMillis());
-
-        int rowsAffected = getContentResolver().update(
-                UpdateDateEntry.CONTENT_URI,
-                values,
-                null,
-                null);
-        if(rowsAffected == 0){
-            getContentResolver().insert(UpdateDateEntry.CONTENT_URI, values);
-        }
-    }
-
     /**
      * Calculates the change in dollars and percentage between the two prices.
      * @param recentClose Stock's recent close
@@ -447,7 +429,7 @@ public class NetworkService extends IntentService {
         return new Pair<>(changeDollar, changePercent);
     }
 
-    private class MainHistory{
+    private class MainHistoryHolder {
         float mRecentClose;
         long mPrevStreakEndDate;
         float mPrevStreakEndPrice;
@@ -455,8 +437,8 @@ public class NetworkService extends IntentService {
         float mChangeDollar;
         float mChangePercent;
 
-        public MainHistory(float recentClose, int streak, long prevStreakEndDate,
-                           float prevStreakEndPrice, float changeDollar, float changePercent){
+        public MainHistoryHolder(float recentClose, int streak, long prevStreakEndDate,
+                                 float prevStreakEndPrice, float changeDollar, float changePercent){
             mRecentClose = recentClose;
             mStreak = streak;
             mPrevStreakEndDate = prevStreakEndDate;

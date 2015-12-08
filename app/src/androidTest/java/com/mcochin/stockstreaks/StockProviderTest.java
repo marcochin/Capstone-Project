@@ -1,23 +1,18 @@
 package com.mcochin.stockstreaks;
 
 import android.content.ContentProviderOperation;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.test.ProviderTestCase2;
-import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
-import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 
 /**
  * Test for ContentProvider
@@ -50,6 +45,7 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
     private static final long PREV_STREAK = 4;
     private static final long YEAR_STREAK_HIGH = 5;
     private static final long YEAR_STREAK_LOW = -6;
+    private static final long UPDATE_DATE = 1449535365871L;
 
     private Uri mUri = StockEntry.buildUri(SYMBOL);
 
@@ -242,6 +238,10 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
                 cursor.close();
             }
         }
+    }
+
+    public void testUpdateDate(){
+
     }
 
     private ContentValues createBareMinimumValues(String symbol, String fullName){

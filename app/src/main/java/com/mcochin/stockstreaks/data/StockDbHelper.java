@@ -5,7 +5,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
 
 /**
  * Manages a local database for stocks data.
@@ -21,11 +20,6 @@ public class StockDbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        final String SQL_CREATE_UPDATE_DATE_TABLE = "CREATE TABLE " + UpdateDateEntry.TABLE_NAME + " (" +
-                UpdateDateEntry._ID + " INTEGER PRIMARY KEY," +
-                UpdateDateEntry.COLUMN_TIME_IN_MILLI + " INTEGER NOT NULL " +
-                " );";
-
         final String SQL_CREATE_STOCKS_TABLE = "CREATE TABLE " + StockEntry.TABLE_NAME + " (" +
 
                 // Why AutoIncrement?
@@ -43,11 +37,11 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 StockEntry.COLUMN_PREV_STREAK + " INTEGER, " +
                 StockEntry.COLUMN_STREAK_YEAR_HIGH + " INTEGER, " +
                 StockEntry.COLUMN_STREAK_YEAR_LOW + " INTEGER, " +
+                StockEntry.COLUMN_UPDATE_TIME_IN_MILLI + " INTEGER, " +
 
                 // All symbols should be unique
                 " UNIQUE (" + StockEntry.COLUMN_SYMBOL + "));";
 
-        db.execSQL(SQL_CREATE_UPDATE_DATE_TABLE);
         db.execSQL(SQL_CREATE_STOCKS_TABLE);
     }
 
@@ -55,7 +49,6 @@ public class StockDbHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // If you plan on adding/removing columns and the app is in production, do not drop tables
         // as it will delete all user data. Instead use ALTER TABLE.
-        db.execSQL("DROP TABLE IF EXISTS " + UpdateDateEntry.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + StockEntry.TABLE_NAME);
         onCreate(db);
     }

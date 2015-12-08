@@ -11,7 +11,7 @@ import android.widget.Toast;
 
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
+import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.Stock;
 
 import java.io.IOException;
@@ -145,15 +145,15 @@ public class Utility {
         Cursor cursor = null;
         Calendar lastUpdateTime = null;
         try {
-            final String[] projection = {UpdateDateEntry.COLUMN_TIME_IN_MILLI};
+            final String[] projection = {StockEntry.COLUMN_UPDATE_TIME_IN_MILLI};
             final int indexTimeInMilli = 0;
 
             cursor = cr.query(
-                    UpdateDateEntry.CONTENT_URI,
+                    StockEntry.CONTENT_URI,
                     projection,
                     null,
                     null,
-                    null);
+                    StockProvider.ORDER_BY_ID_DESC_LIMIT_1);
 
             if (cursor != null && cursor.moveToFirst()) {
                 lastUpdateTime = Utility.getNewYorkCalendarInstance();
@@ -269,7 +269,7 @@ public class Utility {
         if(lastUpdateTime == null){
             return false;
         }
-        //If lastUpdateTime is before the most recent close time then get the non latest
+        //If lastUpdateTime is before the most or would be recent close time then get the non latest
         return lastUpdateTime.before(recentCloseTime);
     }
 

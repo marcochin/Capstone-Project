@@ -32,8 +32,6 @@ import com.mcochin.stockstreaks.adapters.MainAdapter;
 import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
-import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
 import com.mcochin.stockstreaks.services.NetworkService;
 import com.mcochin.stockstreaks.utils.Utility;
@@ -47,8 +45,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         ListManipulatorFragment.EventListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
-    private static final int ID_LOADER_UPDATE_DATE = 0;
-    private static final int ID_LOADER_STOCKS = 1;
     private static final int ID_LOADER_STOCK_WITH_SYMBOL = 2;
 
     private RecyclerView mRecyclerView;
@@ -127,9 +123,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 ((ListManipulatorFragment) getSupportFragmentManager()
                         .findFragmentByTag(ListManipulatorFragment.TAG));
 
-        if(!Utility.canUpdateList(getContentResolver())) {
+        if(!Utility.canUpdateList(getContentResolver()) || !Utility.isNetworkAvailable(this)){
             listManipulatorFragment.initLoadAllFromDb();
-        } else{
+        }else{
             listManipulatorFragment.initLoadAFew();
         }
     }
@@ -192,24 +188,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override // SwipeRefreshLayout.OnRefreshListener
     public void onRefresh() {
-        ((ListManipulatorFragment) getSupportFragmentManager()
-                .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew();
+        if(Utility.canUpdateList(getContentResolver())) {
+            ((ListManipulatorFragment) getSupportFragmentManager()
+                    .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew();
+        }
     }
 
     @Override // LoaderManager.LoaderCallbacks<Cursor>
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         CursorLoader loader = null;
         switch(id){
-            case ID_LOADER_UPDATE_DATE:
-                loader = new CursorLoader(
-                        MainActivity.this,
-                        UpdateDateEntry.CONTENT_URI,
-                        new String[]{UpdateDateEntry.COLUMN_TIME_IN_MILLI},
-                        null,
-                        null,
-                        null);
-                break;
-
             case ID_LOADER_STOCK_WITH_SYMBOL:
                 loader = new CursorLoader(
                         MainActivity.this,
@@ -233,10 +221,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         int id = loader.getId();
 
         switch (id) {
-            case ID_LOADER_UPDATE_DATE:
-                Log.d(TAG, "loader update_date");
-                break;
-
             case ID_LOADER_STOCK_WITH_SYMBOL:
                 Log.d(TAG, "loader stock_with_symbol");
                 ListManipulator listManipulator = getListManipulator();

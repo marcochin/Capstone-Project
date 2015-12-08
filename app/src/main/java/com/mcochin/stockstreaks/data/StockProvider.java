@@ -4,6 +4,7 @@ import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.content.UriMatcher;
 import android.database.Cursor;
@@ -14,7 +15,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.data.StockContract.UpdateDateEntry;
+import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
 
 import java.util.ArrayList;
 
@@ -24,30 +25,29 @@ import java.util.ArrayList;
 public class StockProvider extends ContentProvider {
     private StockDbHelper mStockDbHelper;
     private static final UriMatcher sUriMatcher = buildUriMatcher();
-    private static final String TAG = StockProvider.class.getSimpleName();
 
-    private static final int UPDATE_DATE = 100;
-    private static final int STOCKS = 200;
-    private static final int STOCKS_WITH_SYMBOL = 201;
+    private static final String TAG = StockProvider.class.getSimpleName();
+    public static final String KEY_UPDATE_RESULTS = "updateResults";
 
     private static final String UNKNOWN_URI = "Unknown Uri: ";
     private static final String ERROR_ROW_INSERT = "Failed to insert row:  ";
+
+    private static final int STOCKS = 200;
+    private static final int STOCKS_WITH_SYMBOL = 201;
 
     // stocks.symbol = ?
     private static final String STOCK_SYMBOL_SELECTION =
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_SYMBOL + " = ?";
 
-    // We want last db item to be on top of the list
-    public static final String ORDER_BY_ID_DESC = "ORDER BY " + StockContract.StockEntry._ID + " DESC";
+    public static final String UPDATE_DATE_SELECTION =
+            StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_UPDATE_TIME_IN_MILLI + " = ?";
 
-    /**
-     * This boolean "prevents" a directory uri from being notified, if only an item was notified.
-     */
-    private boolean mPreventDirectoryQuery;
-    /**
-     * This boolean "prevents" a item uri from being notified, if only an directory was notified.
-     */
-    private boolean mPreventItemQuery;
+    // ORDER BY _ID DESC
+    public static final String ORDER_BY_ID_DESC =
+            "ORDER BY " + StockContract.StockEntry._ID + " DESC";
+
+    // ORDER BY _ID DESC LIMIT 1
+    public static final String ORDER_BY_ID_DESC_LIMIT_1 = ORDER_BY_ID_DESC + " LIMIT 1";
 
     private static UriMatcher buildUriMatcher() {
         // All paths added to the UriMatcher have a corresponding code to return when a match is
@@ -57,7 +57,6 @@ public class StockProvider extends ContentProvider {
         final String authority = StockContract.CONTENT_AUTHORITY;
 
         // For each type of URI you want to add, create a corresponding code.
-        matcher.addURI(authority, StockContract.PATH_UPDATE_DATE, UPDATE_DATE);
         matcher.addURI(authority, StockContract.PATH_STOCKS, STOCKS);
         matcher.addURI(authority, StockContract.PATH_STOCKS + "/*", STOCKS_WITH_SYMBOL);
 
@@ -77,8 +76,6 @@ public class StockProvider extends ContentProvider {
         final int match = sUriMatcher.match(uri);
 
         switch (match){
-            case UPDATE_DATE:
-                return UpdateDateEntry.CONTENT_DIR_TYPE;
             case STOCKS:
                 return StockEntry.CONTENT_DIR_TYPE;
             case STOCKS_WITH_SYMBOL:
@@ -95,24 +92,7 @@ public class StockProvider extends ContentProvider {
         Cursor retCursor;
 
         switch (match) {
-            case UPDATE_DATE:
-                retCursor = mStockDbHelper.getWritableDatabase().query(
-                        UpdateDateEntry.TABLE_NAME,
-                        projection,
-                        selection,
-                        selectionArgs,
-                        null,
-                        null,
-                        sortOrder);
-                break;
-
             case STOCKS:
-                Log.d(TAG, "stocksquery");
-                if(mPreventDirectoryQuery){
-                    mPreventDirectoryQuery = false;
-                    return null;
-                }
-
                 retCursor = mStockDbHelper.getWritableDatabase().query(
                         StockEntry.TABLE_NAME,
                         projection,
@@ -122,13 +102,8 @@ public class StockProvider extends ContentProvider {
                         null,
                         sortOrder);
                 break;
-            case STOCKS_WITH_SYMBOL:
-                Log.d(TAG, "symbolquery");
-                if(mPreventItemQuery){
-                    mPreventItemQuery = false;
-                    return null;
-                }
 
+            case STOCKS_WITH_SYMBOL:
                 String symbol = StockContract.getSymbolFromUri(uri);
 
                 retCursor = mStockDbHelper.getWritableDatabase().query(
@@ -160,16 +135,9 @@ public class StockProvider extends ContentProvider {
         long id;
 
         switch (match){
-            case UPDATE_DATE:
-                id = mStockDbHelper.getWritableDatabase()
-                        .insert(UpdateDateEntry.TABLE_NAME, null, values);
-                break;
-
             case STOCKS_WITH_SYMBOL:
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(StockEntry.TABLE_NAME, null, values);
-
-                mPreventDirectoryQuery = true;
                 break;
 
             default:
@@ -197,8 +165,6 @@ public class StockProvider extends ContentProvider {
 
                 rowsDeleted = mStockDbHelper.getWritableDatabase().delete(
                         StockEntry.TABLE_NAME, STOCK_SYMBOL_SELECTION, new String[]{symbol});
-
-                mPreventDirectoryQuery = true;
                 break;
 
             default:
@@ -218,14 +184,6 @@ public class StockProvider extends ContentProvider {
         int rowsAffected;
 
         switch (match){
-            case UPDATE_DATE:
-                rowsAffected = mStockDbHelper.getWritableDatabase().update(
-                        UpdateDateEntry.TABLE_NAME,
-                        values,
-                        null,
-                        null);
-                break;
-
             case STOCKS_WITH_SYMBOL:
                 String symbol = StockContract.getSymbolFromUri(uri);
 
@@ -253,15 +211,10 @@ public class StockProvider extends ContentProvider {
             throws OperationApplicationException {
         ContentProviderResult[] results =  super.applyBatch(operations);
 
-        if(getContext()!= null) {
-            mPreventItemQuery = true;
-
-            for(ContentProviderResult cpr: results) {
-                getContext().getContentResolver().notifyChange(cpr.uri, null);
-                // TODO instead of notifyingChange send a broadcast to the list manipulator to query
-                // TODO the data and show it. THe reason is because we don't have any observers for
-                // TODO every uri.
-            }
+        if(getContext() != null) {
+            Intent updateBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
+            updateBroadcast.putExtra(KEY_UPDATE_RESULTS, results);
+            getContext().sendBroadcast(updateBroadcast);
         }
 
         return results;
