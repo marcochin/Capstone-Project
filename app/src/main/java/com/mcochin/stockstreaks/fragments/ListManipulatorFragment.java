@@ -83,7 +83,7 @@ public class ListManipulatorFragment extends Fragment {
                     if(cursor != null ){
                         mListManipulator.setShownListCursor(cursor);
                         mListManipulator.setLoadList(getLoadListFromDb());
-                        mListManipulator.syncLoadListBookmarkToShownList();
+                        mListManipulator.addToLoadListPositionBookmark(cursor.getCount());
 
                         if(mEventListener != null){
                             mEventListener.onLoadAllFromDbFinished();
@@ -114,12 +114,20 @@ public class ListManipulatorFragment extends Fragment {
     }
 
     public void loadAFew() {
-        // Start service to load a few
-        Intent serviceIntent = new Intent(getContext(), NetworkService.class);
-        serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
-        serviceIntent.putExtra(NetworkService.KEY_LOAD_A_FEW_QUERY, mListManipulator.getAFewToLoad());
+        String[] aFewToLoad = mListManipulator.getAFewToLoad();
 
-        getContext().startService(serviceIntent);
+        if(aFewToLoad != null) {
+            // Start service to load a few
+            Intent serviceIntent = new Intent(getContext(), NetworkService.class);
+            serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
+
+            if (mListManipulator.getLoadListPositionBookmark() == 0) {
+                serviceIntent.putExtra(NetworkService.KEY_UPDATE_UPDATE_DATE, true);
+            }
+            serviceIntent.putExtra(NetworkService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
+
+            getContext().startService(serviceIntent);
+        }
     }
 
     private String[] getLoadListFromDb(){
@@ -146,12 +154,12 @@ public class ListManipulatorFragment extends Fragment {
                     i++;
                 }
             }
+
         }finally {
             if(cursor != null){
                 cursor.close();
             }
         }
-
         return loadList;
     }
 
@@ -184,6 +192,9 @@ public class ListManipulatorFragment extends Fragment {
                     cursor.close();
                 }
             }
+
+            // add to bookmark the result size
+            mListManipulator.addToLoadListPositionBookmark(results.length);
 
             if (mEventListener != null) {
                 mEventListener.onLoadNextFewFinished();

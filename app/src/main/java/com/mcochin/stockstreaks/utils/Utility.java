@@ -253,25 +253,25 @@ public class Utility {
         return false;
     }
 
-    /**
-     * @return true is should load from non latest data, else false
-     * @throws IOException
-     */
-    public static boolean shouldLoadAFewNonLatest(ContentResolver cr) throws IOException{
-
-        yahoofinance.Stock stock = YahooFinance.get("GOOG");
-        Calendar recentCloseTime = stock.getQuote().getLastTradeTime();
-        recentCloseTime.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_UPDATE_HOUR);
-        recentCloseTime.set(Calendar.MINUTE, STOCK_MARKET_UPDATE_MINUTE);
-        recentCloseTime.set(Calendar.MILLISECOND, 0);
-
-        Calendar lastUpdateTime = getLastUpdateTime(cr);
-        if(lastUpdateTime == null){
-            return false;
-        }
-        //If lastUpdateTime is before the most or would be recent close time then get the non latest
-        return lastUpdateTime.before(recentCloseTime);
-    }
+//    /**
+//     * @return true is should load from non latest data, else false
+//     * @throws IOException
+//     */
+//    public static boolean shouldLoadAFewNonLatest(ContentResolver cr) throws IOException{
+//
+//        yahoofinance.Stock stock = YahooFinance.get("GOOG");
+//        Calendar recentCloseTime = stock.getQuote().getLastTradeTime();
+//        recentCloseTime.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_UPDATE_HOUR);
+//        recentCloseTime.set(Calendar.MINUTE, STOCK_MARKET_UPDATE_MINUTE);
+//        recentCloseTime.set(Calendar.MILLISECOND, 0);
+//
+//        Calendar lastUpdateTime = getLastUpdateTime(cr);
+//        if(lastUpdateTime == null){
+//            return false;
+//        }
+//        //If lastUpdateTime is before the most or would be recent close time then get the non latest
+//        return lastUpdateTime.before(recentCloseTime);
+//    }
 
     /**
      * Determines if the calendar is before 4:30pm of its respective day or not.

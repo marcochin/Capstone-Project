@@ -174,11 +174,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
             return;
         }
+        // Refresh the shownList BEFORE fetching a new stock. This is to prevent
+        // fetching the new stock twice when it becomes apart of that list.
+        refreshShownList();
 
-        //Start service to retrieve stock info
+        // Start service to retrieve stock info
         Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
         serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query);
         serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
+        //TODO update updatedate when canUpdateList,
+
         startService(serviceIntent);
 
         //Start cursor loader to load the newly added stock
@@ -188,6 +193,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override // SwipeRefreshLayout.OnRefreshListener
     public void onRefresh() {
+        refreshShownList();
+    }
+
+    private void refreshShownList(){
+        //TODO dismiss snackbar to prevent undo removal
+
         if(Utility.canUpdateList(getContentResolver())) {
             ((ListManipulatorFragment) getSupportFragmentManager()
                     .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew();

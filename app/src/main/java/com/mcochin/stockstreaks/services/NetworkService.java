@@ -34,6 +34,7 @@ public class NetworkService extends IntentService {
     private static final String TAG = NetworkService.class.getSimpleName();
     public static final String KEY_SEARCH_QUERY ="searchQuery";
     public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
+    public static final String KEY_UPDATE_UPDATE_DATE ="updateUpdateDate";
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_STOCK_WITH_SYMBOL = "actionStockWithSymbol";
@@ -47,13 +48,15 @@ public class NetworkService extends IntentService {
     private static final String NASDAQ = "NMS";
     private static final String NYSE = "NYQ";
 
+    private boolean mUpdateUpdateDate;
+    private long mCurrentTimeMillis = 0;
+
     public NetworkService(){
         super(TAG);
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
-
         try {
             // check for internet
             if(!Utility.isNetworkAvailable(this)){
@@ -61,14 +64,15 @@ public class NetworkService extends IntentService {
                 return;
             }
             String action = intent.getAction();
+            mUpdateUpdateDate = intent.getBooleanExtra(KEY_UPDATE_UPDATE_DATE, false);
 
             switch(action) {
                 case ACTION_LOAD_A_FEW: {
                     String[] symbols = intent.getStringArrayExtra(KEY_LOAD_A_FEW_QUERY);
-                    if(Utility.shouldLoadAFewNonLatest(getContentResolver())){
-                        performActionLoadAFewNonLatest(symbols);
-                    } else {
+                    if(mUpdateUpdateDate){
                         performActionLoadAFew(symbols);
+                    } else {
+                        performActionLoadAFewNonLatest(symbols);
                     }
                     break;
                 }
@@ -102,6 +106,7 @@ public class NetworkService extends IntentService {
             try {
                 // Apply operations
                 getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
+
             }catch (RemoteException | OperationApplicationException e){
                 Log.e(TAG, Log.getStackTraceString(e));
                 Utility.showToast(this, getString(R.string.toast_error_updating_list));
@@ -135,18 +140,9 @@ public class NetworkService extends IntentService {
         //Loop through stocks to get their history to calculate main values
         for(Stock stock: stocks){
             List<HistoricalQuote> historyList = stock.getHistory(fromTime, lastUpdateTime, Interval.DAILY);
-            MainHistoryHolder mainHistoryHolder = loopThroughMainHistory(historyList, 0, 0);
+
             // Create ContentValues and put in ops
-            ContentValues values = new ContentValues();
-            values.put(StockEntry.COLUMN_RECENT_CLOSE, mainHistoryHolder.getRecentClose());
-            values.put(StockEntry.COLUMN_STREAK, mainHistoryHolder.getStreak());
-            values.put(StockEntry.COLUMN_CHANGE_DOLLAR, mainHistoryHolder.getChangeDollar());
-            values.put(StockEntry.COLUMN_CHANGE_PERCENT, mainHistoryHolder.getChangePercent());
-            values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, mainHistoryHolder.getPrevStreakEndPrice());
-            values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, mainHistoryHolder.getPrevStreakEndDate());
-            values.put(StockEntry.COLUMN_PREV_STREAK, 0);
-            values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, 0);
-            values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
+            ContentValues values = getValuesFromHistoryList(historyList, 0, 0);
 
             // Add update operations to list
             ops.add(ContentProviderOperation
@@ -158,6 +154,7 @@ public class NetworkService extends IntentService {
         try {
             // Apply operations
             getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
+
         }catch (RemoteException | OperationApplicationException e){
             Log.e(TAG, Log.getStackTraceString(e));
             Utility.showToast(this, getString(R.string.toast_error_updating_list));
@@ -226,28 +223,17 @@ public class NetworkService extends IntentService {
                 recentClose = stock.getQuote().getPrice().floatValue();
             }
 
-            MainHistoryHolder mainHistoryHolder =
-                    loopThroughMainHistory(historyList, recentClose, streak);
-
-            values = new ContentValues();
+            values = getValuesFromHistoryList(historyList, recentClose, streak);
             values.put(StockEntry.COLUMN_SYMBOL, stock.getSymbol());
             values.put(StockEntry.COLUMN_FULL_NAME, stock.getName());
-            values.put(StockEntry.COLUMN_RECENT_CLOSE, mainHistoryHolder.getRecentClose());
-            values.put(StockEntry.COLUMN_STREAK, mainHistoryHolder.getStreak());
-            values.put(StockEntry.COLUMN_CHANGE_DOLLAR, mainHistoryHolder.getChangeDollar());
-            values.put(StockEntry.COLUMN_CHANGE_PERCENT, mainHistoryHolder.getChangePercent());
-            values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, mainHistoryHolder.getPrevStreakEndPrice());
-            values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, mainHistoryHolder.getPrevStreakEndDate());
-            values.put(StockEntry.COLUMN_PREV_STREAK, 0);
-            values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, 0);
-            values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
+
         }
 
         return values;
     }
 
-    private MainHistoryHolder loopThroughMainHistory(List<HistoricalQuote> historyList,
-                                                     float recentClose, int streak){
+    private ContentValues getValuesFromHistoryList(List<HistoricalQuote> historyList,
+                                                   float recentClose, int streak){
         long prevStreakEndDate = 0;
         float prevStreakEndPrice = 0;
 
@@ -296,12 +282,25 @@ public class NetworkService extends IntentService {
         Pair changeDollarAndPercentage =
                 calculateChange(recentClose, prevStreakEndPrice);
 
-        return new MainHistoryHolder(recentClose,
-                streak,
-                prevStreakEndDate,
-                prevStreakEndPrice,
-                (float)changeDollarAndPercentage.first,
-                (float)changeDollarAndPercentage.second);
+        ContentValues values = new ContentValues();
+        values.put(StockEntry.COLUMN_RECENT_CLOSE, recentClose);
+        values.put(StockEntry.COLUMN_STREAK, streak);
+        values.put(StockEntry.COLUMN_CHANGE_DOLLAR, (float)changeDollarAndPercentage.first);
+        values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float)changeDollarAndPercentage.second);
+        values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, prevStreakEndPrice);
+        values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, prevStreakEndDate);
+        values.put(StockEntry.COLUMN_PREV_STREAK, 0);
+        values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, 0);
+        values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
+
+        if(mUpdateUpdateDate && mCurrentTimeMillis == 0){
+            mCurrentTimeMillis = System.currentTimeMillis();
+        }
+        values.put(StockEntry.COLUMN_UPDATE_TIME_IN_MILLI,
+                mUpdateUpdateDate ? mCurrentTimeMillis
+                        : Utility.getLastUpdateTime(getContentResolver()).getTimeInMillis());
+
+        return values;
     }
 
     private ContentValues getDetailValues(String symbol) throws IOException{
@@ -428,48 +427,6 @@ public class NetworkService extends IntentService {
 
         return new Pair<>(changeDollar, changePercent);
     }
-
-    private class MainHistoryHolder {
-        float mRecentClose;
-        long mPrevStreakEndDate;
-        float mPrevStreakEndPrice;
-        int mStreak;
-        float mChangeDollar;
-        float mChangePercent;
-
-        public MainHistoryHolder(float recentClose, int streak, long prevStreakEndDate,
-                                 float prevStreakEndPrice, float changeDollar, float changePercent){
-            mRecentClose = recentClose;
-            mStreak = streak;
-            mPrevStreakEndDate = prevStreakEndDate;
-            mPrevStreakEndPrice = prevStreakEndPrice;
-        }
-
-        public float getRecentClose() {
-            return mRecentClose;
-        }
-
-        public float getPrevStreakEndPrice() {
-            return mPrevStreakEndPrice;
-        }
-
-        public long getPrevStreakEndDate() {
-            return mPrevStreakEndDate;
-        }
-
-        public int getStreak() {
-            return mStreak;
-        }
-
-        public float getChangePercent() {
-            return mChangePercent;
-        }
-
-        public float getChangeDollar() {
-            return mChangeDollar;
-        }
-    }
-
 }
 
 

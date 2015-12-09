@@ -53,10 +53,6 @@ public class ListManipulator {
         return mUniqueId++;
     }
 
-    public void syncLoadListBookmarkToShownList(){
-        mLoadListPositionBookmark = mShownList.size();
-    }
-
     public void setShownListCursor(Cursor cursor){
     //TODO remove this, Using fruits array just to debug
 //        for(String fruit : FRUITS){
@@ -68,6 +64,7 @@ public class ListManipulator {
 //            mUniqueId++;
 //        }
         mUniqueId = 0;
+        mShownList.clear();
 
         while(cursor.moveToNext()) {
             Stock stock = Utility.getStockFromCursor(cursor);
@@ -131,6 +128,18 @@ public class ListManipulator {
         return mShownList.get(index);
     }
 
+    public int getLoadListPositionBookmark(){
+        return mLoadListPositionBookmark;
+    }
+
+    public void addToLoadListPositionBookmark(int addToBookmark){
+        if(addToBookmark > 0 ) {
+            mLoadListPositionBookmark += addToBookmark;
+        } else{
+            throw new IllegalArgumentException("Must be a positive number.");
+        }
+    }
+
     public String[] getAFewToLoad(){
         if(!canLoadAFew()){
             return null;
@@ -148,9 +157,11 @@ public class ListManipulator {
             loadAFew = false;
         }
 
+        // We can't update the REAL bookmark until we get a msg that update has succeeded.
+        int bookmarkHelper = mLoadListPositionBookmark;
         for(int i = 0; i < (loadAFew? A_FEW: whatsLeftToLoad); i++){
-            nextFewToLoad[i] = mLoadList[mLoadListPositionBookmark];
-            mLoadListPositionBookmark++;
+            nextFewToLoad[i] = mLoadList[bookmarkHelper];
+            bookmarkHelper++;
         }
         return nextFewToLoad;
     }
