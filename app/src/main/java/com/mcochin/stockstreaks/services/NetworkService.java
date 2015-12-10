@@ -16,6 +16,7 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -142,7 +143,7 @@ public class NetworkService extends IntentService {
             List<HistoricalQuote> historyList = stock.getHistory(fromTime, lastUpdateTime, Interval.DAILY);
 
             // Create ContentValues and put in ops
-            ContentValues values = getValuesFromHistoryList(historyList, 0, 0);
+            ContentValues values = getValuesFromHistoryList(historyList, 0);
 
             // Add update operations to list
             ops.add(ContentProviderOperation
@@ -179,7 +180,6 @@ public class NetworkService extends IntentService {
     }
 
     private ContentValues getLatestMainValues(Stock stock) throws IOException{
-        int streak = 0;
         float recentClose = 0;
         ContentValues values = null;
 
@@ -200,7 +200,6 @@ public class NetworkService extends IntentService {
             List<HistoricalQuote> historyList =
                     stock.getHistory(fromTime, nowTime, Interval.DAILY);
 
-
             StockQuote quote = stock.getQuote();
             Calendar lastTradeTime = Utility.calendarTimeReset(quote.getLastTradeTime());
             Calendar firstHistoricalDate = Utility.calendarTimeReset(historyList.get(0).getDate());
@@ -214,16 +213,10 @@ public class NetworkService extends IntentService {
             if(!lastTradeTime.equals(firstHistoricalDate)
                     && (nowTimeDay > lastTradeDay || !Utility.isDuringTradingHours())){
                 Log.d(TAG, "using stock price");
-                if (quote.getChange().floatValue() > 0) {
-                    streak++;
-
-                } else if (quote.getChange().floatValue() < 0) {
-                    streak--;
-                }
                 recentClose = stock.getQuote().getPrice().floatValue();
             }
 
-            values = getValuesFromHistoryList(historyList, recentClose, streak);
+            values = getValuesFromHistoryList(historyList, recentClose);
             values.put(StockEntry.COLUMN_SYMBOL, stock.getSymbol());
             values.put(StockEntry.COLUMN_FULL_NAME, stock.getName());
 
@@ -233,19 +226,29 @@ public class NetworkService extends IntentService {
     }
 
     private ContentValues getValuesFromHistoryList(List<HistoricalQuote> historyList,
-                                                   float recentClose, int streak){
+                                                   float recentClose){
+        int streak = 0;
         long prevStreakEndDate = 0;
         float prevStreakEndPrice = 0;
 
+        // Due to inconsistency of Yahoo History Dates sometimes being offset by 1
+        // We can't determine the first up streak by looking at the change. We need to compare
+        // to its previous adj close price. So if it compares to itself, streak will not change.
+        HistoricalQuote firstHistory = historyList.get(0);
+        if(recentClose != 0){
+            if(recentClose > roundTo2Decimals(firstHistory.getAdjClose().floatValue())){
+                streak++;
+            }else if(recentClose < roundTo2Decimals(firstHistory.getAdjClose().floatValue())) {
+                streak--;
+            }
+        }else{
+            // Retrieves most recent close if not already retrieved.
+            recentClose = firstHistory.getAdjClose().floatValue();
+        }
+
         for (int i = 0; i < historyList.size(); i++) {
             HistoricalQuote history = historyList.get(i);
-
-            if (recentClose == 0) {
-                // Retrieves most recent close if not already retrieved.
-                recentClose = history.getAdjClose().floatValue();
-            }
-
-            float historyAdjClose = history.getAdjClose().floatValue();
+            float historyAdjClose = roundTo2Decimals(history.getAdjClose().floatValue());
             boolean shouldBreak = false;
 
             // Need to compare history adj close to its previous history's adj close.
@@ -253,7 +256,8 @@ public class NetworkService extends IntentService {
             // If its the last day in the history we need to skip it because we have
             // nothing to compare it to.
             if (i + 1 < historyList.size()) {
-                float prevHistoryAdjClose = historyList.get(i + 1).getAdjClose().floatValue();
+                float prevHistoryAdjClose =
+                        roundTo2Decimals(historyList.get(i + 1).getAdjClose().floatValue());
 
                 if (historyAdjClose > prevHistoryAdjClose) {
                     // Down streak broken so break;
@@ -273,6 +277,7 @@ public class NetworkService extends IntentService {
             }
             if (shouldBreak) {
                 prevStreakEndDate = history.getDate().getTimeInMillis();
+                Log.d("day", "" + history.getDate().get(Calendar.DAY_OF_MONTH));
                 prevStreakEndPrice = historyAdjClose;
                 break;
             }
@@ -426,6 +431,10 @@ public class NetworkService extends IntentService {
         float changePercent = changeDollar / prevStreakEndPrice * 100;
 
         return new Pair<>(changeDollar, changePercent);
+    }
+
+    private float roundTo2Decimals(float f){
+       return Float.parseFloat(String.format("%.2f", f));
     }
 }
 

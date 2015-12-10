@@ -14,7 +14,6 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.Stock;
 
-import java.io.IOException;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -253,6 +252,22 @@ public class Utility {
         return false;
     }
 
+    /**
+     * Determines if the calendar is before 4:30pm of its respective day or not.
+     * @param calendar calendar to test
+     * @return
+     */
+    public static boolean isBeforeFourThirty(Calendar calendar){
+        Calendar fourThirtyTime = getNewYorkCalendarInstance();
+        fourThirtyTime.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_UPDATE_HOUR);
+        fourThirtyTime.set(Calendar.MINUTE, STOCK_MARKET_UPDATE_MINUTE);
+        fourThirtyTime.set(Calendar.MILLISECOND, 0);
+
+        return calendar.before(fourThirtyTime);
+    }
+
+
+
 //    /**
 //     * @return true is should load from non latest data, else false
 //     * @throws IOException
@@ -272,18 +287,4 @@ public class Utility {
 //        //If lastUpdateTime is before the most or would be recent close time then get the non latest
 //        return lastUpdateTime.before(recentCloseTime);
 //    }
-
-    /**
-     * Determines if the calendar is before 4:30pm of its respective day or not.
-     * @param calendar calendar to test
-     * @return
-     */
-    public static boolean isBeforeFourThirty(Calendar calendar){
-        Calendar fourThirtyTime = getNewYorkCalendarInstance();
-        fourThirtyTime.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_UPDATE_HOUR);
-        fourThirtyTime.set(Calendar.MINUTE, STOCK_MARKET_UPDATE_MINUTE);
-        fourThirtyTime.set(Calendar.MILLISECOND, 0);
-
-        return calendar.before(fourThirtyTime);
-    }
 }

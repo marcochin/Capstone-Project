@@ -9,7 +9,12 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v7.app.AppCompatActivity;
 
+import com.mcochin.stockstreaks.MainActivity;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockProvider;
@@ -19,10 +24,12 @@ import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Locale;
 
 public class ListManipulatorFragment extends Fragment {
     public static final String TAG = ListManipulatorFragment.class.getSimpleName();
     public static final String BROADCAST_ACTION = StockContract.CONTENT_AUTHORITY;
+    public static final int ID_LOADER_STOCK_WITH_SYMBOL = 2;
 
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
@@ -31,6 +38,7 @@ public class ListManipulatorFragment extends Fragment {
     public interface EventListener{
         void onLoadNextFewFinished();
         void onLoadAllFromDbFinished();
+        void onLoadStockWithSymbolFinished(Loader<Cursor> loader, Cursor data);
     }
 
     @Override
@@ -71,22 +79,24 @@ public class ListManipulatorFragment extends Fragment {
                     ContentResolver cr = getContext().getContentResolver();
                     Calendar lastUpdateTime = Utility.getLastUpdateTime(cr);
 
-                    // Query db for all data with the same updateDate as the first entry.
-                    cursor = cr.query(
-                            StockContract.StockEntry.CONTENT_URI,
-                            ListManipulator.STOCK_PROJECTION,
-                            StockProvider.UPDATE_DATE_SELECTION,
-                            new String[]{Long.toString(lastUpdateTime.getTimeInMillis())},
-                            StockProvider.ORDER_BY_ID_DESC);
+                    if(lastUpdateTime != null) {
+                        // Query db for all data with the same updateDate as the first entry.
+                        cursor = cr.query(
+                                StockContract.StockEntry.CONTENT_URI,
+                                ListManipulator.STOCK_PROJECTION,
+                                StockProvider.UPDATE_DATE_SELECTION,
+                                new String[]{Long.toString(lastUpdateTime.getTimeInMillis())},
+                                StockProvider.ORDER_BY_ID_DESC);
 
-                    // Extract Stock data from cursor
-                    if(cursor != null ){
-                        mListManipulator.setShownListCursor(cursor);
-                        mListManipulator.setLoadList(getLoadListFromDb());
-                        mListManipulator.addToLoadListPositionBookmark(cursor.getCount());
+                        // Extract Stock data from cursor
+                        if (cursor != null) {
+                            mListManipulator.setShownListCursor(cursor);
+                            mListManipulator.setLoadList(getLoadListFromDb());
+                            mListManipulator.addToLoadListPositionBookmark(cursor.getCount());
 
-                        if(mEventListener != null){
-                            mEventListener.onLoadAllFromDbFinished();
+                            if (mEventListener != null) {
+                                mEventListener.onLoadAllFromDbFinished();
+                            }
                         }
                     }
                 }finally {
@@ -99,16 +109,27 @@ public class ListManipulatorFragment extends Fragment {
         }.execute();
     }
 
-    public void initLoadAFew(){
+    /**
+     * Refreshes the list.
+     * @param attachSymbol An option to query a symbol once the list has done refreshing.
+     */
+    public void initLoadAFew(final String attachSymbol){
         // Get load list of symbols to query
         new AsyncTask<Void, Void, Void>(){
             @Override
             protected Void doInBackground(Void... params) {
                 // Give list to ListManipulator
                 mListManipulator.setLoadList(getLoadListFromDb());
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
                 loadAFew();
 
-                return null;
+                if(attachSymbol != null){
+                    loadStockWithSymbol(attachSymbol);
+                }
             }
         }.execute();
     }
@@ -128,6 +149,57 @@ public class ListManipulatorFragment extends Fragment {
 
             getContext().startService(serviceIntent);
         }
+
+        //TODO else nothing to load
+    }
+
+    public void loadStockWithSymbol(final String symbol){
+
+        // Start service to retrieve stock info
+        Intent serviceIntent = new Intent(getContext(), NetworkService.class);
+        serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, symbol);
+        serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
+
+        if(Utility.canUpdateList(getContext().getContentResolver())){
+            serviceIntent.putExtra(NetworkService.KEY_UPDATE_UPDATE_DATE, true);
+        }
+        getContext().startService(serviceIntent);
+
+        //Start cursor loader to load the newly added stock
+        ((AppCompatActivity)getContext()).getSupportLoaderManager().restartLoader(
+                ID_LOADER_STOCK_WITH_SYMBOL,
+                null,
+                new LoaderManager.LoaderCallbacks<Cursor>() {
+                    @Override
+                    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+                        CursorLoader loader = null;
+                        switch (id) {
+                            case ID_LOADER_STOCK_WITH_SYMBOL:
+                                loader = new CursorLoader(
+                                        getContext(),
+                                        StockContract.StockEntry.buildUri(
+                                                symbol.toUpperCase(Locale.US)),
+                                        ListManipulator.STOCK_PROJECTION,
+                                        null,
+                                        null,
+                                        null);
+                                break;
+                        }
+                        return loader;
+                    }
+
+                    @Override
+                    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+                        if (mEventListener != null) {
+                            mEventListener.onLoadStockWithSymbolFinished(loader, data);
+                        }
+                    }
+
+                    @Override
+                    public void onLoaderReset(Loader<Cursor> loader) {
+
+                    }
+                });
     }
 
     private String[] getLoadListFromDb(){
@@ -163,12 +235,12 @@ public class ListManipulatorFragment extends Fragment {
         return loadList;
     }
 
-    public ListManipulator getListManipulator() {
-        return mListManipulator;
-    }
-
     public void setEventListener(EventListener eventListener){
         mEventListener = eventListener;
+    }
+
+    public ListManipulator getListManipulator() {
+        return mListManipulator;
     }
 
     /**

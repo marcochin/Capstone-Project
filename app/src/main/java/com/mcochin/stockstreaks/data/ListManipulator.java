@@ -68,8 +68,7 @@ public class ListManipulator {
 
         while(cursor.moveToNext()) {
             Stock stock = Utility.getStockFromCursor(cursor);
-            stock.setId(generateUniqueId());
-            mShownList.add(stock);
+            addItem(stock);
         }
     }
 
@@ -80,7 +79,7 @@ public class ListManipulator {
 
     public void addItem(Stock stock){
         stock.setId(generateUniqueId());
-        mShownList.add(stock);
+        mShownList.add(0, stock);
     }
 
     public void moveItem(int fromPosition, int toPosition) {

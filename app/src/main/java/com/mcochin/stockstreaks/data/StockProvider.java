@@ -43,8 +43,7 @@ public class StockProvider extends ContentProvider {
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_UPDATE_TIME_IN_MILLI + " = ?";
 
     // ORDER BY _ID DESC
-    public static final String ORDER_BY_ID_DESC =
-            "ORDER BY " + StockContract.StockEntry._ID + " DESC";
+    public static final String ORDER_BY_ID_DESC = StockContract.StockEntry._ID + " DESC";
 
     // ORDER BY _ID DESC LIMIT 1
     public static final String ORDER_BY_ID_DESC_LIMIT_1 = ORDER_BY_ID_DESC + " LIMIT 1";

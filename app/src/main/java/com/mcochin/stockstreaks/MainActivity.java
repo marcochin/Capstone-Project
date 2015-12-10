@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -31,21 +30,18 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.WrapperAdapterUtils;
 import com.mcochin.stockstreaks.adapters.MainAdapter;
 import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListManipulator;
-import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
-import com.mcochin.stockstreaks.services.NetworkService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
-        SearchBox.SearchListener, MainAdapter.EventListener, SwipeRefreshLayout.OnRefreshListener,
+public class MainActivity extends AppCompatActivity implements SearchBox.SearchListener,
+        MainAdapter.EventListener, SwipeRefreshLayout.OnRefreshListener,
         ListManipulatorFragment.EventListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
-    private static final int ID_LOADER_STOCK_WITH_SYMBOL = 2;
 
     private RecyclerView mRecyclerView;
     private MyLinearLayoutManager mLayoutManager;
@@ -126,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         if(!Utility.canUpdateList(getContentResolver()) || !Utility.isNetworkAvailable(this)){
             listManipulatorFragment.initLoadAllFromDb();
         }else{
-            listManipulatorFragment.initLoadAFew();
+            refreshShownList(null);
         }
     }
 
@@ -138,6 +134,36 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onLoadAllFromDbFinished() {// ListManipulatorFragment.EventListener
         mAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onLoadStockWithSymbolFinished(Loader<Cursor> loader, Cursor data) {
+        if(data == null || data.getCount() == 0){
+            return;
+        }
+
+        Log.d(TAG, "loader stock_with_symbol");
+        ListManipulator listManipulator = getListManipulator();
+
+        if(data.moveToFirst()){
+            listManipulator.addItem(Utility.getStockFromCursor(data));
+        }
+        mAdapter.notifyItemInserted(0);
+        mRecyclerView.smoothScrollToPosition(0);
+    }
+
+    @Override // SwipeRefreshLayout.OnRefreshListener
+    public void onRefresh() {
+        if(Utility.canUpdateList(getContentResolver())) {
+            refreshShownList(null);
+        }
+    }
+
+    private void refreshShownList(String attachSymbol){
+        //TODO dismiss snackbar to prevent undo removal
+
+        ((ListManipulatorFragment) getSupportFragmentManager()
+                .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew(attachSymbol);
     }
 
     @Override // SearchBox.SearchListener
@@ -176,79 +202,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
         // Refresh the shownList BEFORE fetching a new stock. This is to prevent
         // fetching the new stock twice when it becomes apart of that list.
-        refreshShownList();
-
-        // Start service to retrieve stock info
-        Intent serviceIntent = new Intent(MainActivity.this, NetworkService.class);
-        serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, query);
-        serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
-        //TODO update updatedate when canUpdateList,
-
-        startService(serviceIntent);
-
-        //Start cursor loader to load the newly added stock
-        getSupportLoaderManager().restartLoader(ID_LOADER_STOCK_WITH_SYMBOL,
-                null, MainActivity.this);
-    }
-
-    @Override // SwipeRefreshLayout.OnRefreshListener
-    public void onRefresh() {
-        refreshShownList();
-    }
-
-    private void refreshShownList(){
-        //TODO dismiss snackbar to prevent undo removal
-
         if(Utility.canUpdateList(getContentResolver())) {
+            refreshShownList(query);
+        }else{
             ((ListManipulatorFragment) getSupportFragmentManager()
-                    .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew();
+                    .findFragmentByTag(ListManipulatorFragment.TAG)).loadStockWithSymbol(query);
         }
-    }
-
-    @Override // LoaderManager.LoaderCallbacks<Cursor>
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        CursorLoader loader = null;
-        switch(id){
-            case ID_LOADER_STOCK_WITH_SYMBOL:
-                loader = new CursorLoader(
-                        MainActivity.this,
-                        StockEntry.buildUri(mSearchEditText.getText().toString()
-                                .toUpperCase(Locale.US)),
-                        ListManipulator.STOCK_PROJECTION,
-                        null,
-                        null,
-                        null);
-                break;
-        }
-        return loader;
-    }
-
-    @Override // LoaderManager.LoaderCallbacks<Cursor>
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if(data == null || data.getCount() == 0){
-            return;
-        }
-
-        int id = loader.getId();
-
-        switch (id) {
-            case ID_LOADER_STOCK_WITH_SYMBOL:
-                Log.d(TAG, "loader stock_with_symbol");
-                ListManipulator listManipulator = getListManipulator();
-
-                if(data.moveToFirst()){
-                    listManipulator.addItem(Utility.getStockFromCursor(data));
-                }
-                int position = listManipulator.getCount() - 1;
-                mAdapter.notifyItemInserted(position);
-                mRecyclerView.smoothScrollToPosition(position);
-
-                break;
-        }
-    }
-
-    @Override // LoaderManager.LoaderCallbacks<Cursor>
-    public void onLoaderReset(Loader<Cursor> loader) {
 
     }
 
@@ -385,10 +344,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         if (!mTwoPane) {
             ViewCompat.setElevation(mAppBar, 0);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
                 mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
                     @Override
                     public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                        Log.d("Scroll", "scrolled");
                         if (recyclerView.computeVerticalScrollOffset() <= 2) {
                             mAppBar.setElevation(0);
                         } else {
