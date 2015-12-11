@@ -338,8 +338,6 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         protected void onPerformAction() {
             super.onPerformAction();
             //Log.d(TAG, "onPerformAction");
-            mAdapter.mListManipulator.removeItem(mPosition);
-            mAdapter.notifyItemRemoved(mPosition);
         }
 
         @Override

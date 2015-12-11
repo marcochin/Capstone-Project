@@ -57,8 +57,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private SwipeRefreshLayout mSwipeToRefresh;
     private View mRootView;
 
-    private View.OnClickListener mSnackBarActionListener;
-
     private boolean mTwoPane;
 
     @Override
@@ -90,16 +88,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         ((ListManipulatorFragment) getSupportFragmentManager()
                 .findFragmentByTag(ListManipulatorFragment.TAG)).setEventListener(this);
 
-        // Initialize our snack bar action button listener
-        mSnackBarActionListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int position = getListManipulator().undoLastRemoveItem();
-                mAdapter.notifyItemInserted(position);
-                mRecyclerView.smoothScrollToPosition(position);
-            }
-        };
-
         // Set our refresh listener for swiping down to refresh
         mSwipeToRefresh.setOnRefreshListener(this);
 
@@ -120,10 +108,27 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                         .findFragmentByTag(ListManipulatorFragment.TAG));
 
         if(!Utility.canUpdateList(getContentResolver()) || !Utility.isNetworkAvailable(this)){
-            listManipulatorFragment.initLoadAllFromDb();
+
+            listManipulatorFragment.initLoadAllFromDb(); //TODO if it loads from db do we really need to retain listManipulator?
         }else{
             refreshShownList(null);
         }
+    }
+
+    @Override // SwipeRefreshLayout.OnRefreshListener
+    public void onRefresh() {
+        if(Utility.canUpdateList(getContentResolver())) {
+            refreshShownList(null);
+        }else{
+            mSwipeToRefresh.setRefreshing(false);
+        }
+    }
+
+    private void refreshShownList(String attachSymbol){
+        //TODO dismiss snackbar to prevent undo removal because the old data will not be in sync with new data
+
+        ((ListManipulatorFragment) getSupportFragmentManager()
+                .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew(attachSymbol);
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -150,20 +155,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
         mAdapter.notifyItemInserted(0);
         mRecyclerView.smoothScrollToPosition(0);
-    }
-
-    @Override // SwipeRefreshLayout.OnRefreshListener
-    public void onRefresh() {
-        if(Utility.canUpdateList(getContentResolver())) {
-            refreshShownList(null);
-        }
-    }
-
-    private void refreshShownList(String attachSymbol){
-        //TODO dismiss snackbar to prevent undo removal
-
-        ((ListManipulatorFragment) getSupportFragmentManager()
-                .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew(attachSymbol);
     }
 
     @Override // SearchBox.SearchListener
@@ -208,7 +199,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             ((ListManipulatorFragment) getSupportFragmentManager()
                     .findFragmentByTag(ListManipulatorFragment.TAG)).loadStockWithSymbol(query);
         }
-
     }
 
     @Override // MainAdapter.EventListener
@@ -225,11 +215,28 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // MainAdapter.EventListener
     public void onItemRemoved(MainAdapter.MainViewHolder holder) {
+        int position = holder.getAdapterPosition();
+        getListManipulator().removeItem(holder.getAdapterPosition(), getContentResolver());
+        mAdapter.notifyItemRemoved(position);
+
         Snackbar.make(
                 mRootView,
-                getString(R.string.placeholder_snackbar_main_text, holder.getSymbol()),
-                    Snackbar.LENGTH_LONG)
-                .setAction(R.string.snackbar_action_text, mSnackBarActionListener)
+                getString(R.string.placeholder_snackbar_main_text, holder.getSymbol()), Snackbar.LENGTH_LONG)
+                .setAction(R.string.snackbar_action_text, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        int position = getListManipulator().undoLastRemoveItem();
+                        mAdapter.notifyItemInserted(position);
+                        mRecyclerView.smoothScrollToPosition(position);
+                    }
+                })
+                .setCallback(new Snackbar.Callback() {
+                    @Override
+                    public void onDismissed(Snackbar snackbar, int event) {
+                        super.onDismissed(snackbar, event);
+                        getListManipulator().permanentlyDeleteLastRemoveItem(getContentResolver());
+                    }
+                })
                 .show();
     }
 
@@ -243,6 +250,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     public void onPause() {
         mDragDropManager.cancelDrag();
         super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        getListManipulator().permanentlyDeleteLastRemoveItem(getContentResolver());
+        super.onStop();
     }
 
     @Override

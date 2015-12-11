@@ -1,7 +1,6 @@
 package com.mcochin.stockstreaks.data;
 
 import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
@@ -25,8 +24,29 @@ public class StockContract {
     For instance, content://com.mcochin.stockstreaks/stocks/ is a valid path for
     looking at stocks data. Simply put, these should be names of your tables! */
     public static final String PATH_STOCKS = "stocks";
+    public static final String PATH_SAVE_STATE = "save_state";
+
+
 
     /** Inner class that defines the table contents of the update_date table */
+    public static final class SaveStateEntry implements BaseColumns {
+        // content://com.mcochin.stockstreaks/save_state
+        public static final Uri CONTENT_URI =
+                BASE_CONTENT_URI.buildUpon().appendPath(PATH_SAVE_STATE).build();
+
+        // There will only be one item in the update date table and that is the time_in_milli
+        // "vnd.android.cursor.item/com.mcochin.stockstreaks/save_state
+        public static final String CONTENT_DIR_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
+            + CONTENT_AUTHORITY + "/" + PATH_SAVE_STATE;
+
+        public static final String TABLE_NAME = PATH_SAVE_STATE;
+        public static final String COLUMN_UPDATE_TIME_IN_MILLI = "update_time_in_milli";
+        public static final String COLUMN_SHOWN_ID_BOOKMARK = "shown_id_bookmark";
+    }
+
+
+
+    /** Inner class that defines the table contents of the stocks table */
     public static final class StockEntry implements BaseColumns {
 
         // content://com.mcochin.stockstreaks/stocks
@@ -34,8 +54,8 @@ public class StockContract {
                 BASE_CONTENT_URI.buildUpon().appendPath(PATH_STOCKS).build();
 
         // "vnd.android.cursor.dir/com.mcochin.stockstreaks/stocks
-        public static final String CONTENT_DIR_TYPE =
-                ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_STOCKS;
+        public static final String CONTENT_DIR_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/"
+                + CONTENT_AUTHORITY + "/" + PATH_STOCKS;
 
         // "vnd.android.cursor.item/com.mcochin.stockstreaks/stocks
         public static final String CONTENT_ITEM_TYPE =
@@ -53,7 +73,6 @@ public class StockContract {
         public static final String COLUMN_PREV_STREAK= "prev_streak";
         public static final String COLUMN_STREAK_YEAR_HIGH = "streak_year_high";
         public static final String COLUMN_STREAK_YEAR_LOW = "streak_year_low";
-        public static final String COLUMN_UPDATE_TIME_IN_MILLI = "update_time_in_milli";
 
         /**
          * This will serve as the return URI for something like inserting a row.

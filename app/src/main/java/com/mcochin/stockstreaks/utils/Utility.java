@@ -7,10 +7,13 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v4.util.Pair;
 import android.widget.Toast;
 
 import com.mcochin.stockstreaks.data.ListManipulator;
+import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.Stock;
 
@@ -93,6 +96,27 @@ public class Utility {
         return calendar;
     }
 
+    /**
+     * Calculates the change in dollars and percentage between the two prices.
+     * @param recentClose Stock's recent close
+     * @param prevStreakEndPrice Previous streak's end price for the stock
+     * @return A Pair containing:
+     * <ul>
+     *     <li>Pair.first is the change in dollars</li>
+     *     <li>Pair.second is the change in percentage</li>
+     * </ul>
+     */
+    public static Pair<Float, Float> calculateChange(float recentClose, float prevStreakEndPrice){
+        float changeDollar = recentClose - prevStreakEndPrice;
+        float changePercent = changeDollar / prevStreakEndPrice * 100;
+
+        return new Pair<>(changeDollar, changePercent);
+    }
+
+    public static float roundTo2Decimals(float f){
+        return Float.parseFloat(String.format("%.2f", f));
+    }
+
     public static Stock getStockFromCursor(Cursor cursor){
         String symbol = cursor.getString(ListManipulator.INDEX_SYMBOL);
         String fullName = cursor.getString(ListManipulator.INDEX_FULL_NAME);
@@ -144,15 +168,15 @@ public class Utility {
         Cursor cursor = null;
         Calendar lastUpdateTime = null;
         try {
-            final String[] projection = {StockEntry.COLUMN_UPDATE_TIME_IN_MILLI};
+            final String[] projection = {SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI};
             final int indexTimeInMilli = 0;
 
             cursor = cr.query(
-                    StockEntry.CONTENT_URI,
+                    SaveStateEntry.CONTENT_URI,
                     projection,
                     null,
                     null,
-                    StockProvider.ORDER_BY_ID_DESC_LIMIT_1);
+                    null);
 
             if (cursor != null && cursor.moveToFirst()) {
                 lastUpdateTime = Utility.getNewYorkCalendarInstance();
@@ -165,6 +189,36 @@ public class Utility {
             }
         }
         return lastUpdateTime;
+    }
+
+    /**
+     * Gets last update time from db
+     * @param cr
+     * @return returns the lastUpdateTime or null if not yet exist
+     */
+    public static int getShownIdBookmark(ContentResolver cr) {
+        Cursor cursor = null;
+        int shownIdBookmark = -1;
+        try {
+            final String[] projection = {SaveStateEntry.COLUMN_SHOWN_ID_BOOKMARK};
+            final int indexBookmark = 0;
+
+            cursor = cr.query(
+                    SaveStateEntry.CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    null);
+
+            if (cursor != null && cursor.moveToFirst()) {
+                shownIdBookmark = cursor.getInt(indexBookmark);
+            }
+        }finally {
+            if(cursor!=null){
+                cursor.close();
+            }
+        }
+        return shownIdBookmark;
     }
 
     /**
@@ -265,8 +319,6 @@ public class Utility {
 
         return calendar.before(fourThirtyTime);
     }
-
-
 
 //    /**
 //     * @return true is should load from non latest data, else false

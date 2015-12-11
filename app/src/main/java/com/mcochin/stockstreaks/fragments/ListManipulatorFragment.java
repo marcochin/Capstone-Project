@@ -13,8 +13,9 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
-import com.mcochin.stockstreaks.MainActivity;
+import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockProvider;
@@ -22,11 +23,10 @@ import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.NetworkService;
 import com.mcochin.stockstreaks.utils.Utility;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
 
-public class ListManipulatorFragment extends Fragment {
+public class ListManipulatorFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     public static final String TAG = ListManipulatorFragment.class.getSimpleName();
     public static final String BROADCAST_ACTION = StockContract.CONTENT_AUTHORITY;
     public static final int ID_LOADER_STOCK_WITH_SYMBOL = 2;
@@ -69,6 +69,46 @@ public class ListManipulatorFragment extends Fragment {
         super.onDetach();
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        CursorLoader loader = null;
+        switch (id) {
+            case ID_LOADER_STOCK_WITH_SYMBOL:
+                String symbol = args.getString(NetworkService.KEY_SEARCH_QUERY);
+
+                if(symbol != null) {
+                    loader = new CursorLoader(
+                            getContext(),
+                            StockContract.StockEntry.buildUri(
+                                    symbol.toUpperCase(Locale.US)),
+                            ListManipulator.STOCK_PROJECTION,
+                            null,
+                            null,
+                            null);
+                }
+                break;
+        }
+        return loader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        int id = loader.getId();
+
+        switch (id) {
+            case ID_LOADER_STOCK_WITH_SYMBOL:
+                if (mEventListener != null) {
+                    mEventListener.onLoadStockWithSymbolFinished(loader, data);
+                }
+                break;
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
+    }
+
     public void initLoadAllFromDb(){
         // Get load list of symbols to query
         new AsyncTask<Void, Void, Void>(){
@@ -77,25 +117,28 @@ public class ListManipulatorFragment extends Fragment {
                 Cursor cursor = null;
                 try {
                     ContentResolver cr = getContext().getContentResolver();
-                    Calendar lastUpdateTime = Utility.getLastUpdateTime(cr);
+                    int shownIdBookmark  = Utility.getShownIdBookmark(cr);
 
-                    if(lastUpdateTime != null) {
+                    if(shownIdBookmark >= 0) {
                         // Query db for all data with the same updateDate as the first entry.
                         cursor = cr.query(
                                 StockContract.StockEntry.CONTENT_URI,
                                 ListManipulator.STOCK_PROJECTION,
-                                StockProvider.UPDATE_DATE_SELECTION,
-                                new String[]{Long.toString(lastUpdateTime.getTimeInMillis())},
+                                StockProvider.SHOWN_ID_BOOKMARK_SELECTION,
+                                new String[]{Integer.toString(shownIdBookmark)},
                                 StockProvider.ORDER_BY_ID_DESC);
 
                         // Extract Stock data from cursor
                         if (cursor != null) {
-                            mListManipulator.setShownListCursor(cursor);
-                            mListManipulator.setLoadList(getLoadListFromDb());
-                            mListManipulator.addToLoadListPositionBookmark(cursor.getCount());
+                            int cursorCount = cursor.getCount();
+                            if(cursorCount > 0) {
+                                mListManipulator.setShownListCursor(cursor);
+                                mListManipulator.setLoadList(getLoadListFromDb());
+                                mListManipulator.addToLoadListPositionBookmark(cursorCount);
 
-                            if (mEventListener != null) {
-                                mEventListener.onLoadAllFromDbFinished();
+                                if (mEventListener != null) {
+                                    mEventListener.onLoadAllFromDbFinished();
+                                }
                             }
                         }
                     }
@@ -143,7 +186,7 @@ public class ListManipulatorFragment extends Fragment {
             serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
 
             if (mListManipulator.getLoadListPositionBookmark() == 0) {
-                serviceIntent.putExtra(NetworkService.KEY_UPDATE_UPDATE_DATE, true);
+                serviceIntent.putExtra(NetworkService.KEY_LIST_REFRESH, true);
             }
             serviceIntent.putExtra(NetworkService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
 
@@ -153,53 +196,26 @@ public class ListManipulatorFragment extends Fragment {
         //TODO else nothing to load
     }
 
-    public void loadStockWithSymbol(final String symbol){
+    public void loadStockWithSymbol(String symbol){
+        // Check if symbol already exists in database
+        if (Utility.isEntryExist(symbol, getContext().getContentResolver())) {
+            Utility.showToast(getContext(), getString(R.string.toast_symbol_exists));
+            return;
+        }
 
         // Start service to retrieve stock info
         Intent serviceIntent = new Intent(getContext(), NetworkService.class);
         serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, symbol);
         serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
 
-        if(Utility.canUpdateList(getContext().getContentResolver())){
-            serviceIntent.putExtra(NetworkService.KEY_UPDATE_UPDATE_DATE, true);
-        }
         getContext().startService(serviceIntent);
 
         //Start cursor loader to load the newly added stock
-        ((AppCompatActivity)getContext()).getSupportLoaderManager().restartLoader(
-                ID_LOADER_STOCK_WITH_SYMBOL,
-                null,
-                new LoaderManager.LoaderCallbacks<Cursor>() {
-                    @Override
-                    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-                        CursorLoader loader = null;
-                        switch (id) {
-                            case ID_LOADER_STOCK_WITH_SYMBOL:
-                                loader = new CursorLoader(
-                                        getContext(),
-                                        StockContract.StockEntry.buildUri(
-                                                symbol.toUpperCase(Locale.US)),
-                                        ListManipulator.STOCK_PROJECTION,
-                                        null,
-                                        null,
-                                        null);
-                                break;
-                        }
-                        return loader;
-                    }
+        Bundle args = new Bundle();
+        args.putString(NetworkService.KEY_SEARCH_QUERY, symbol);
 
-                    @Override
-                    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-                        if (mEventListener != null) {
-                            mEventListener.onLoadStockWithSymbolFinished(loader, data);
-                        }
-                    }
-
-                    @Override
-                    public void onLoaderReset(Loader<Cursor> loader) {
-
-                    }
-                });
+        ((AppCompatActivity)getContext()).getSupportLoaderManager()
+                .restartLoader(ID_LOADER_STOCK_WITH_SYMBOL, args, this);
     }
 
     private String[] getLoadListFromDb(){

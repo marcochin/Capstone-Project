@@ -1,5 +1,6 @@
 package com.mcochin.stockstreaks.data;
 
+import android.content.ContentResolver;
 import android.database.Cursor;
 
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -68,7 +69,8 @@ public class ListManipulator {
 
         while(cursor.moveToNext()) {
             Stock stock = Utility.getStockFromCursor(cursor);
-            addItem(stock);
+            stock.setId(generateUniqueId());
+            mShownList.add(stock);
         }
     }
 
@@ -91,9 +93,11 @@ public class ListManipulator {
         mShownList.add(toPosition, stock);
     }
 
-    public void removeItem(int position) {
+    public void removeItem(int position, ContentResolver cr) {
         mLastRemovedItem = mShownList.remove(position);
         mLastRemovedPosition = position;
+
+        permanentlyDeleteLastRemoveItem(cr);
     }
 
     public int undoLastRemoveItem() {
@@ -113,6 +117,13 @@ public class ListManipulator {
             return insertedPosition;
         } else {
             return -1;
+        }
+    }
+
+    public void permanentlyDeleteLastRemoveItem(ContentResolver cr){
+        if(mLastRemovedItem != null) {
+            cr.delete(StockEntry.buildUri(mLastRemovedItem.getSymbol()), null, null);
+            mLastRemovedItem = null;
         }
     }
 
