@@ -18,6 +18,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
@@ -35,6 +36,8 @@ import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
+import org.w3c.dom.Text;
+
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements SearchBox.SearchListener,
@@ -42,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         ListManipulatorFragment.EventListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
+    private static final String KEY_LOGO_VISIBLE = "logoVisible";
 
     private RecyclerView mRecyclerView;
     private MyLinearLayoutManager mLayoutManager;
@@ -53,9 +57,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
 
     private EditText mSearchEditText;
+    private TextView mLogo;
     private SearchBox mAppBar;
     private SwipeRefreshLayout mSwipeToRefresh;
     private View mRootView;
+    private Snackbar mSnackbar;
 
     private boolean mTwoPane;
 
@@ -68,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mTwoPane = findViewById(R.id.detail_container) != null;
         mRootView = findViewById(R.id.rootView);
         mAppBar = (SearchBox)findViewById(R.id.appBar);
+        mLogo = (TextView)findViewById(R.id.logo);
         mSearchEditText = (EditText)findViewById(R.id.search);
         mSwipeToRefresh = (SwipeRefreshLayout)findViewById(R.id.swipe_to_refresh);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
@@ -82,6 +89,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mAppBar.toggleSearch();
+
+                // Else if not focused, but logo is invisible, open search w/o the focus
+            } else if(!savedInstanceState.getBoolean(KEY_LOGO_VISIBLE)){
+                mAppBar.toggleSearch();
+                mSearchEditText.clearFocus();
             }
         }
 
@@ -99,17 +111,19 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         configureAppBarDynamicElevation();
 
         // Fetch the stock list
-        fetchStockList();
+        fetchStockList(savedInstanceState);
     }
 
-    private void fetchStockList(){
+    private void fetchStockList(Bundle savedInstanceState){
         ListManipulatorFragment listManipulatorFragment =
                 ((ListManipulatorFragment) getSupportFragmentManager()
                         .findFragmentByTag(ListManipulatorFragment.TAG));
 
         if(!Utility.canUpdateList(getContentResolver()) || !Utility.isNetworkAvailable(this)){
-
-            listManipulatorFragment.initLoadAllFromDb(); //TODO if it loads from db do we really need to retain listManipulator?
+            if(savedInstanceState == null) {
+                // Only load from db on first load because listManipulator is storing the list.
+                listManipulatorFragment.initLoadAllFromDb();
+            }
         }else{
             refreshShownList(null);
         }
@@ -125,7 +139,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     private void refreshShownList(String attachSymbol){
-        //TODO dismiss snackbar to prevent undo removal because the old data will not be in sync with new data
+        // Dismiss Snackbar to prevent undo removal because the old data will not be in sync with
+        // new data when list is refreshed.
+        if(mSnackbar != null && mSnackbar.isShown()){
+            mSnackbar.dismiss();
+        }
 
         ((ListManipulatorFragment) getSupportFragmentManager()
                 .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew(attachSymbol);
@@ -207,6 +225,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             //If tablet insert fragment into container
 
         }else{
+            mSearchEditText.clearFocus();
             //If phone open activity
             Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
             startActivity(openDetail);
@@ -219,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         getListManipulator().removeItem(holder.getAdapterPosition(), getContentResolver());
         mAdapter.notifyItemRemoved(position);
 
-        Snackbar.make(
+        mSnackbar = Snackbar.make(
                 mRootView,
                 getString(R.string.placeholder_snackbar_main_text, holder.getSymbol()), Snackbar.LENGTH_LONG)
                 .setAction(R.string.snackbar_action_text, new View.OnClickListener() {
@@ -236,13 +255,20 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                         super.onDismissed(snackbar, event);
                         getListManipulator().permanentlyDeleteLastRemoveItem(getContentResolver());
                     }
-                })
-                .show();
+                });
+        mSnackbar.show();
+    }
+
+    @Override
+    public void onItemMoved(int fromPosition, int toPosition) {
+        getListManipulator().moveItem(fromPosition, toPosition);
+        mAdapter.notifyItemMoved(fromPosition, toPosition);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putBoolean(KEY_SEARCH_FOCUSED, mSearchEditText.isFocused());
+        outState.putBoolean(KEY_LOGO_VISIBLE, mLogo.getVisibility() == View.VISIBLE);
         super.onSaveInstanceState(outState);
     }
 

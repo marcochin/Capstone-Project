@@ -45,5 +45,8 @@
     <string name="placeholder_percent">%1$s%%</string>
     <string name="placeholder_days">%1$s days</string>
     <string name="placeholder_d">%1$sd</string>
+    <string name="placeholder_update_time">Updated: %1$s</string>
+    <string name="update_time_format" translatable="false">EEEE, MMMM dd\n@ h:mm a</string>
+    <string name="update_time_format_wide" translatable="false">EEEE, MMMM dd @ h:mm a</string>
 
 </resources>

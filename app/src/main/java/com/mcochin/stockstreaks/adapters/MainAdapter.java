@@ -23,6 +23,11 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeabl
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.utils.Utility;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * This is the adapter for <code>MainFragment</code>
@@ -51,10 +56,24 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     private boolean mIsPhone;
 
+    // Interfaces
+    public interface EventListener {
+        void onItemClick(MainViewHolder holder);
+        void onItemRemoved(MainViewHolder holder);
+        void onItemMoved(int fromPosition, int toPosition);
+    }
+
+    // NOTE: Make accessible with shorter name
+    private interface Draggable extends DraggableItemConstants {
+    }
+    private interface Swipeable extends SwipeableItemConstants {
+    }
+
     // Our ViewHolder class
     public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
             implements View.OnClickListener, View.OnTouchListener {
         ViewGroup mContainer;
+        TextView mUpdateTime;
         TextView mSymbol;
         TextView mFullName;
         TextView mRecentClose;
@@ -67,6 +86,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         public MainViewHolder(View itemView) {
             super(itemView);
             mContainer = (ViewGroup) itemView.findViewById(R.id.swipe_container);
+            mUpdateTime = (TextView)itemView.findViewById(R.id.text_update_time);
             mSymbol = (TextView) itemView.findViewById(R.id.text_symbol);
             mFullName = (TextView) itemView.findViewById(R.id.text_full_name);
             mRecentClose = (TextView) itemView.findViewById(R.id.text_recent_close);
@@ -108,18 +128,6 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         }
     }
 
-    // Interfaces
-    public interface EventListener {
-        void onItemClick(MainViewHolder holder);
-        void onItemRemoved(MainViewHolder holder);
-    }
-
-    // NOTE: Make accessible with shorter name
-    private interface Draggable extends DraggableItemConstants {
-    }
-    private interface Swipeable extends SwipeableItemConstants {
-    }
-
     // Constructor
     public MainAdapter (Context context, RecyclerViewDragDropManager dragDropManager,
                         ListManipulator listManipulator, EventListener eventListener){
@@ -159,38 +167,56 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         Stock stock = mListManipulator.getItem(position);
         Resources resources = mContext.getResources();
 
-        // Set our symbol, fullName, and recent close
+        // Set symbol
         holder.mSymbol.setText(stock.getSymbol());
+
+        // Set full name
         holder.mFullName.setText(stock.getFullName());
 
+        // Set recent close
         String recentClose = String.format("%.2f", stock.getRecentClose());
         holder.mRecentClose.setText(resources.getString(R.string.placeholder_dollar, recentClose));
 
-        // Convert change amount float values to Strings
+        // Format dollar/percent change float values to 2 decimals
         String changeDollar = resources.getString(
                 R.string.placeholder_dollar, String.format("%.2f", stock.getChangeDollar()));
+
         String changePercent = resources.getString(
                 R.string.placeholder_percent, String.format("%.2f", stock.getChangePercent()));
+
+        // Format streak String
         String streak = String.format("%d", stock.getStreak());
 
-        // Get our change colors and set our stock arrow ImageView
+        // Get our dollar/percent change colors and set our stock arrow ImageView
         int color;
         if(stock.getChangeDollar() > 0){
             color = ContextCompat.getColor(mContext, R.color.stock_up_green);
             holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_up);
+
         }else if (stock.getChangeDollar() < 0){
             color = ContextCompat.getColor(mContext, R.color.stock_down_red);
             holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_down);
+
         }else{
             color = ContextCompat.getColor(mContext, R.color.stock_neutral);
         }
 
-        // Set our change amounts, change color, and streak
+        // Set our dollar/percent change, change color, and streak
         if(position == 0) { //list_first_item
+            SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
+                    R.string.update_time_format_ref),
+                    Locale.US);
+
+            Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
+            holder.mUpdateTime.setText(resources.getString(
+                    R.string.placeholder_update_time, sdf.format(updateTime)));
+
             holder.mChangeDollar.setText(changeDollar);
             holder.mChangeDollar.setTextColor(color);
+
             holder.mChangePercent.setText(changePercent);
             holder.mChangePercent.setTextColor(color);
+
             holder.mStreak.setText(mContext.getString(R.string.placeholder_days, streak));
 
         } else{ //list_item
@@ -258,7 +284,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             // swipe left
             case Swipeable.RESULT_SWIPED_LEFT:
                 //Log.d(TAG, "Swiped left");
-                return new SwipeResultAction(this, holder, position);
+                return new SwipeResultAction(this, holder);
             case Swipeable.RESULT_CANCELED:
                 // other --- do nothing
             default:
@@ -308,13 +334,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     @Override // DraggableItemAdapter
     public void onMoveItem(int fromPosition, int toPosition) {
         //Log.d(TAG, "onMoveItem(fromPosition = " + fromPosition + ", toPosition = " + toPosition + ")");
-
         if (fromPosition == toPosition) {
             return;
         }
-
-        mListManipulator.moveItem(fromPosition, toPosition);
-        notifyItemMoved(fromPosition, toPosition);
+        if(mEventListener != null){
+            mEventListener.onItemMoved(fromPosition, toPosition);
+        }
     }
 
     public void release(){
@@ -326,11 +351,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     private static class SwipeResultAction extends SwipeResultActionRemoveItem {
         private MainAdapter mAdapter;
         private MainViewHolder mHolder;
-        private final int mPosition;
 
-        SwipeResultAction(MainAdapter adapter, MainViewHolder holder, int position) {
+        SwipeResultAction(MainAdapter adapter, MainViewHolder holder) {
             mAdapter = adapter;
-            mPosition = position;
             mHolder = holder;
         }
 
@@ -338,15 +361,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         protected void onPerformAction() {
             super.onPerformAction();
             //Log.d(TAG, "onPerformAction");
+            if(mAdapter.mEventListener != null) {
+                mAdapter.mEventListener.onItemRemoved(mHolder);
+            }
         }
 
         @Override
         protected void onSlideAnimationEnd() {
             super.onSlideAnimationEnd();
             //Log.d(TAG, "onSlideAnimationEnd");
-            if(mAdapter.mEventListener != null) {
-                mAdapter.mEventListener.onItemRemoved(mHolder);
-            }
         }
 
         @Override

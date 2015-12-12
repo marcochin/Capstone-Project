@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -109,49 +110,6 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
 
     }
 
-    public void initLoadAllFromDb(){
-        // Get load list of symbols to query
-        new AsyncTask<Void, Void, Void>(){
-            @Override
-            protected Void doInBackground(Void... params) {
-                Cursor cursor = null;
-                try {
-                    ContentResolver cr = getContext().getContentResolver();
-                    int shownIdBookmark  = Utility.getShownIdBookmark(cr);
-
-                    if(shownIdBookmark >= 0) {
-                        // Query db for all data with the same updateDate as the first entry.
-                        cursor = cr.query(
-                                StockContract.StockEntry.CONTENT_URI,
-                                ListManipulator.STOCK_PROJECTION,
-                                StockProvider.SHOWN_ID_BOOKMARK_SELECTION,
-                                new String[]{Integer.toString(shownIdBookmark)},
-                                StockProvider.ORDER_BY_ID_DESC);
-
-                        // Extract Stock data from cursor
-                        if (cursor != null) {
-                            int cursorCount = cursor.getCount();
-                            if(cursorCount > 0) {
-                                mListManipulator.setShownListCursor(cursor);
-                                mListManipulator.setLoadList(getLoadListFromDb());
-                                mListManipulator.addToLoadListPositionBookmark(cursorCount);
-
-                                if (mEventListener != null) {
-                                    mEventListener.onLoadAllFromDbFinished();
-                                }
-                            }
-                        }
-                    }
-                }finally {
-                    if(cursor != null){
-                        cursor.close();
-                    }
-                }
-                return null;
-            }
-        }.execute();
-    }
-
     /**
      * Refreshes the list.
      * @param attachSymbol An option to query a symbol once the list has done refreshing.
@@ -218,6 +176,49 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                 .restartLoader(ID_LOADER_STOCK_WITH_SYMBOL, args, this);
     }
 
+    public void initLoadAllFromDb(){
+        // Get load list of symbols to query
+        new AsyncTask<Void, Void, Void>(){
+            @Override
+            protected Void doInBackground(Void... params) {
+                Cursor cursor = null;
+                try {
+                    ContentResolver cr = getContext().getContentResolver();
+                    int shownIdBookmark  = Utility.getShownIdBookmark(cr);
+
+                    if(shownIdBookmark >= 0) {
+                        // Query db for all data with the same updateDate as the first entry.
+                        cursor = cr.query(
+                                StockContract.StockEntry.CONTENT_URI,
+                                ListManipulator.STOCK_PROJECTION,
+                                StockProvider.SHOWN_ID_BOOKMARK_SELECTION,
+                                new String[]{Integer.toString(shownIdBookmark)},
+                                StockProvider.ORDER_BY_ID_DESC);
+
+                        // Extract Stock data from cursor
+                        if (cursor != null) {
+                            int cursorCount = cursor.getCount();
+                            if(cursorCount > 0) {
+                                mListManipulator.setShownListCursor(cursor);
+                                mListManipulator.setLoadList(getLoadListFromDb());
+                                mListManipulator.addToLoadListPositionBookmark(cursorCount);
+
+                                if (mEventListener != null) {
+                                    mEventListener.onLoadAllFromDbFinished();
+                                }
+                            }
+                        }
+                    }
+                }finally {
+                    if(cursor != null){
+                        cursor.close();
+                    }
+                }
+                return null;
+            }
+        }.execute();
+    }
+
     private String[] getLoadListFromDb(){
         Cursor cursor = null;
         String[] loadList = null;
@@ -265,13 +266,16 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
     public class UpdateReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
-            ContentProviderResult[] results = (ContentProviderResult[])
-                    intent.getParcelableArrayExtra(StockProvider.KEY_UPDATE_RESULTS);
+            Parcelable[] results = intent.getParcelableArrayExtra(StockProvider.KEY_UPDATE_RESULTS);
             //Loop through results
-            for (ContentProviderResult result : results) {
+            for (Parcelable result : results) {
                 // Query the stocks from db
-                Cursor cursor = getContext().getContentResolver().query(result.uri,
-                        ListManipulator.STOCK_PROJECTION, null, null, null);
+                Cursor cursor = getContext().getContentResolver().query(
+                        ((ContentProviderResult)result).uri,
+                        ListManipulator.STOCK_PROJECTION,
+                        null,
+                        null,
+                        null);
 
                 // Insert stock in shownList
                 if(cursor != null && cursor.moveToFirst()) {

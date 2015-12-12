@@ -237,9 +237,12 @@ public class StockProvider extends ContentProvider {
         ContentProviderResult[] results =  super.applyBatch(operations);
 
         if(getContext() != null) {
-            Intent updateBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
-            updateBroadcast.putExtra(KEY_UPDATE_RESULTS, results[0]);
-            getContext().sendBroadcast(updateBroadcast);
+            if(operations.get(0).isWriteOperation()
+                    && operations.get(operations.size()-1).isWriteOperation()) {
+                Intent updateBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
+                updateBroadcast.putExtra(KEY_UPDATE_RESULTS, results);
+                getContext().sendBroadcast(updateBroadcast);
+            }
         }
 
         return results;

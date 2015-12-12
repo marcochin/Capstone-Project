@@ -94,10 +94,10 @@ public class ListManipulator {
     }
 
     public void removeItem(int position, ContentResolver cr) {
+        permanentlyDeleteLastRemoveItem(cr);
+
         mLastRemovedItem = mShownList.remove(position);
         mLastRemovedPosition = position;
-
-        permanentlyDeleteLastRemoveItem(cr);
     }
 
     public int undoLastRemoveItem() {

@@ -860,10 +860,10 @@ public class SearchBox extends RelativeLayout {
 			mic.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_clear));
 		}
 
-		showKeyboard();
+        showKeyboard();
 	}
-	
-	private void closeSearch() {
+
+    private void closeSearch() {
         if(animateDrawerLogo){
             this.materialMenu.animateState(IconState.BURGER);
             this.drawerLogo.setVisibility(View.VISIBLE);

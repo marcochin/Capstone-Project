@@ -17,7 +17,7 @@
         app:columnCount="2">
 
         <TextView
-            android:id="@+id/text_date_updated"
+            android:id="@+id/text_update_time"
             android:layout_width="0dp"
             android:layout_marginBottom="8dp"
             android:fontFamily="sans-serif"

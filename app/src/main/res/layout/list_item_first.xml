@@ -17,7 +17,7 @@
         app:columnCount="2">
 
         <TextView
-            android:id="@+id/text_date_updated"
+            android:id="@+id/text_update_time"
             android:layout_width="0dp"
             android:layout_marginBottom="8dp"
             android:fontFamily="sans-serif"
@@ -25,7 +25,7 @@
             android:textColor="@color/secondary_text"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
-            tools:text="Updated: Thursday, April 03 \n @ 4:00pm" />
+            tools:text="Updated: Thursday, April 03\n@ 4:00 PM" />
 
         <TextView
             android:id="@+id/text_full_name"

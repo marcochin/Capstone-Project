@@ -5,7 +5,9 @@ import android.util.Log;
 
 import com.mcochin.stockstreaks.utils.Utility;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * Test for some Utility Methods
@@ -186,8 +188,12 @@ public class UtilityTest extends ActivityInstrumentationTestCase2<MainActivity> 
     public void testCalendarTimeInMilli() {
         Calendar newYork = Utility.getNewYorkCalendarInstance();
         Calendar myTime = Calendar.getInstance();
+        myTime.set(Calendar.HOUR, 12);
+        SimpleDateFormat sdf = new SimpleDateFormat("EEEE, MMMM dd\n@ h:mm a", Locale.US);
 
-        Log.d("Time", "TimeInMilli: newYOrk " + newYork.getTimeInMillis() + " " + newYork.get(Calendar.HOUR_OF_DAY));
-        Log.d("Time", "TimeInMilli: myTime " + myTime.getTimeInMillis()+ " " + myTime.get(Calendar.HOUR_OF_DAY));
+        Log.d("Time", sdf.format(myTime.getTime()));
+//        Log.d("Time", "TimeInMilli: newYOrk " + newYork.getTimeInMillis() + " " + newYork.get(Calendar.HOUR_OF_DAY));
+//        Log.d("Time", "TimeInMilli: myTime " + myTime.getTimeInMillis()+ " " + myTime.get(Calendar.HOUR_OF_DAY));
+
     }
 }

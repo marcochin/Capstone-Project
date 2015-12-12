@@ -104,10 +104,10 @@ public class NetworkService extends IntentService {
 
             }
             try {
-                // Apply operations
-                getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
                 // Update the update time
                 updateUpdateTime();
+                // Apply operations
+                getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
 
             }catch (RemoteException | OperationApplicationException e){
                 Log.e(TAG, Log.getStackTraceString(e));
@@ -168,10 +168,10 @@ public class NetworkService extends IntentService {
         if(values == null){
             return;
         }
-        // Put stock into the database
-        getContentResolver().insert(StockEntry.buildUri(symbol), values);
         // Update the update time
         updateUpdateTime();
+        // Put stock into the database
+        getContentResolver().insert(StockEntry.buildUri(symbol), values);
     }
 
     private ContentValues getLatestMainValues(Stock stock) throws IOException{
