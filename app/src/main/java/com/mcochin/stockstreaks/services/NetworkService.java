@@ -104,7 +104,7 @@ public class NetworkService extends IntentService {
 
             }
             try {
-                // Update the update time
+                // Update the update time (Must be before applying the updates)
                 updateUpdateTime();
                 // Apply operations
                 getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
@@ -168,7 +168,7 @@ public class NetworkService extends IntentService {
         if(values == null){
             return;
         }
-        // Update the update time
+        // Update the update time (Must be before the insert)
         updateUpdateTime();
         // Put stock into the database
         getContentResolver().insert(StockEntry.buildUri(symbol), values);

@@ -49,9 +49,47 @@ public class ListManipulator {
     private Stock mLastRemovedItem = null;
     private int mLastRemovedPosition = -1;
     private int mUniqueId = 0;
+    private boolean mListUpdated;
+
+    public void addItem(Stock stock){
+        stock.setId(generateUniqueId());
+        mShownList.add(0, stock);
+        mListUpdated = true;
+    }
+
+    public void addToLoadListPositionBookmark(int addToBookmark){
+        if(addToBookmark > 0 ) {
+            mLoadListPositionBookmark += addToBookmark;
+        } else{
+            throw new IllegalArgumentException("Must be a positive number.");
+        }
+    }
+
+    public int getCount(){
+        return mShownList.size();
+    }
+
+    public Stock getItem(int index) {
+        if (index < 0 || index >= getCount()) {
+            throw new IndexOutOfBoundsException("index = " + index);
+        }
+        return mShownList.get(index);
+    }
+
+    public int getLoadListPositionBookmark(){
+        return mLoadListPositionBookmark;
+    }
 
     public int generateUniqueId(){
         return mUniqueId++;
+    }
+
+    public boolean isListUpdated(){
+        return mListUpdated;
+    }
+
+    public void setListUpdated(boolean listUpdated){
+        mListUpdated = listUpdated;
     }
 
     public void setShownListCursor(Cursor cursor){
@@ -79,11 +117,6 @@ public class ListManipulator {
         mLoadList = loadList;
     }
 
-    public void addItem(Stock stock){
-        stock.setId(generateUniqueId());
-        mShownList.add(0, stock);
-    }
-
     public void moveItem(int fromPosition, int toPosition) {
         if (fromPosition == toPosition) {
             return;
@@ -91,6 +124,7 @@ public class ListManipulator {
 
         Stock stock = mShownList.remove(fromPosition);
         mShownList.add(toPosition, stock);
+        mListUpdated = true;
     }
 
     public void removeItem(int position, ContentResolver cr) {
@@ -124,29 +158,7 @@ public class ListManipulator {
         if(mLastRemovedItem != null) {
             cr.delete(StockEntry.buildUri(mLastRemovedItem.getSymbol()), null, null);
             mLastRemovedItem = null;
-        }
-    }
-
-    public int getCount(){
-        return mShownList.size();
-    }
-
-    public Stock getItem(int index) {
-        if (index < 0 || index >= getCount()) {
-            throw new IndexOutOfBoundsException("index = " + index);
-        }
-        return mShownList.get(index);
-    }
-
-    public int getLoadListPositionBookmark(){
-        return mLoadListPositionBookmark;
-    }
-
-    public void addToLoadListPositionBookmark(int addToBookmark){
-        if(addToBookmark > 0 ) {
-            mLoadListPositionBookmark += addToBookmark;
-        } else{
-            throw new IllegalArgumentException("Must be a positive number.");
+            mListUpdated = true;
         }
     }
 

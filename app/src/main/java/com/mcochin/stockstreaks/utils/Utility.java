@@ -11,10 +11,8 @@ import android.support.v4.util.Pair;
 import android.widget.Toast;
 
 import com.mcochin.stockstreaks.data.ListManipulator;
-import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
-import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.Stock;
 
 import java.util.Calendar;
@@ -192,15 +190,15 @@ public class Utility {
     }
 
     /**
-     * Gets last update time from db
+     * Gets the last shown position
      * @param cr
-     * @return returns the lastUpdateTime or null if not yet exist
+     * @return returns the last shown position or -1 if not yet exist
      */
-    public static int getShownIdBookmark(ContentResolver cr) {
+    public static int getShownPositionBookmark(ContentResolver cr) {
         Cursor cursor = null;
-        int shownIdBookmark = -1;
+        int shownPosBookmark = -1;
         try {
-            final String[] projection = {SaveStateEntry.COLUMN_SHOWN_ID_BOOKMARK};
+            final String[] projection = {SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK};
             final int indexBookmark = 0;
 
             cursor = cr.query(
@@ -211,14 +209,14 @@ public class Utility {
                     null);
 
             if (cursor != null && cursor.moveToFirst()) {
-                shownIdBookmark = cursor.getInt(indexBookmark);
+                shownPosBookmark = cursor.getInt(indexBookmark);
             }
         }finally {
             if(cursor!=null){
                 cursor.close();
             }
         }
-        return shownIdBookmark;
+        return shownPosBookmark;
     }
 
     /**

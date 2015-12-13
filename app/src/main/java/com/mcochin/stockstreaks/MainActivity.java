@@ -279,12 +279,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override
-    public void onStop() {
-        getListManipulator().permanentlyDeleteLastRemoveItem(getContentResolver());
-        super.onStop();
-    }
-
-    @Override
     public void onDestroy() {
         if (mDragDropManager != null) {
             mDragDropManager.release();

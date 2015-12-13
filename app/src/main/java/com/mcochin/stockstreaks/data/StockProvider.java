@@ -10,6 +10,7 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -29,6 +30,11 @@ public class StockProvider extends ContentProvider {
 
     private static final String TAG = StockProvider.class.getSimpleName();
     public static final String KEY_UPDATE_RESULTS = "updateResults";
+    public static final String KEY_OPERATIONS = "updateOperations";
+
+    private static final String METHOD_INSERT_ITEM = "insertItem";
+    private static final String METHOD_UPDATE_ITEMS = "updateItems";
+    private static final String METHOD_UPDATE_LIST_POSITION = "updateListPosition";
 
     private static final String UNKNOWN_URI = "Unknown Uri: ";
     private static final String ERROR_ROW_INSERT = "Failed to insert row:  ";
@@ -41,11 +47,12 @@ public class StockProvider extends ContentProvider {
     private static final String STOCK_SYMBOL_SELECTION =
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_SYMBOL + " = ?";
 
-    public static final String SHOWN_ID_BOOKMARK_SELECTION =
-            StockEntry.TABLE_NAME + "." + StockEntry._ID + " >= ?";
+    // stocks.list_position <= ?
+    public static final String SHOWN_POSITION_BOOKMARK_SELECTION =
+            StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_LIST_POSITION + " <= ?";
 
-    // ORDER BY _ID DESC
-    public static final String ORDER_BY_ID_DESC = StockContract.StockEntry._ID + " DESC";
+    // list_position ASC
+    public static final String ORDER_BY_LIST_POSITION_ASC = StockEntry.COLUMN_LIST_POSITION + " ASC";
 
     private static UriMatcher buildUriMatcher() {
         // All paths added to the UriMatcher have a corresponding code to return when a match is
@@ -230,22 +237,50 @@ public class StockProvider extends ContentProvider {
         return rowsAffected;
     }
 
-    @NonNull
+    @Nullable
     @Override
-    public ContentProviderResult[] applyBatch(@NonNull ArrayList<ContentProviderOperation> operations)
-            throws OperationApplicationException {
-        ContentProviderResult[] results =  super.applyBatch(operations);
+    public Bundle call(@NonNull String method, String arg, Bundle extras) {
+        try {
+            ArrayList<ContentProviderOperation> operations =
+                    extras.getParcelableArrayList(KEY_OPERATIONS);
+            if(operations != null) {
+                ContentProviderResult[] results = applyBatch(operations);
 
-        if(getContext() != null) {
-            if(operations.get(0).isWriteOperation()
-                    && operations.get(operations.size()-1).isWriteOperation()) {
-                Intent updateBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
-                updateBroadcast.putExtra(KEY_UPDATE_RESULTS, results);
-                getContext().sendBroadcast(updateBroadcast);
+                switch (method) {
+                    case METHOD_INSERT_ITEM:
+                        insertItem(results);
+                        break;
+
+                    case METHOD_UPDATE_ITEMS:
+                        updateItems(results);
+                        break;
+
+                    case METHOD_UPDATE_LIST_POSITION:
+                        updateListPosition(results);
+                        break;
+                }
             }
+        }catch (OperationApplicationException e){
+            Log.e(TAG, Log.getStackTraceString(e));
         }
 
-        return results;
+        return super.call(method, arg, extras);
+    }
+
+    private void insertItem(ContentProviderResult[] results){
+
+    }
+
+    private void updateItems(ContentProviderResult[] results){
+        if (getContext() != null) {
+            Intent updateBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
+            updateBroadcast.putExtra(KEY_UPDATE_RESULTS, results);
+            getContext().sendBroadcast(updateBroadcast);
+        }
+    }
+
+    private void updateListPosition(ContentProviderResult[] results){
+
     }
 }
 

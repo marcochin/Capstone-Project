@@ -24,7 +24,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
         final String SQL_CREATE_SAVE_STATE_TABLE = "CREATE TABLE " + SaveStateEntry.TABLE_NAME + " (" +
                 SaveStateEntry._ID + " INTEGER PRIMARY KEY, " +
                 SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI + " INTEGER, " +
-                SaveStateEntry.COLUMN_SHOWN_ID_BOOKMARK + " INTEGER " + ");";
+                SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK + " INTEGER " + ");";
 
         final String SQL_CREATE_STOCKS_TABLE = "CREATE TABLE " + StockEntry.TABLE_NAME + " (" +
 
@@ -43,6 +43,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 StockEntry.COLUMN_PREV_STREAK + " INTEGER, " +
                 StockEntry.COLUMN_STREAK_YEAR_HIGH + " INTEGER, " +
                 StockEntry.COLUMN_STREAK_YEAR_LOW + " INTEGER, " +
+                StockEntry.COLUMN_LIST_POSITION + " INTEGER, " +
 
                 // All symbols should be unique
                 " UNIQUE (" + StockEntry.COLUMN_SYMBOL + "));";
@@ -59,4 +60,6 @@ public class StockDbHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + StockEntry.TABLE_NAME);
         onCreate(db);
     }
+
+
 }

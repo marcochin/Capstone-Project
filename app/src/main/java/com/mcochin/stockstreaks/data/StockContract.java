@@ -41,7 +41,7 @@ public class StockContract {
 
         public static final String TABLE_NAME = PATH_SAVE_STATE;
         public static final String COLUMN_UPDATE_TIME_IN_MILLI = "update_time_in_milli";
-        public static final String COLUMN_SHOWN_ID_BOOKMARK = "shown_id_bookmark";
+        public static final String COLUMN_SHOWN_POSITION_BOOKMARK = "shown_position_bookmark";
     }
 
 
@@ -62,6 +62,7 @@ public class StockContract {
                 ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_STOCKS;
 
         public static final String TABLE_NAME = PATH_STOCKS;
+        public static final String COLUMN_LIST_POSITION = "list_position";
         public static final String COLUMN_SYMBOL = "symbol";
         public static final String COLUMN_FULL_NAME = "full_name";
         public static final String COLUMN_RECENT_CLOSE = "recent_close";
@@ -89,5 +90,10 @@ public class StockContract {
     public static String getSymbolFromUri(Uri uri){
         // content://com.mcochin.stockstreaks/stocks/GPRO
         return uri.getPathSegments().get(1);
+    }
+
+    public static boolean isSaveStateUri(Uri uri){
+        // content://com.mcochin.stockstreaks/save_state/
+        return uri.getPathSegments().get(0).equals(PATH_SAVE_STATE);
     }
 }

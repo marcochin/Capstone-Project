@@ -14,7 +14,6 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
@@ -24,7 +23,6 @@ import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.NetworkService;
 import com.mcochin.stockstreaks.utils.Utility;
 
-import java.util.Calendar;
 import java.util.Locale;
 
 public class ListManipulatorFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
@@ -59,6 +57,17 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
 
         setRetainInstance(true);  // keep the fragment instance
         mListManipulator = new ListManipulator();
+    }
+
+    @Override
+    public void onStop() {
+        mListManipulator.permanentlyDeleteLastRemoveItem(getContext().getContentResolver());
+        if(mListManipulator.isListUpdated()){
+            //TODO Save bookmark in db
+            //TODO Save list positions in db
+            mListManipulator.setListUpdated(false);
+        }
+        super.onStop();
     }
 
     @Override
@@ -184,16 +193,16 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                 Cursor cursor = null;
                 try {
                     ContentResolver cr = getContext().getContentResolver();
-                    int shownIdBookmark  = Utility.getShownIdBookmark(cr);
+                    int shownPositionBookmark  = Utility.getShownPositionBookmark(cr);
 
-                    if(shownIdBookmark >= 0) {
+                    if(shownPositionBookmark >= 0) {
                         // Query db for all data with the same updateDate as the first entry.
                         cursor = cr.query(
                                 StockContract.StockEntry.CONTENT_URI,
                                 ListManipulator.STOCK_PROJECTION,
-                                StockProvider.SHOWN_ID_BOOKMARK_SELECTION,
-                                new String[]{Integer.toString(shownIdBookmark)},
-                                StockProvider.ORDER_BY_ID_DESC);
+                                StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
+                                new String[]{Integer.toString(shownPositionBookmark)},
+                                StockProvider.ORDER_BY_LIST_POSITION_ASC);
 
                         // Extract Stock data from cursor
                         if (cursor != null) {
@@ -232,7 +241,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                     projection,
                     null,
                     null,
-                    StockProvider.ORDER_BY_ID_DESC);
+                    StockProvider.ORDER_BY_LIST_POSITION_ASC);
 
             // Grab symbols from cursor and put them in array
             if(cursor != null){
