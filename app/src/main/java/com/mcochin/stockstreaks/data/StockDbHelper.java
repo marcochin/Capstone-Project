@@ -1,5 +1,6 @@
 package com.mcochin.stockstreaks.data;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -50,6 +51,11 @@ public class StockDbHelper extends SQLiteOpenHelper {
 
         db.execSQL(SQL_CREATE_SAVE_STATE_TABLE);
         db.execSQL(SQL_CREATE_STOCKS_TABLE);
+
+        // Initialize starting update time
+        ContentValues values = new ContentValues();
+        values.put(SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI, 0);
+        db.insert(SaveStateEntry.TABLE_NAME, null, values);
     }
 
     @Override
@@ -60,6 +66,4 @@ public class StockDbHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + StockEntry.TABLE_NAME);
         onCreate(db);
     }
-
-
 }

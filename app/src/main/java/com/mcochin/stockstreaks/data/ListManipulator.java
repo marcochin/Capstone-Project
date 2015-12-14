@@ -1,10 +1,14 @@
 package com.mcochin.stockstreaks.data;
 
+import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.database.Cursor;
+import android.os.Bundle;
 
-import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
@@ -86,10 +90,6 @@ public class ListManipulator {
 
     public boolean isListUpdated(){
         return mListUpdated;
-    }
-
-    public void setListUpdated(boolean listUpdated){
-        mListUpdated = listUpdated;
     }
 
     public void setShownListCursor(Cursor cursor){
@@ -194,5 +194,57 @@ public class ListManipulator {
         }
 
         return false;
+    }
+
+    public void saveBookmarkAndListPositions(ContentResolver cr){
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+
+        // Save bookmark in db
+        ContentValues bookmarkValues = new ContentValues();
+        bookmarkValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, getCount());
+
+        ops.add(ContentProviderOperation
+                .newUpdate(SaveStateEntry.CONTENT_URI)
+                .withValues(bookmarkValues)
+                .withYieldAllowed(true)
+                .build());
+
+        // Save shown list positions in db
+        int i = 0;
+        for(Stock stock: mShownList){
+            // Save bookmark in db
+            ContentValues positionValues = new ContentValues();
+            positionValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, i);
+
+            ops.add(ContentProviderOperation
+                            .newUpdate(StockEntry.buildUri(stock.getSymbol()))
+                            .withValues(positionValues)
+                            .withYieldAllowed(true)
+                            .build());
+            i++;
+        }
+
+        if(mLoadList != null) {
+            // Save load list positions beneath the shown list positions in db
+            for (int j = mLoadListPositionBookmark; j < mLoadList.length; j++) {
+                // Save bookmark in db
+                ContentValues positionValues = new ContentValues();
+                positionValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, i);
+
+                ops.add(ContentProviderOperation
+                        .newUpdate(StockEntry.buildUri(mLoadList[j]))
+                        .withValues(positionValues)
+                        .withYieldAllowed(true)
+                        .build());
+                i++;
+            }
+        }
+
+        // Apply operations
+        Bundle extras = new Bundle();
+        extras.putParcelableArrayList(StockProvider.KEY_OPERATIONS, ops);
+        cr.call(StockContract.BASE_CONTENT_URI, StockProvider.METHOD_UPDATE_LIST_POSITION, null, extras);
+
+        mListUpdated = false;
     }
 }

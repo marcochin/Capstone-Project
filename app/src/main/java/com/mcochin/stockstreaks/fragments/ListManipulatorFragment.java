@@ -18,12 +18,14 @@ import android.support.v7.app.AppCompatActivity;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
+import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.NetworkService;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.Locale;
+import java.util.concurrent.locks.Lock;
 
 public class ListManipulatorFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     public static final String TAG = ListManipulatorFragment.class.getSimpleName();
@@ -61,11 +63,10 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
 
     @Override
     public void onStop() {
-        mListManipulator.permanentlyDeleteLastRemoveItem(getContext().getContentResolver());
+        ContentResolver cr  = getContext().getContentResolver();
+        mListManipulator.permanentlyDeleteLastRemoveItem(cr);
         if(mListManipulator.isListUpdated()){
-            //TODO Save bookmark in db
-            //TODO Save list positions in db
-            mListManipulator.setListUpdated(false);
+            mListManipulator.saveBookmarkAndListPositions(cr);
         }
         super.onStop();
     }
@@ -89,8 +90,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                 if(symbol != null) {
                     loader = new CursorLoader(
                             getContext(),
-                            StockContract.StockEntry.buildUri(
-                                    symbol.toUpperCase(Locale.US)),
+                            StockEntry.buildUri(symbol.toUpperCase(Locale.US)),
                             ListManipulator.STOCK_PROJECTION,
                             null,
                             null,
@@ -130,16 +130,16 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
             protected Void doInBackground(Void... params) {
                 // Give list to ListManipulator
                 mListManipulator.setLoadList(getLoadListFromDb());
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
+                // LOCK
                 loadAFew();
 
-                if(attachSymbol != null){
+                // UNLOCK when finish updating
+                if (attachSymbol != null) {
+                    // TODO threading problem!!! load stock With symbol needs to load AFTER loadAFew
                     loadStockWithSymbol(attachSymbol);
                 }
+
+                return null;
             }
         }.execute();
     }
@@ -164,12 +164,6 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
     }
 
     public void loadStockWithSymbol(String symbol){
-        // Check if symbol already exists in database
-        if (Utility.isEntryExist(symbol, getContext().getContentResolver())) {
-            Utility.showToast(getContext(), getString(R.string.toast_symbol_exists));
-            return;
-        }
-
         // Start service to retrieve stock info
         Intent serviceIntent = new Intent(getContext(), NetworkService.class);
         serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, symbol);
@@ -185,7 +179,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                 .restartLoader(ID_LOADER_STOCK_WITH_SYMBOL, args, this);
     }
 
-    public void initLoadAllFromDb(){
+    public void initLoadFromBookmark(){
         // Get load list of symbols to query
         new AsyncTask<Void, Void, Void>(){
             @Override
@@ -198,7 +192,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                     if(shownPositionBookmark >= 0) {
                         // Query db for all data with the same updateDate as the first entry.
                         cursor = cr.query(
-                                StockContract.StockEntry.CONTENT_URI,
+                                StockEntry.CONTENT_URI,
                                 ListManipulator.STOCK_PROJECTION,
                                 StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
                                 new String[]{Integer.toString(shownPositionBookmark)},
@@ -232,12 +226,12 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
         Cursor cursor = null;
         String[] loadList = null;
         try {
-            final String[] projection = new String[]{StockContract.StockEntry.COLUMN_SYMBOL};
+            final String[] projection = new String[]{StockEntry.COLUMN_SYMBOL};
             final int indexSymbol = 0;
 
             // Query db for just symbols.
             cursor = getContext().getContentResolver().query(
-                    StockContract.StockEntry.CONTENT_URI,
+                    StockEntry.CONTENT_URI,
                     projection,
                     null,
                     null,
@@ -275,22 +269,24 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
     public class UpdateReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
-            Parcelable[] results = intent.getParcelableArrayExtra(StockProvider.KEY_UPDATE_RESULTS);
+            Parcelable[] results = intent.getParcelableArrayExtra(StockProvider.KEY_OPERATION_RESULTS);
             //Loop through results
             for (Parcelable result : results) {
-                // Query the stocks from db
-                Cursor cursor = getContext().getContentResolver().query(
-                        ((ContentProviderResult)result).uri,
-                        ListManipulator.STOCK_PROJECTION,
-                        null,
-                        null,
-                        null);
+                if(!StockContract.isSaveStateUri(((ContentProviderResult)result).uri)) {
+                    // Query the stocks from db
+                    Cursor cursor = getContext().getContentResolver().query(
+                            ((ContentProviderResult) result).uri,
+                            ListManipulator.STOCK_PROJECTION,
+                            null,
+                            null,
+                            null);
 
-                // Insert stock in shownList
-                if(cursor != null && cursor.moveToFirst()) {
-                    Stock stock = Utility.getStockFromCursor(cursor);
-                    mListManipulator.addItem(stock);
-                    cursor.close();
+                    // Insert stock in shownList
+                    if (cursor != null && cursor.moveToFirst()) {
+                        Stock stock = Utility.getStockFromCursor(cursor);
+                        mListManipulator.addItem(stock);
+                        cursor.close();
+                    }
                 }
             }
 

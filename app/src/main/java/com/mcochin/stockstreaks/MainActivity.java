@@ -36,8 +36,6 @@ import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
-import org.w3c.dom.Text;
-
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements SearchBox.SearchListener,
@@ -122,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if(!Utility.canUpdateList(getContentResolver()) || !Utility.isNetworkAvailable(this)){
             if(savedInstanceState == null) {
                 // Only load from db on first load because listManipulator is storing the list.
-                listManipulatorFragment.initLoadAllFromDb();
+                listManipulatorFragment.initLoadFromBookmark();
             }
         }else{
             refreshShownList(null);
@@ -154,18 +152,17 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mAdapter.notifyDataSetChanged();
     }
 
-    @Override
+    @Override // ListManipulatorFragment.EventListener
     public void onLoadAllFromDbFinished() {// ListManipulatorFragment.EventListener
         mAdapter.notifyDataSetChanged();
     }
 
-    @Override
+    @Override // ListManipulatorFragment.EventListener
     public void onLoadStockWithSymbolFinished(Loader<Cursor> loader, Cursor data) {
         if(data == null || data.getCount() == 0){
             return;
         }
 
-        Log.d(TAG, "loader stock_with_symbol");
         ListManipulator listManipulator = getListManipulator();
 
         if(data.moveToFirst()){
@@ -173,6 +170,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
         mAdapter.notifyItemInserted(0);
         mRecyclerView.smoothScrollToPosition(0);
+
+        getSupportLoaderManager().destroyLoader(ListManipulatorFragment.ID_LOADER_STOCK_WITH_SYMBOL);
+        mSearchEditText.setText("");
     }
 
     @Override // SearchBox.SearchListener
@@ -205,10 +205,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         query = query.toUpperCase(Locale.US);
 
         if (TextUtils.isEmpty(query)) {
-            Toast.makeText(MainActivity.this,
-                    R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
+            return;
+
+        } else if (Utility.isEntryExist(query, getContentResolver())) {
+            // Check if symbol already exists in database
+            Toast.makeText(this, R.string.toast_symbol_exists, Toast.LENGTH_SHORT).show();
             return;
         }
+
         // Refresh the shownList BEFORE fetching a new stock. This is to prevent
         // fetching the new stock twice when it becomes apart of that list.
         if(Utility.canUpdateList(getContentResolver())) {

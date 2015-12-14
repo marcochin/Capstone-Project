@@ -29,12 +29,12 @@ public class StockProvider extends ContentProvider {
     private static final UriMatcher sUriMatcher = buildUriMatcher();
 
     private static final String TAG = StockProvider.class.getSimpleName();
-    public static final String KEY_UPDATE_RESULTS = "updateResults";
-    public static final String KEY_OPERATIONS = "updateOperations";
+    public static final String KEY_OPERATION_RESULTS = "operationResults";
+    public static final String KEY_OPERATIONS = "operations";
 
-    private static final String METHOD_INSERT_ITEM = "insertItem";
-    private static final String METHOD_UPDATE_ITEMS = "updateItems";
-    private static final String METHOD_UPDATE_LIST_POSITION = "updateListPosition";
+    public static final String METHOD_INSERT_ITEM = "insertItem";
+    public static final String METHOD_UPDATE_ITEMS = "updateItems";
+    public static final String METHOD_UPDATE_LIST_POSITION = "updateListPosition";
 
     private static final String UNKNOWN_URI = "Unknown Uri: ";
     private static final String ERROR_ROW_INSERT = "Failed to insert row:  ";
@@ -47,9 +47,9 @@ public class StockProvider extends ContentProvider {
     private static final String STOCK_SYMBOL_SELECTION =
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_SYMBOL + " = ?";
 
-    // stocks.list_position <= ?
+    // stocks.list_position < ?
     public static final String SHOWN_POSITION_BOOKMARK_SELECTION =
-            StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_LIST_POSITION + " <= ?";
+            StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_LIST_POSITION + " < ?";
 
     // list_position ASC
     public static final String ORDER_BY_LIST_POSITION_ASC = StockEntry.COLUMN_LIST_POSITION + " ASC";
@@ -267,20 +267,21 @@ public class StockProvider extends ContentProvider {
         return super.call(method, arg, extras);
     }
 
-    private void insertItem(ContentProviderResult[] results){
-
-    }
 
     private void updateItems(ContentProviderResult[] results){
         if (getContext() != null) {
             Intent updateBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
-            updateBroadcast.putExtra(KEY_UPDATE_RESULTS, results);
+            updateBroadcast.putExtra(KEY_OPERATION_RESULTS, results);
             getContext().sendBroadcast(updateBroadcast);
         }
     }
 
     private void updateListPosition(ContentProviderResult[] results){
+        // Do nothing
+    }
 
+    private void insertItem(ContentProviderResult[] results){
+        // Do nothing
     }
 }
 

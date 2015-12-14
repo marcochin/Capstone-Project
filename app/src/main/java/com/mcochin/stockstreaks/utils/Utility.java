@@ -190,7 +190,7 @@ public class Utility {
     }
 
     /**
-     * Gets the last shown position
+     * Gets the last shown position + 1. The bookmark is always 1 above the actual position.
      * @param cr
      * @return returns the last shown position or -1 if not yet exist
      */

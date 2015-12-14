@@ -4,16 +4,15 @@ import android.app.IntentService;
 import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.content.OperationApplicationException;
-import android.database.Cursor;
-import android.os.RemoteException;
+import android.os.Bundle;
 import android.support.v4.util.Pair;
 import android.util.Log;
 
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract;
-import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
+import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
@@ -68,6 +67,8 @@ public class NetworkService extends IntentService {
                     String[] symbols = intent.getStringArrayExtra(KEY_LOAD_A_FEW_QUERY);
                     boolean listRefresh = intent.getBooleanExtra(KEY_LIST_REFRESH, false);
 
+                    // We use listRefresh when we CAN update (loading the first few), then every
+                    // subsequent load that requires up to date info we use first option too.
                     if(listRefresh || !Utility.canUpdateList(getContentResolver())){
                         performActionLoadAFew(symbols);
                     } else {
@@ -103,16 +104,10 @@ public class NetworkService extends IntentService {
                         .build());
 
             }
-            try {
-                // Update the update time (Must be before applying the updates)
-                updateUpdateTime();
-                // Apply operations
-                getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
-
-            }catch (RemoteException | OperationApplicationException e){
-                Log.e(TAG, Log.getStackTraceString(e));
-                Utility.showToast(this, getString(R.string.toast_error_updating_list));
-            }
+            // Add update time operation to list
+            ops.add(getUpdateTimeOperation());
+            // Apply operations
+            applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
         }
     }
 
@@ -151,14 +146,9 @@ public class NetworkService extends IntentService {
                     .withYieldAllowed(true)
                     .build());
         }
-        try {
-            // Apply operations
-            getContentResolver().applyBatch(StockContract.CONTENT_AUTHORITY, ops);
 
-        }catch (RemoteException | OperationApplicationException e){
-            Log.e(TAG, Log.getStackTraceString(e));
-            Utility.showToast(this, getString(R.string.toast_error_updating_list));
-        }
+        // Apply operations
+        applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
     }
 
     private void performActionStockWithSymbol(String symbol)throws IOException{
@@ -168,10 +158,20 @@ public class NetworkService extends IntentService {
         if(values == null){
             return;
         }
-        // Update the update time (Must be before the insert)
-        updateUpdateTime();
-        // Put stock into the database
-        getContentResolver().insert(StockEntry.buildUri(symbol), values);
+
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+
+        // Add insert operation to list
+        ops.add(ContentProviderOperation
+                .newInsert(StockEntry.buildUri(stock.getSymbol()))
+                .withValues(values)
+                .withYieldAllowed(true)
+                .build());
+
+        // Add update time operation to list
+        ops.add(getUpdateTimeOperation());
+        // Apply operations
+        applyOperations(ops, StockProvider.METHOD_INSERT_ITEM, null);
     }
 
     private ContentValues getLatestMainValues(Stock stock) throws IOException{
@@ -332,6 +332,24 @@ public class NetworkService extends IntentService {
         if(rowsAffected < 1){
             getContentResolver().insert(SaveStateEntry.CONTENT_URI, values);
         }
+    }
+
+    private ContentProviderOperation getUpdateTimeOperation(){
+        ContentValues values = new ContentValues();
+        values.put(SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI, System.currentTimeMillis());
+
+        return ContentProviderOperation
+                .newUpdate(SaveStateEntry.CONTENT_URI)
+                .withValues(values)
+                .withYieldAllowed(true)
+                .build();
+    }
+
+    private void applyOperations(ArrayList<ContentProviderOperation> ops, String method, String arg){
+        Bundle extras = new Bundle();
+        extras.putParcelableArrayList(StockProvider.KEY_OPERATIONS, ops);
+
+        getContentResolver().call(StockContract.BASE_CONTENT_URI, method, arg, extras);
     }
 
 //    private ContentValues getDetailValues(String symbol) throws IOException{

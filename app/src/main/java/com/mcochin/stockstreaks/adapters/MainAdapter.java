@@ -100,15 +100,6 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             itemView.setOnTouchListener(this);
         }
 
-        public CharSequence getSymbol(){
-            return mSymbol.getText();
-        }
-
-        @Override
-        public View getSwipeableContainerView() {
-            return mContainer;
-        }
-
         @Override
         public void onClick(View v) {
             if(mEventListener != null) {
@@ -125,6 +116,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
                 }
             }
             return false;
+        }
+
+        @Override
+        public View getSwipeableContainerView() {
+            return mContainer;
+        }
+
+        public CharSequence getSymbol(){
+            return mSymbol.getText();
         }
     }
 
