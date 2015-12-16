@@ -68,4 +68,21 @@
 
     </android.support.v7.widget.GridLayout>
 
+    <ProgressBar
+        android:id="@+id/progress_wheel"
+        android:layout_width="@dimen/progress_wheel_size"
+        android:layout_height="@dimen/progress_wheel_size"
+        android:indeterminate="true"
+        android:layout_gravity="center"
+        android:visibility="invisible" />
+
+    <TextView
+        style="?android:attr/borderlessButtonStyle"
+        android:id="@+id/retry_button"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:text="@string/retry"
+        android:visibility="invisible"/>
+
 </FrameLayout>

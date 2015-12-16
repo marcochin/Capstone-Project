@@ -13,6 +13,7 @@ import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
+import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
@@ -34,11 +35,14 @@ public class NetworkService extends IntentService {
     private static final String TAG = NetworkService.class.getSimpleName();
     public static final String KEY_SEARCH_QUERY ="searchQuery";
     public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
-    public static final String KEY_LIST_REFRESH ="updateUpdateDate";
+    public static final String KEY_LIST_REFRESH ="listResfresh";
+    public static final String KEY_ERROR ="error";
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_STOCK_WITH_SYMBOL = "actionStockWithSymbol";
     public static final String ACTION_DETAILS = "actionDetails";
+
+    public static final int NETWORK_ERROR = -1;
 
     //needs to be 32 and 366 since we need to compare closing to prev day's closing price
     private static final int MONTH = 32;
@@ -85,6 +89,10 @@ public class NetworkService extends IntentService {
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
             Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
+
+            Intent errorBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
+            errorBroadcast.putExtra(KEY_ERROR, NETWORK_ERROR);
+            sendBroadcast(errorBroadcast);
         }
     }
 

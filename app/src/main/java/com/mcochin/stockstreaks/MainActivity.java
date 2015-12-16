@@ -7,7 +7,6 @@ import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.Loader;
 import android.support.v4.view.ViewCompat;
@@ -15,7 +14,6 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -53,13 +51,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private RecyclerViewSwipeManager mSwipeManager;
     private RecyclerViewTouchActionGuardManager mTouchActionGuardManager;
 
-
     private EditText mSearchEditText;
     private TextView mLogo;
     private SearchBox mAppBar;
     private SwipeRefreshLayout mSwipeToRefresh;
     private View mRootView;
     private Snackbar mSnackbar;
+
+    private ListManipulatorFragment mListFragment;
 
     private boolean mTwoPane;
 
@@ -79,11 +78,16 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if (savedInstanceState == null) {
             // Initialize the fragment that stores the list
+            mListFragment = new ListManipulatorFragment();
+
             getSupportFragmentManager().beginTransaction()
-                    .add(new ListManipulatorFragment(), ListManipulatorFragment.TAG).commit();
+                    .add(mListFragment, ListManipulatorFragment.TAG).commit();
 
             getSupportFragmentManager().executePendingTransactions();
         } else{
+            mListFragment = ((ListManipulatorFragment) getSupportFragmentManager()
+                    .findFragmentByTag(ListManipulatorFragment.TAG));
+
             // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mAppBar.toggleSearch();
@@ -95,8 +99,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
         }
 
-        ((ListManipulatorFragment) getSupportFragmentManager()
-                .findFragmentByTag(ListManipulatorFragment.TAG)).setEventListener(this);
+        mListFragment.setEventListener(this);
 
         // Set our refresh listener for swiping down to refresh
         mSwipeToRefresh.setOnRefreshListener(this);
@@ -113,14 +116,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     private void fetchStockList(Bundle savedInstanceState){
-        ListManipulatorFragment listManipulatorFragment =
-                ((ListManipulatorFragment) getSupportFragmentManager()
-                        .findFragmentByTag(ListManipulatorFragment.TAG));
 
         if(!Utility.canUpdateList(getContentResolver()) || !Utility.isNetworkAvailable(this)){
             if(savedInstanceState == null) {
                 // Only load from db on first load because listManipulator is storing the list.
-                listManipulatorFragment.initLoadFromBookmark();
+                mListFragment.initLoadFromBookmark();
             }
         }else{
             refreshShownList(null);
@@ -142,14 +142,23 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if(mSnackbar != null && mSnackbar.isShown()){
             mSnackbar.dismiss();
         }
-
-        ((ListManipulatorFragment) getSupportFragmentManager()
-                .findFragmentByTag(ListManipulatorFragment.TAG)).initLoadAFew(attachSymbol);
+        mListFragment.initLoadAFew(attachSymbol);
     }
 
     @Override // ListManipulatorFragment.EventListener
-    public void onLoadNextFewFinished() {
-        mAdapter.notifyDataSetChanged();
+    public void onLoadNextFewFinished(boolean isSuccess) {
+        if(isSuccess) {
+            mAdapter.notifyDataSetChanged();
+        }else{
+            // Show retry button
+            int lastPosition = getListManipulator().getCount() - 1;
+            MainAdapter.MainViewHolder holder = (MainAdapter.MainViewHolder)mRecyclerView
+                    .findViewHolderForAdapterPosition(lastPosition);
+
+            if(holder.getSymbol() == ListManipulator.LOADING_ITEM){
+                mAdapter.notifyItemChanged(lastPosition);
+            }
+        }
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -159,9 +168,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadStockWithSymbolFinished(Loader<Cursor> loader, Cursor data) {
-        if(data == null || data.getCount() == 0){
-            return;
-        }
 
         ListManipulator listManipulator = getListManipulator();
 
@@ -219,8 +225,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if(Utility.canUpdateList(getContentResolver())) {
             refreshShownList(query);
         }else{
-            ((ListManipulatorFragment) getSupportFragmentManager()
-                    .findFragmentByTag(ListManipulatorFragment.TAG)).loadStockWithSymbol(query);
+            mListFragment.loadStockWithSymbol(query);
         }
     }
 
@@ -235,6 +240,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
             startActivity(openDetail);
         }
+    }
+
+    @Override // MainAdapter.EventListener
+    public void onItemRetryClick(MainAdapter.MainViewHolder holder) {
+        mListFragment.loadAFew();
+        mAdapter.notifyItemChanged(getListManipulator().getCount()-1);
     }
 
     @Override // MainAdapter.EventListener
@@ -264,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mSnackbar.show();
     }
 
-    @Override
+    @Override // MainAdapter.EventListener
     public void onItemMoved(int fromPosition, int toPosition) {
         getListManipulator().moveItem(fromPosition, toPosition);
         mAdapter.notifyItemMoved(fromPosition, toPosition);
@@ -314,6 +325,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mAdapter.release();
         mAdapter = null;
         mLayoutManager = null;
+        mListFragment = null;
 
         super.onDestroy();
     }
@@ -340,7 +352,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         final MainAdapter mainAdapter = new MainAdapter(
                 this,
                 mDragDropManager,
-                getListManipulator(),
+                mListFragment,
                 this);
 
         mAdapter = mainAdapter;
@@ -387,12 +399,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
                     @Override
                     public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                        Log.d("Scroll", "scrolled");
                         if (recyclerView.computeVerticalScrollOffset() <= 2) {
                             mAppBar.setElevation(0);
                         } else {
                             mAppBar.setElevation(
                                     getResources().getDimension(R.dimen.appbar_elevation));
+                        }
+
+                        if(!getListManipulator().isLoadingItemPresent()) {
+                            loadAFew();
                         }
                     }
                 });
@@ -400,8 +415,18 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
+    private void loadAFew(){
+        ListManipulator listManipulator = getListManipulator();
+        if(mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount()-1){
+            mListFragment.loadAFew();
+            // Insert dummy item
+            listManipulator.addLoadingItem();
+            // Must notifyItemInserted AFTER loadAFew for mIsLoadingAFew to be updated
+            mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
+        }
+    }
+
     public ListManipulator getListManipulator() {
-        return ((ListManipulatorFragment) getSupportFragmentManager()
-                .findFragmentByTag(ListManipulatorFragment.TAG)).getListManipulator();
+        return mListFragment.getListManipulator();
     }
 }

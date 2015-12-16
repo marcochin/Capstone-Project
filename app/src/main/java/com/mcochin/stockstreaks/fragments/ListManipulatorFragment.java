@@ -1,4 +1,5 @@
 package com.mcochin.stockstreaks.fragments;
+
 import android.content.BroadcastReceiver;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
@@ -15,7 +16,6 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 
-import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
@@ -25,7 +25,6 @@ import com.mcochin.stockstreaks.services.NetworkService;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.Locale;
-import java.util.concurrent.locks.Lock;
 
 public class ListManipulatorFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     public static final String TAG = ListManipulatorFragment.class.getSimpleName();
@@ -36,8 +35,18 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
     private EventListener mEventListener;
     private UpdateReceiver mUpdateReceiver;
 
+    /**
+     * This is true if the list is updating to the latest values
+     */
+    private volatile boolean mIsRefreshing;
+
+    /**
+     * This is true if the list is loading a few. Latest values or not.
+     */
+    private boolean mIsLoadingAFew;
+
     public interface EventListener{
-        void onLoadNextFewFinished();
+        void onLoadNextFewFinished(boolean isSuccess);
         void onLoadAllFromDbFinished();
         void onLoadStockWithSymbolFinished(Loader<Cursor> loader, Cursor data);
     }
@@ -103,10 +112,15 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        if(data == null || data.getCount() == 0){
+            return;
+        }
+
         int id = loader.getId();
 
         switch (id) {
             case ID_LOADER_STOCK_WITH_SYMBOL:
+
                 if (mEventListener != null) {
                     mEventListener.onLoadStockWithSymbolFinished(loader, data);
                 }
@@ -117,66 +131,6 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
 
-    }
-
-    /**
-     * Refreshes the list.
-     * @param attachSymbol An option to query a symbol once the list has done refreshing.
-     */
-    public void initLoadAFew(final String attachSymbol){
-        // Get load list of symbols to query
-        new AsyncTask<Void, Void, Void>(){
-            @Override
-            protected Void doInBackground(Void... params) {
-                // Give list to ListManipulator
-                mListManipulator.setLoadList(getLoadListFromDb());
-                // LOCK
-                loadAFew();
-
-                // UNLOCK when finish updating
-                if (attachSymbol != null) {
-                    // TODO threading problem!!! load stock With symbol needs to load AFTER loadAFew
-                    loadStockWithSymbol(attachSymbol);
-                }
-
-                return null;
-            }
-        }.execute();
-    }
-
-    public void loadAFew() {
-        String[] aFewToLoad = mListManipulator.getAFewToLoad();
-
-        if(aFewToLoad != null) {
-            // Start service to load a few
-            Intent serviceIntent = new Intent(getContext(), NetworkService.class);
-            serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
-
-            if (mListManipulator.getLoadListPositionBookmark() == 0) {
-                serviceIntent.putExtra(NetworkService.KEY_LIST_REFRESH, true);
-            }
-            serviceIntent.putExtra(NetworkService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
-
-            getContext().startService(serviceIntent);
-        }
-
-        //TODO else nothing to load
-    }
-
-    public void loadStockWithSymbol(String symbol){
-        // Start service to retrieve stock info
-        Intent serviceIntent = new Intent(getContext(), NetworkService.class);
-        serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, symbol);
-        serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
-
-        getContext().startService(serviceIntent);
-
-        //Start cursor loader to load the newly added stock
-        Bundle args = new Bundle();
-        args.putString(NetworkService.KEY_SEARCH_QUERY, symbol);
-
-        ((AppCompatActivity)getContext()).getSupportLoaderManager()
-                .restartLoader(ID_LOADER_STOCK_WITH_SYMBOL, args, this);
     }
 
     public void initLoadFromBookmark(){
@@ -217,9 +171,77 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                         cursor.close();
                     }
                 }
+
                 return null;
             }
         }.execute();
+    }
+
+    /**
+     * Refreshes the list.
+     * @param attachSymbol An option to query a symbol once the list has done refreshing.
+     */
+    public void initLoadAFew(final String attachSymbol){
+        // Get load list of symbols to query
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                if(!mIsRefreshing) {
+                    // Give list to ListManipulator
+                    mListManipulator.setLoadList(getLoadListFromDb());
+                    mIsRefreshing = loadAFew();
+                }
+
+                if (attachSymbol != null) {
+                    loadStockWithSymbol(attachSymbol);
+                }
+                return null;
+            }
+        }.execute();
+    }
+
+    /**
+     * Loads the next few symbols in the user's list.
+     * @return true is request can be sent to {@link NetworkService}, false otherwise.
+     */
+    public boolean loadAFew() {
+        if(!mIsRefreshing) {
+            String[] aFewToLoad = mListManipulator.getAFewToLoad();
+
+            if (aFewToLoad != null) {
+                mIsLoadingAFew = true;
+
+                // Start service to load a few
+                Intent serviceIntent = new Intent(getContext(), NetworkService.class);
+                serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
+
+                if (mListManipulator.getLoadListPositionBookmark() == 0) {
+                    serviceIntent.putExtra(NetworkService.KEY_LIST_REFRESH, true);
+                }
+                serviceIntent.putExtra(NetworkService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
+                getContext().startService(serviceIntent);
+
+                return true;
+            }
+        }
+        mIsLoadingAFew = false;
+        return false;
+    }
+
+    public void loadStockWithSymbol(String symbol){
+        // Start service to retrieve stock info
+        Intent serviceIntent = new Intent(getContext(), NetworkService.class);
+        serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, symbol);
+        serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
+
+        getContext().startService(serviceIntent);
+
+        //Start cursor loader to load the newly added stock
+        Bundle args = new Bundle();
+        args.putString(NetworkService.KEY_SEARCH_QUERY, symbol);
+
+        ((AppCompatActivity)getContext()).getSupportLoaderManager()
+                .restartLoader(ID_LOADER_STOCK_WITH_SYMBOL, args, this);
     }
 
     private String[] getLoadListFromDb(){
@@ -255,6 +277,10 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
         return loadList;
     }
 
+    public boolean isLoadingAFew(){
+        return mIsLoadingAFew;
+    }
+
     public void setEventListener(EventListener eventListener){
         mEventListener = eventListener;
     }
@@ -268,34 +294,67 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
      */
     public class UpdateReceiver extends BroadcastReceiver{
         @Override
-        public void onReceive(Context context, Intent intent) {
-            Parcelable[] results = intent.getParcelableArrayExtra(StockProvider.KEY_OPERATION_RESULTS);
-            //Loop through results
-            for (Parcelable result : results) {
-                if(!StockContract.isSaveStateUri(((ContentProviderResult)result).uri)) {
-                    // Query the stocks from db
-                    Cursor cursor = getContext().getContentResolver().query(
-                            ((ContentProviderResult) result).uri,
-                            ListManipulator.STOCK_PROJECTION,
-                            null,
-                            null,
-                            null);
+        public void onReceive(Context context, final Intent intent) {
+            final int errorCode = intent.getIntExtra(NetworkService.KEY_ERROR, 0);
 
-                    // Insert stock in shownList
-                    if (cursor != null && cursor.moveToFirst()) {
-                        Stock stock = Utility.getStockFromCursor(cursor);
-                        mListManipulator.addItem(stock);
-                        cursor.close();
+                new AsyncTask<Void, Void, Boolean>() {
+                    boolean isSuccess = false;
+
+                    @Override
+                    protected Boolean doInBackground(Void... params) {
+                        if(errorCode != NetworkService.NETWORK_ERROR) {
+                            isSuccess = true;
+
+                            Parcelable[] results = intent.getParcelableArrayExtra(
+                                    StockProvider.KEY_OPERATION_RESULTS);
+                            Cursor cursor = null;
+
+                            //Remove loading item if it exists
+                            mListManipulator.removeLoadingItem();
+
+                            //Loop through results
+                            for (Parcelable result : results) {
+                                try {
+                                    // Filter out save state Uri
+                                    if (!StockContract.isSaveStateUri(
+                                            ((ContentProviderResult) result).uri)) {
+
+                                        // Query the stocks from db
+                                        cursor = getContext().getContentResolver().query(
+                                                ((ContentProviderResult) result).uri,
+                                                ListManipulator.STOCK_PROJECTION,
+                                                null,
+                                                null,
+                                                null);
+
+                                        // Insert stock in shownList
+                                        if (cursor != null && cursor.moveToFirst()) {
+                                            Stock stock = Utility.getStockFromCursor(cursor);
+                                            mListManipulator.addItem(stock);
+                                        }
+                                    }
+                                } finally {
+                                    if (cursor != null) {
+                                        cursor.close();
+                                    }
+                                }
+                            }
+
+                            // add to bookmark the result size
+                            mListManipulator.addToLoadListPositionBookmark(results.length);
+                        }
+                        return isSuccess;
                     }
-                }
-            }
 
-            // add to bookmark the result size
-            mListManipulator.addToLoadListPositionBookmark(results.length);
-
-            if (mEventListener != null) {
-                mEventListener.onLoadNextFewFinished();
-            }
+                    @Override
+                    protected void onPostExecute(Boolean isSuccess) {
+                        if (mEventListener != null) {
+                            mEventListener.onLoadNextFewFinished(isSuccess);
+                        }
+                        mIsRefreshing = false;
+                        mIsLoadingAFew = false;
+                    }
+                }.execute();
         }
     }
 }

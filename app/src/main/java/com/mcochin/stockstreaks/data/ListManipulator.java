@@ -28,6 +28,7 @@ public class ListManipulator {
 //            "Cantaloupe", "Papaya"};
 
     public static final int A_FEW = 20;
+    public static final String LOADING_ITEM = "loadingItem";
 
     public static final String[] STOCK_PROJECTION = new String[]{
             StockEntry.COLUMN_SYMBOL,
@@ -59,6 +60,27 @@ public class ListManipulator {
         stock.setId(generateUniqueId());
         mShownList.add(0, stock);
         mListUpdated = true;
+    }
+
+    public void addLoadingItem(){
+        Stock stock = new Stock();
+        stock.setId(generateUniqueId());
+        stock.setSymbol(LOADING_ITEM);
+        mShownList.add(stock);
+    }
+
+    public void removeLoadingItem(){
+        if(isLoadingItemPresent()){
+            mShownList.remove(getCount() - 1);
+        }
+    }
+
+    public boolean isLoadingItemPresent(){
+        if(getCount() > 0) {
+            Stock stock = mShownList.get(getCount() - 1);
+            return stock.getSymbol().equals(LOADING_ITEM);
+        }
+        return false;
     }
 
     public void addToLoadListPositionBookmark(int addToBookmark){
@@ -163,28 +185,28 @@ public class ListManipulator {
     }
 
     public String[] getAFewToLoad(){
-        if(!canLoadAFew()){
-            return null;
+        String [] nextFewToLoad = null;
+
+        if(canLoadAFew()) {
+            boolean loadAFew;
+
+            int whatsLeftToLoad = mLoadList.length - mLoadListPositionBookmark;
+            if (whatsLeftToLoad >= A_FEW) {
+                nextFewToLoad = new String[A_FEW];
+                loadAFew = true;
+            } else {
+                nextFewToLoad = new String[whatsLeftToLoad];
+                loadAFew = false;
+            }
+
+            // We can't update the REAL bookmark until we get a msg that update has succeeded.
+            int bookmarkHelper = mLoadListPositionBookmark;
+            for (int i = 0; i < (loadAFew ? A_FEW : whatsLeftToLoad); i++) {
+                nextFewToLoad[i] = mLoadList[bookmarkHelper];
+                bookmarkHelper++;
+            }
         }
 
-        String [] nextFewToLoad;
-        boolean loadAFew;
-
-        int whatsLeftToLoad = mLoadList.length - mLoadListPositionBookmark;
-        if (whatsLeftToLoad >= A_FEW){
-            nextFewToLoad = new String[A_FEW];
-            loadAFew = true;
-        } else{
-            nextFewToLoad = new String[whatsLeftToLoad];
-            loadAFew = false;
-        }
-
-        // We can't update the REAL bookmark until we get a msg that update has succeeded.
-        int bookmarkHelper = mLoadListPositionBookmark;
-        for(int i = 0; i < (loadAFew? A_FEW: whatsLeftToLoad); i++){
-            nextFewToLoad[i] = mLoadList[bookmarkHelper];
-            bookmarkHelper++;
-        }
         return nextFewToLoad;
     }
 
@@ -214,7 +236,7 @@ public class ListManipulator {
         for(Stock stock: mShownList){
             // Save bookmark in db
             ContentValues positionValues = new ContentValues();
-            positionValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, i);
+            positionValues.put(StockEntry.COLUMN_LIST_POSITION, i);
 
             ops.add(ContentProviderOperation
                             .newUpdate(StockEntry.buildUri(stock.getSymbol()))
@@ -229,7 +251,7 @@ public class ListManipulator {
             for (int j = mLoadListPositionBookmark; j < mLoadList.length; j++) {
                 // Save bookmark in db
                 ContentValues positionValues = new ContentValues();
-                positionValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, i);
+                positionValues.put(StockEntry.COLUMN_LIST_POSITION, i);
 
                 ops.add(ContentProviderOperation
                         .newUpdate(StockEntry.buildUri(mLoadList[j]))

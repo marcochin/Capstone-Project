@@ -2,8 +2,8 @@
     <string name="app_name">Stock Streaks</string>
 
     <!-- Toolbar menu -->
-    <string name="action_settings">Settings</string>
-    <string name="action_search">Search</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_sort">Sort</string>
     <string name="search_hint">Add Symbol...</string>
     <string name="logo_typeface_path" translatable="false">fonts/harlowsi.TTF</string>
 
@@ -34,6 +34,9 @@
     <string name="last_streak">Prev. Streak:</string>
     <string name="streak_year_high">365 Day\nStreak High:</string>
     <string name="streak_year_low">365 Day\nStreak Low:</string>
+
+    <!-- list_item load a few-->
+    <string name="retry">Retry</string>
 
     <!-- Snackbar -->
     <string name="placeholder_snackbar_main_text">%1$s removed</string>

@@ -22,6 +22,7 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultAct
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeableItemViewHolder;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
+import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.utils.Utility;
 
@@ -41,6 +42,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public static final int LIST_ITEM_FIRST = 1;
 
     private ListManipulator mListManipulator;
+    private ListManipulatorFragment mListFragment;
     private EventListener mEventListener;
     private RecyclerViewDragDropManager mDragDropManager;
     private Context mContext;
@@ -61,6 +63,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         void onItemClick(MainViewHolder holder);
         void onItemRemoved(MainViewHolder holder);
         void onItemMoved(int fromPosition, int toPosition);
+        void onItemRetryClick(MainViewHolder holder);
     }
 
     // NOTE: Make accessible with shorter name
@@ -82,6 +85,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         TextView mChangeAmt;
         TextView mStreak;
         ImageView mStreakArrow;
+        View mProgressWheel;
+        View mRetryButton;
+
 
         public MainViewHolder(View itemView) {
             super(itemView);
@@ -95,15 +101,28 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             mChangeAmt = (TextView) itemView.findViewById(R.id.text_change_amt);
             mStreak = (TextView) itemView.findViewById(R.id.text_streak);
             mStreakArrow = (ImageView)itemView.findViewById(R.id.image_streak_arrow);
+            mProgressWheel = itemView.findViewById(R.id.progress_wheel);
+            mRetryButton = itemView.findViewById(R.id.retry_button);
 
             itemView.setOnClickListener(this);
             itemView.setOnTouchListener(this);
+            mRetryButton.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View v) {
-            if(mEventListener != null) {
-                mEventListener.onItemClick(this);
+            if (mEventListener != null) {
+                int id = v.getId();
+
+                switch (id) {
+                    case R.id.swipe_container:
+                        mEventListener.onItemClick(this);
+                        break;
+
+                case R.id.retry_button:
+                    mEventListener.onItemRetryClick(this);
+                    break;
+                }
             }
         }
 
@@ -130,11 +149,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     // Constructor
     public MainAdapter (Context context, RecyclerViewDragDropManager dragDropManager,
-                        ListManipulator listManipulator, EventListener eventListener){
+                        ListManipulatorFragment listFragment, EventListener eventListener){
 
         mEventListener = eventListener;
         mDragDropManager = dragDropManager;
-        mListManipulator = listManipulator;
+        mListFragment = listFragment;
+        mListManipulator = listFragment.getListManipulator();
         mContext = context;
 //        mListManipulator.setShownListCursor(null); //TODO remove this, only for debugging
 
@@ -165,97 +185,114 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public void onBindViewHolder(final MainViewHolder holder, int position) {
 //        Log.d(TAG, "onBind");
         Stock stock = mListManipulator.getItem(position);
-        Resources resources = mContext.getResources();
 
-        // Set symbol
-        holder.mSymbol.setText(stock.getSymbol());
-
-        // Set full name
-        holder.mFullName.setText(stock.getFullName());
-
-        // Set recent close
-        String recentClose = String.format("%.2f", stock.getRecentClose());
-        holder.mRecentClose.setText(resources.getString(R.string.placeholder_dollar, recentClose));
-
-        // Format dollar/percent change float values to 2 decimals
-        String changeDollar = resources.getString(
-                R.string.placeholder_dollar, String.format("%.2f", stock.getChangeDollar()));
-
-        String changePercent = resources.getString(
-                R.string.placeholder_percent, String.format("%.2f", stock.getChangePercent()));
-
-        // Format streak String
-        String streak = String.format("%d", stock.getStreak());
-
-        // Get our dollar/percent change colors and set our stock arrow ImageView
-        int color;
-        if(stock.getChangeDollar() > 0){
-            color = ContextCompat.getColor(mContext, R.color.stock_up_green);
-            holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_up);
-
-        }else if (stock.getChangeDollar() < 0){
-            color = ContextCompat.getColor(mContext, R.color.stock_down_red);
-            holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_down);
-
-        }else{
-            color = ContextCompat.getColor(mContext, R.color.stock_neutral);
-        }
-
-        // Set our dollar/percent change, change color, and streak
-        if(position == 0) { //list_first_item
-            SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
-                    R.string.update_time_format_ref),
-                    Locale.US);
-
-            Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
-            holder.mUpdateTime.setText(resources.getString(
-                    R.string.placeholder_update_time, sdf.format(updateTime)));
-
-            holder.mChangeDollar.setText(changeDollar);
-            holder.mChangeDollar.setTextColor(color);
-
-            holder.mChangePercent.setText(changePercent);
-            holder.mChangePercent.setTextColor(color);
-
-            holder.mStreak.setText(mContext.getString(R.string.placeholder_days, streak));
-
-        } else{ //list_item
-            holder.mChangeAmt.setText(resources.getString(
-                    R.string.placeholder_change_amt, changeDollar, changePercent));
-            holder.mChangeAmt.setTextColor(color);
-            holder.mStreak.setText(mContext.getString(R.string.placeholder_d, streak));
-        }
-
-        // Set background resource (target view ID: container)
-        final int dragState = holder.getDragStateFlags();
-        if (((dragState & Draggable.STATE_FLAG_IS_UPDATED) != 0)){
-            int bgResId;
-
-            // ACTIVE flags is the one being acted upon
-            if ((dragState & Draggable.STATE_FLAG_IS_ACTIVE) != 0) {
-                bgResId = R.drawable.bg_item_dragging_active_state;
-            } else if (position == 0 && mIsPhone){
-                bgResId = R.drawable.list_item_first_selector;
-            } else{
-                bgResId = R.drawable.list_item_selector;
+        // Determine if this is a dummy "loading" item
+        if(stock.getSymbol().equals(ListManipulator.LOADING_ITEM)) {
+            holder.mContainer.setVisibility(View.INVISIBLE);
+            if(mListFragment.isLoadingAFew()){
+                holder.mProgressWheel.setVisibility(View.VISIBLE);
+                holder.mRetryButton.setVisibility(View.INVISIBLE);
+            }else{
+                holder.mProgressWheel.setVisibility(View.INVISIBLE);
+                holder.mRetryButton.setVisibility(View.VISIBLE);
             }
 
-            holder.mContainer.setBackgroundResource(bgResId);
-        }
+        }else {
+            holder.mContainer.setVisibility(View.VISIBLE);
+            holder.mProgressWheel.setVisibility(View.INVISIBLE);
+            holder.mRetryButton.setVisibility(View.INVISIBLE);
+            Resources resources = mContext.getResources();
 
-        // Restore back padding for pre-kitkat list_items
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            if(position == 0 && mIsPhone){
-                holder.mContainer.setPadding(mListItemFirstPadding, mListItemFirstPadding,
-                        mListItemFirstPadding, mListItemFirstPadding);
+            // Set symbol
+            holder.mSymbol.setText(stock.getSymbol());
+
+            // Set full name
+            holder.mFullName.setText(stock.getFullName());
+
+            // Set recent close
+            String recentClose = String.format("%.2f", stock.getRecentClose());
+            holder.mRecentClose.setText(resources.getString(R.string.placeholder_dollar, recentClose));
+
+            // Format dollar/percent change float values to 2 decimals
+            String changeDollar = resources.getString(
+                    R.string.placeholder_dollar, String.format("%.2f", stock.getChangeDollar()));
+
+            String changePercent = resources.getString(
+                    R.string.placeholder_percent, String.format("%.2f", stock.getChangePercent()));
+
+            // Format streak String
+            String streak = String.format("%d", stock.getStreak());
+
+            // Get our dollar/percent change colors and set our stock arrow ImageView
+            int color;
+            if (stock.getChangeDollar() > 0) {
+                color = ContextCompat.getColor(mContext, R.color.stock_up_green);
+                holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_up);
+
+            } else if (stock.getChangeDollar() < 0) {
+                color = ContextCompat.getColor(mContext, R.color.stock_down_red);
+                holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_down);
+
             } else {
-                holder.mContainer.setPadding(mListItemHorizontalPadding, mListItemVerticalPadding,
-                        mListItemHorizontalPadding, mListItemVerticalPadding);
+                color = ContextCompat.getColor(mContext, R.color.stock_neutral);
             }
-        }
 
-        // Set swiping properties. This sets the horizontal offset of the items
-        holder.setSwipeItemHorizontalSlideAmount(0);
+            // Set our dollar/percent change, change color, and streak
+            if (position == 0) { //list_first_item
+                SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
+                        R.string.update_time_format_ref),
+                        Locale.US);
+
+                Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
+                holder.mUpdateTime.setText(resources.getString(
+                        R.string.placeholder_update_time, sdf.format(updateTime)));
+
+                holder.mChangeDollar.setText(changeDollar);
+                holder.mChangeDollar.setTextColor(color);
+
+                holder.mChangePercent.setText(changePercent);
+                holder.mChangePercent.setTextColor(color);
+
+                holder.mStreak.setText(mContext.getString(R.string.placeholder_days, streak));
+
+            } else { //list_item
+                holder.mChangeAmt.setText(resources.getString(
+                        R.string.placeholder_change_amt, changeDollar, changePercent));
+                holder.mChangeAmt.setTextColor(color);
+                holder.mStreak.setText(mContext.getString(R.string.placeholder_d, streak));
+            }
+
+            // Set background resource (target view ID: container)
+            final int dragState = holder.getDragStateFlags();
+            if (((dragState & Draggable.STATE_FLAG_IS_UPDATED) != 0)) {
+                int bgResId;
+
+                // ACTIVE flags is the one being acted upon
+                if ((dragState & Draggable.STATE_FLAG_IS_ACTIVE) != 0) {
+                    bgResId = R.drawable.bg_item_dragging_active_state;
+                } else if (position == 0 && mIsPhone) {
+                    bgResId = R.drawable.list_item_first_selector;
+                } else {
+                    bgResId = R.drawable.list_item_selector;
+                }
+
+                holder.mContainer.setBackgroundResource(bgResId);
+            }
+
+            // Restore back padding for pre-kitkat list_items
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                if (position == 0 && mIsPhone) {
+                    holder.mContainer.setPadding(mListItemFirstPadding, mListItemFirstPadding,
+                            mListItemFirstPadding, mListItemFirstPadding);
+                } else {
+                    holder.mContainer.setPadding(mListItemHorizontalPadding, mListItemVerticalPadding,
+                            mListItemHorizontalPadding, mListItemVerticalPadding);
+                }
+            }
+
+            // Set swiping properties. This sets the horizontal offset of the items
+            holder.setSwipeItemHorizontalSlideAmount(0);
+        }
     }
 
     @Override
@@ -296,7 +333,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public int onGetSwipeReactionType(MainViewHolder holder, int position, int x, int y) {
 //        Log.d(TAG, "onGetSwipeReactionType");
 
-        // THis is what enables swiping
+        // This is what enables swiping
         return Swipeable.REACTION_CAN_SWIPE_BOTH_H;
     }
 
@@ -345,6 +382,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public void release(){
         mDragDropManager = null;
         mListManipulator = null;
+        mListFragment = null;
         mContext = null;
     }
 
