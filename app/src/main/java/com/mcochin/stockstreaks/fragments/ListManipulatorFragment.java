@@ -1,7 +1,7 @@
 package com.mcochin.stockstreaks.fragments;
 
 import android.content.BroadcastReceiver;
-import android.content.ContentProviderResult;
+import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,7 +9,6 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -24,6 +23,7 @@ import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.NetworkService;
 import com.mcochin.stockstreaks.utils.Utility;
 
+import java.util.ArrayList;
 import java.util.Locale;
 
 public class ListManipulatorFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
@@ -115,7 +115,6 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
         if(data == null || data.getCount() == 0){
             return;
         }
-
         int id = loader.getId();
 
         switch (id) {
@@ -191,11 +190,15 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                     mListManipulator.setLoadList(getLoadListFromDb());
                     mIsRefreshing = loadAFew();
                 }
+                return null;
+            }
 
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                //Loader must be run on main thread or crash
                 if (attachSymbol != null) {
                     loadStockWithSymbol(attachSymbol);
                 }
-                return null;
             }
         }.execute();
     }
@@ -305,32 +308,34 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                         if(errorCode != NetworkService.NETWORK_ERROR) {
                             isSuccess = true;
 
-                            Parcelable[] results = intent.getParcelableArrayExtra(
-                                    StockProvider.KEY_OPERATION_RESULTS);
+                            ArrayList<ContentProviderOperation> ops = intent
+                                    .getParcelableArrayListExtra(StockProvider.KEY_OPERATIONS);
                             Cursor cursor = null;
 
-                            //Remove loading item if it exists
+                            // Remove loading item if it exists
                             mListManipulator.removeLoadingItem();
 
                             //Loop through results
-                            for (Parcelable result : results) {
+                            for (ContentProviderOperation op : ops) {
                                 try {
                                     // Filter out save state Uri
-                                    if (!StockContract.isSaveStateUri(
-                                            ((ContentProviderResult) result).uri)) {
-
+                                    if (!StockContract.isSaveStateUri(op.getUri())){
                                         // Query the stocks from db
                                         cursor = getContext().getContentResolver().query(
-                                                ((ContentProviderResult) result).uri,
+                                                op.getUri(),
                                                 ListManipulator.STOCK_PROJECTION,
                                                 null,
                                                 null,
                                                 null);
 
-                                        // Insert stock in shownList
-                                        if (cursor != null && cursor.moveToFirst()) {
-                                            Stock stock = Utility.getStockFromCursor(cursor);
-                                            mListManipulator.addItem(stock);
+                                        if(mIsRefreshing){
+                                            mListManipulator.setShownListCursor(cursor);
+                                        }else {
+                                            // Insert stock in shownList
+                                            if (cursor != null && cursor.moveToFirst()) {
+                                                Stock stock = Utility.getStockFromCursor(cursor);
+                                                mListManipulator.addItemToBottom(stock);
+                                            }
                                         }
                                     }
                                 } finally {
@@ -339,9 +344,6 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                                     }
                                 }
                             }
-
-                            // add to bookmark the result size
-                            mListManipulator.addToLoadListPositionBookmark(results.length);
                         }
                         return isSuccess;
                     }

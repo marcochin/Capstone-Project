@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mAppBar.setSearchListener(this);
 
         configureRecyclerView();
-        configureAppBarDynamicElevation();
+        configureDynamicScrollingEvents();
 
         // Fetch the stock list
         fetchStockList(savedInstanceState);
@@ -129,11 +129,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // SwipeRefreshLayout.OnRefreshListener
     public void onRefresh() {
-        if(Utility.canUpdateList(getContentResolver())) {
-            refreshShownList(null);
-        }else{
-            mSwipeToRefresh.setRefreshing(false);
-        }
+//        if(Utility.canUpdateList(getContentResolver())) {
+//            refreshShownList(null);
+//        }else{
+//            mSwipeToRefresh.setRefreshing(false);
+//        }
+        refreshShownList(null);
+        mSwipeToRefresh.setRefreshing(false);
     }
 
     private void refreshShownList(String attachSymbol){
@@ -172,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         ListManipulator listManipulator = getListManipulator();
 
         if(data.moveToFirst()){
-            listManipulator.addItem(Utility.getStockFromCursor(data));
+            listManipulator.addItemToTop(Utility.getStockFromCursor(data));
         }
         mAdapter.notifyItemInserted(0);
         mRecyclerView.smoothScrollToPosition(0);
@@ -245,7 +247,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // MainAdapter.EventListener
     public void onItemRetryClick(MainAdapter.MainViewHolder holder) {
         mListFragment.loadAFew();
-        mAdapter.notifyItemChanged(getListManipulator().getCount()-1);
+        mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
     }
 
     @Override // MainAdapter.EventListener
@@ -388,7 +390,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mDragDropManager.attachRecyclerView(mRecyclerView);
     }
 
-    private void configureAppBarDynamicElevation(){
+    private void configureDynamicScrollingEvents(){
         // When recyclerView is scrolled all the way to the top, appbar elevation will disappear.
         // When you start scrolling down elevation will reappear.
         if (!mTwoPane) {
@@ -399,30 +401,32 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
                     @Override
                     public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                        if (recyclerView.computeVerticalScrollOffset() <= 2) {
+                        if (recyclerView.computeVerticalScrollOffset() <= 2) { //0 or 1 not reliable
                             mAppBar.setElevation(0);
                         } else {
                             mAppBar.setElevation(
                                     getResources().getDimension(R.dimen.appbar_elevation));
                         }
 
-                        if(!getListManipulator().isLoadingItemPresent()) {
-                            loadAFew();
-                        }
+                        dynamicLoadAFew();
                     }
                 });
             }
         }
     }
 
-    private void loadAFew(){
+    private void dynamicLoadAFew(){
         ListManipulator listManipulator = getListManipulator();
-        if(mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount()-1){
-            mListFragment.loadAFew();
-            // Insert dummy item
-            listManipulator.addLoadingItem();
-            // Must notifyItemInserted AFTER loadAFew for mIsLoadingAFew to be updated
-            mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
+
+        if(!listManipulator.isLoadingItemPresent()) {
+            if (mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount() - 1 &&
+                    listManipulator.canLoadAFew()) {
+                mListFragment.loadAFew();
+                // Insert dummy item
+                listManipulator.addLoadingItem();
+                // Must notifyItemInserted AFTER loadAFew for mIsLoadingAFew to be updated
+                mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
+            }
         }
     }
 

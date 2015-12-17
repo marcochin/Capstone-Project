@@ -5,6 +5,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
@@ -48,7 +49,7 @@ public class ListManipulator {
     public static final int INDEX_STREAK = 5;
 
     private String[] mLoadList;
-    private int mLoadListPositionBookmark;
+    private int mLoadListPositionBookmark = 0;
 
     private List<Stock> mShownList = new ArrayList<>();
     private Stock mLastRemovedItem = null;
@@ -56,10 +57,25 @@ public class ListManipulator {
     private int mUniqueId = 0;
     private boolean mListUpdated;
 
-    public void addItem(Stock stock){
+    /**
+     * Add a new query item to the top of the list
+     * @param stock
+     */
+    public void addItemToTop(Stock stock){
         stock.setId(generateUniqueId());
         mShownList.add(0, stock);
         mListUpdated = true;
+    }
+
+    /**
+     * Add an updated db item to the bottom of the list
+     * @param stock
+     */
+    public void addItemToBottom(Stock stock){
+        stock.setId(generateUniqueId());
+        mShownList.add(stock);
+        mListUpdated = true;
+        addToLoadListPositionBookmark(1);
     }
 
     public void addLoadingItem(){
@@ -202,8 +218,7 @@ public class ListManipulator {
             // We can't update the REAL bookmark until we get a msg that update has succeeded.
             int bookmarkHelper = mLoadListPositionBookmark;
             for (int i = 0; i < (loadAFew ? A_FEW : whatsLeftToLoad); i++) {
-                nextFewToLoad[i] = mLoadList[bookmarkHelper];
-                bookmarkHelper++;
+                nextFewToLoad[i] = mLoadList[bookmarkHelper++];
             }
         }
 

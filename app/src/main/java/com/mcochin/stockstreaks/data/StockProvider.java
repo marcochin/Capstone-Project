@@ -29,7 +29,6 @@ public class StockProvider extends ContentProvider {
     private static final UriMatcher sUriMatcher = buildUriMatcher();
 
     private static final String TAG = StockProvider.class.getSimpleName();
-    public static final String KEY_OPERATION_RESULTS = "operationResults";
     public static final String KEY_OPERATIONS = "operations";
 
     public static final String METHOD_INSERT_ITEM = "insertItem";
@@ -244,19 +243,19 @@ public class StockProvider extends ContentProvider {
             ArrayList<ContentProviderOperation> operations =
                     extras.getParcelableArrayList(KEY_OPERATIONS);
             if(operations != null) {
-                ContentProviderResult[] results = applyBatch(operations);
+                applyBatch(operations);
 
                 switch (method) {
                     case METHOD_INSERT_ITEM:
-                        insertItem(results);
+                        insertItem(operations);
                         break;
 
                     case METHOD_UPDATE_ITEMS:
-                        updateItems(results);
+                        updateItems(operations);
                         break;
 
                     case METHOD_UPDATE_LIST_POSITION:
-                        updateListPosition(results);
+                        updateListPosition(operations);
                         break;
                 }
             }
@@ -268,19 +267,19 @@ public class StockProvider extends ContentProvider {
     }
 
 
-    private void updateItems(ContentProviderResult[] results){
+    private void updateItems(ArrayList<ContentProviderOperation> ops){
         if (getContext() != null) {
             Intent updateBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
-            updateBroadcast.putExtra(KEY_OPERATION_RESULTS, results);
+            updateBroadcast.putParcelableArrayListExtra(KEY_OPERATIONS, ops);
             getContext().sendBroadcast(updateBroadcast);
         }
     }
 
-    private void updateListPosition(ContentProviderResult[] results){
+    private void updateListPosition(ArrayList<ContentProviderOperation> ops){
         // Do nothing
     }
 
-    private void insertItem(ContentProviderResult[] results){
+    private void insertItem(ArrayList<ContentProviderOperation> ops){
         // Do nothing
     }
 }

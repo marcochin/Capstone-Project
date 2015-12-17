@@ -104,9 +104,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             mProgressWheel = itemView.findViewById(R.id.progress_wheel);
             mRetryButton = itemView.findViewById(R.id.retry_button);
 
-            itemView.setOnClickListener(this);
-            itemView.setOnTouchListener(this);
-            mRetryButton.setOnClickListener(this);
+            mContainer.setOnClickListener(this);
+            mContainer.setOnTouchListener(this);
+            if(mRetryButton != null) {
+                //first_item will not have a retry button/progress wheel
+                mRetryButton.setOnClickListener(this);
+            }
         }
 
         @Override
@@ -119,9 +122,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
                         mEventListener.onItemClick(this);
                         break;
 
-                case R.id.retry_button:
-                    mEventListener.onItemRetryClick(this);
-                    break;
+                    case R.id.retry_button:
+                        mEventListener.onItemRetryClick(this);
+                        break;
                 }
             }
         }
@@ -199,8 +202,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
         }else {
             holder.mContainer.setVisibility(View.VISIBLE);
-            holder.mProgressWheel.setVisibility(View.INVISIBLE);
-            holder.mRetryButton.setVisibility(View.INVISIBLE);
+            if(position != 0){
+                holder.mProgressWheel.setVisibility(View.INVISIBLE);
+                holder.mRetryButton.setVisibility(View.INVISIBLE);
+            }
+
             Resources resources = mContext.getResources();
 
             // Set symbol
@@ -334,6 +340,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 //        Log.d(TAG, "onGetSwipeReactionType");
 
         // This is what enables swiping
+        if (holder.getSymbol().equals(ListManipulator.LOADING_ITEM)) {
+            return SwipeableItemConstants.REACTION_CAN_NOT_SWIPE_ANY;
+        }
         return Swipeable.REACTION_CAN_SWIPE_BOTH_H;
     }
 
@@ -359,7 +368,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         //Log.d(TAG, "onCheckCanStartDrag");
 
         // This is what enables dragging
-        return true;
+        return !holder.getSymbol().equals(ListManipulator.LOADING_ITEM);
     }
 
     @Override // DraggableItemAdapter

@@ -49,6 +49,7 @@ public class NetworkService extends IntentService {
     private static final int YEAR = 366;
 
     private static final String NOT_AVAILABLE = "N/A";
+    private static final String USD = "USD";
     private static final String NASDAQ = "NMS";
     private static final String NYSE = "NYQ";
 
@@ -189,8 +190,7 @@ public class NetworkService extends IntentService {
         if(stock == null){
             Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
 
-        } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getStockExchange().equals(NASDAQ)
-                && !stock.getStockExchange().equals(NYSE))) {
+        } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getCurrency().equals(USD))) {
             Utility.showToast(this, getString(R.string.toast_symbol_not_found));
 
         } else{
@@ -215,7 +215,7 @@ public class NetworkService extends IntentService {
             // Determine if we should use stock price
             if(!lastTradeTime.equals(firstHistoricalDate)
                     && (nowTimeDay > lastTradeDay || !Utility.isDuringTradingHours())){
-                Log.d(TAG, "using stock price");
+//                Log.d(TAG, "using stock price");
                 recentClose = stock.getQuote().getPrice().floatValue();
             }
 
