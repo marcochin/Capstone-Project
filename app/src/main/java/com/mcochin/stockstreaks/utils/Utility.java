@@ -1,5 +1,7 @@
 package com.mcochin.stockstreaks.utils;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -254,7 +256,9 @@ public class Utility {
      * @return true if list can be updated, else false
      */
     public static boolean canUpdateList(ContentResolver cr){
-
+        // NOTE: This method can be a problem for those holidays where the market is only open
+        // for half a day. For best accuracy, we need to make an api call to get the last trade day
+        // to compare w/ our updateTime. However, I think this is good enough.
         Calendar lastUpdateTime = getLastUpdateTime(cr);
         if(lastUpdateTime == null) {
             return true;
@@ -316,6 +320,22 @@ public class Utility {
         fourThirtyTime.set(Calendar.MILLISECOND, 0);
 
         return calendar.before(fourThirtyTime);
+    }
+
+    /**
+     * Detects to see if {@link com.mcochin.stockstreaks.services.NetworkService} is still running.
+     * @param manager ActivityManager
+     * @return returns true if running, false otherwise
+     */
+    public static boolean isNetworkServiceRunning(ActivityManager manager) {
+        //ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if ("com.mcochin.stockstreaks.services.NetworkService"
+                    .equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
 //    /**

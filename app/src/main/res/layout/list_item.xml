@@ -69,7 +69,7 @@
     </android.support.v7.widget.GridLayout>
 
     <ProgressBar
-        android:id="@+id/progress_wheel"
+        android:id="@+id/progress_wheel_load_a_few"
         android:layout_width="@dimen/progress_wheel_size"
         android:layout_height="@dimen/progress_wheel_size"
         android:indeterminate="true"

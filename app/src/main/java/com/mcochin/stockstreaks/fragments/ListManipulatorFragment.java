@@ -46,7 +46,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
     private boolean mIsLoadingAFew;
 
     public interface EventListener{
-        void onLoadNextFewFinished(boolean isSuccess);
+        void onLoadAFewFinished(boolean isSuccess);
         void onLoadAllFromDbFinished();
         void onLoadStockWithSymbolFinished(Loader<Cursor> loader, Cursor data);
     }
@@ -132,7 +132,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
 
     }
 
-    public void initLoadFromBookmark(){
+    public void initLoadFromDb(){
         // Get load list of symbols to query
         new AsyncTask<Void, Void, Void>(){
             @Override
@@ -158,10 +158,6 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                                 mListManipulator.setShownListCursor(cursor);
                                 mListManipulator.setLoadList(getLoadListFromDb());
                                 mListManipulator.addToLoadListPositionBookmark(cursorCount);
-
-                                if (mEventListener != null) {
-                                    mEventListener.onLoadAllFromDbFinished();
-                                }
                             }
                         }
                     }
@@ -172,6 +168,13 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                 }
 
                 return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if (mEventListener != null) {
+                    mEventListener.onLoadAllFromDbFinished();
+                }
             }
         }.execute();
     }
@@ -185,11 +188,9 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                if(!mIsRefreshing) {
-                    // Give list to ListManipulator
-                    mListManipulator.setLoadList(getLoadListFromDb());
-                    mIsRefreshing = loadAFew();
-                }
+                // Give list to ListManipulator
+                mListManipulator.setLoadList(getLoadListFromDb());
+                mIsRefreshing = loadAFew();
                 return null;
             }
 
@@ -198,6 +199,9 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                 //Loader must be run on main thread or crash
                 if (attachSymbol != null) {
                     loadStockWithSymbol(attachSymbol);
+                }
+                if(!mIsRefreshing && mEventListener != null){
+                    mEventListener.onLoadAFewFinished(false);
                 }
             }
         }.execute();
@@ -208,25 +212,24 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
      * @return true is request can be sent to {@link NetworkService}, false otherwise.
      */
     public boolean loadAFew() {
-        if(!mIsRefreshing) {
-            String[] aFewToLoad = mListManipulator.getAFewToLoad();
+        String[] aFewToLoad = mListManipulator.getAFewToLoad();
 
-            if (aFewToLoad != null) {
-                mIsLoadingAFew = true;
+        if (aFewToLoad != null) {
+            mIsLoadingAFew = true;
 
-                // Start service to load a few
-                Intent serviceIntent = new Intent(getContext(), NetworkService.class);
-                serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
+            // Start service to load a few
+            Intent serviceIntent = new Intent(getContext(), NetworkService.class);
+            serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
 
-                if (mListManipulator.getLoadListPositionBookmark() == 0) {
-                    serviceIntent.putExtra(NetworkService.KEY_LIST_REFRESH, true);
-                }
-                serviceIntent.putExtra(NetworkService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
-                getContext().startService(serviceIntent);
-
-                return true;
+            if (mListManipulator.getLoadListPositionBookmark() == 0) {
+                serviceIntent.putExtra(NetworkService.KEY_LIST_REFRESH, true);
             }
+            serviceIntent.putExtra(NetworkService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
+            getContext().startService(serviceIntent);
+
+            return true;
         }
+
         mIsLoadingAFew = false;
         return false;
     }
@@ -280,6 +283,9 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
         return loadList;
     }
 
+    public boolean isRefreshing(){
+        return mIsRefreshing;
+    }
     public boolean isLoadingAFew(){
         return mIsLoadingAFew;
     }
@@ -351,7 +357,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
                     @Override
                     protected void onPostExecute(Boolean isSuccess) {
                         if (mEventListener != null) {
-                            mEventListener.onLoadNextFewFinished(isSuccess);
+                            mEventListener.onLoadAFewFinished(isSuccess);
                         }
                         mIsRefreshing = false;
                         mIsLoadingAFew = false;

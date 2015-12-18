@@ -101,7 +101,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             mChangeAmt = (TextView) itemView.findViewById(R.id.text_change_amt);
             mStreak = (TextView) itemView.findViewById(R.id.text_streak);
             mStreakArrow = (ImageView)itemView.findViewById(R.id.image_streak_arrow);
-            mProgressWheel = itemView.findViewById(R.id.progress_wheel);
+            mProgressWheel = itemView.findViewById(R.id.progress_wheel_load_a_few);
             mRetryButton = itemView.findViewById(R.id.retry_button);
 
             mContainer.setOnClickListener(this);

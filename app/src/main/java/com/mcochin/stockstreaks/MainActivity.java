@@ -1,6 +1,7 @@
 package com.mcochin.stockstreaks;
 
 import android.annotation.TargetApi;
+import android.app.ActivityManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.drawable.NinePatchDrawable;
@@ -14,8 +15,10 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -57,6 +60,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private SwipeRefreshLayout mSwipeToRefresh;
     private View mRootView;
     private Snackbar mSnackbar;
+    private View mProgressWheel;
+    private View mEmptyMsg;
 
     private ListManipulatorFragment mListFragment;
 
@@ -70,6 +75,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // Find our views from xml layouts
         mTwoPane = findViewById(R.id.detail_container) != null;
         mRootView = findViewById(R.id.rootView);
+        mProgressWheel = findViewById(R.id.progress_wheel);
+        mEmptyMsg = findViewById(R.id.text_empty_list);
         mAppBar = (SearchBox)findViewById(R.id.appBar);
         mLogo = (TextView)findViewById(R.id.logo);
         mSearchEditText = (EditText)findViewById(R.id.search);
@@ -104,10 +111,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // Set our refresh listener for swiping down to refresh
         mSwipeToRefresh.setOnRefreshListener(this);
 
-        // Initialize our searchBox overflow menu and search callbacks
-        mAppBar.setOverflowMenu(R.menu.menu_main);
+        // Set our search callbacks
         mAppBar.setSearchListener(this);
 
+        configureOverflowMenu();
         configureRecyclerView();
         configureDynamicScrollingEvents();
 
@@ -116,11 +123,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     private void fetchStockList(Bundle savedInstanceState){
-
         if(!Utility.canUpdateList(getContentResolver()) || !Utility.isNetworkAvailable(this)){
             if(savedInstanceState == null) {
                 // Only load from db on first load because listManipulator is storing the list.
-                mListFragment.initLoadFromBookmark();
+                mListFragment.initLoadFromDb();
             }
         }else{
             refreshShownList(null);
@@ -129,11 +135,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // SwipeRefreshLayout.OnRefreshListener
     public void onRefresh() {
-//        if(Utility.canUpdateList(getContentResolver())) {
-//            refreshShownList(null);
-//        }else{
-//            mSwipeToRefresh.setRefreshing(false);
-//        }
         refreshShownList(null);
         mSwipeToRefresh.setRefreshing(false);
     }
@@ -141,14 +142,18 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private void refreshShownList(String attachSymbol){
         // Dismiss Snackbar to prevent undo removal because the old data will not be in sync with
         // new data when list is refreshed.
-        if(mSnackbar != null && mSnackbar.isShown()){
-            mSnackbar.dismiss();
+        if(!mListFragment.isRefreshing() && Utility.canUpdateList(getContentResolver())) {
+            showProgressWheel();
+
+            if (mSnackbar != null && mSnackbar.isShown()) {
+                mSnackbar.dismiss();
+            }
+            mListFragment.initLoadAFew(attachSymbol);
         }
-        mListFragment.initLoadAFew(attachSymbol);
     }
 
     @Override // ListManipulatorFragment.EventListener
-    public void onLoadNextFewFinished(boolean isSuccess) {
+    public void onLoadAFewFinished(boolean isSuccess) {
         if(isSuccess) {
             mAdapter.notifyDataSetChanged();
         }else{
@@ -161,16 +166,19 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 mAdapter.notifyItemChanged(lastPosition);
             }
         }
+
+        hideProgressWheelIfPossible();
+        showEmptyMessageIfPossible();
     }
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadAllFromDbFinished() {// ListManipulatorFragment.EventListener
         mAdapter.notifyDataSetChanged();
+        showEmptyMessageIfPossible();
     }
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadStockWithSymbolFinished(Loader<Cursor> loader, Cursor data) {
-
         ListManipulator listManipulator = getListManipulator();
 
         if(data.moveToFirst()){
@@ -178,9 +186,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
         mAdapter.notifyItemInserted(0);
         mRecyclerView.smoothScrollToPosition(0);
-
-        getSupportLoaderManager().destroyLoader(ListManipulatorFragment.ID_LOADER_STOCK_WITH_SYMBOL);
         mSearchEditText.setText("");
+        getSupportLoaderManager().destroyLoader(ListManipulatorFragment.ID_LOADER_STOCK_WITH_SYMBOL);
+
+        hideProgressWheelIfPossible();
+        hideEmptyMessage();
     }
 
     @Override // SearchBox.SearchListener
@@ -221,6 +231,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             Toast.makeText(this, R.string.toast_symbol_exists, Toast.LENGTH_SHORT).show();
             return;
         }
+        showProgressWheel();
 
         // Refresh the shownList BEFORE fetching a new stock. This is to prevent
         // fetching the new stock twice when it becomes apart of that list.
@@ -246,8 +257,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // MainAdapter.EventListener
     public void onItemRetryClick(MainAdapter.MainViewHolder holder) {
-        mListFragment.loadAFew();
-        mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
+        if(!mListFragment.isRefreshing()) {
+            mListFragment.loadAFew();
+            mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
+        }
     }
 
     @Override // MainAdapter.EventListener
@@ -275,6 +288,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     }
                 });
         mSnackbar.show();
+
+        showEmptyMessageIfPossible();
     }
 
     @Override // MainAdapter.EventListener
@@ -296,40 +311,23 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         super.onPause();
     }
 
-    @Override
-    public void onDestroy() {
-        if (mDragDropManager != null) {
-            mDragDropManager.release();
-            mDragDropManager = null;
-        }
+    public void configureOverflowMenu(){
+        mAppBar.setOverflowMenu(R.menu.menu_main);
+        mAppBar.setOverflowMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                int id = item.getItemId();
 
-        if (mSwipeManager != null) {
-            mSwipeManager.release();
-            mSwipeManager = null;
-        }
-
-        if (mTouchActionGuardManager != null) {
-            mTouchActionGuardManager.release();
-            mTouchActionGuardManager = null;
-        }
-
-        if (mRecyclerView != null) {
-            mRecyclerView.clearOnScrollListeners();
-            mRecyclerView.setItemAnimator(null);
-            mRecyclerView.setAdapter(null);
-            mRecyclerView = null;
-        }
-
-        if (mWrappedAdapter != null) {
-            WrapperAdapterUtils.releaseAll(mWrappedAdapter);
-            mWrappedAdapter = null;
-        }
-        mAdapter.release();
-        mAdapter = null;
-        mLayoutManager = null;
-        mListFragment = null;
-
-        super.onDestroy();
+                switch (id) {
+                    case R.id.action_refresh:
+                        refreshShownList(null);
+                        break;
+                    case R.id.action_sort:
+                        break;
+                }
+                return false;
+            }
+        });
     }
 
     private void configureRecyclerView(){
@@ -420,7 +418,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if(!listManipulator.isLoadingItemPresent()) {
             if (mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount() - 1 &&
-                    listManipulator.canLoadAFew()) {
+                    !mListFragment.isRefreshing() && listManipulator.canLoadAFew()) {
                 mListFragment.loadAFew();
                 // Insert dummy item
                 listManipulator.addLoadingItem();
@@ -430,7 +428,63 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
+    private void hideEmptyMessage(){
+        mEmptyMsg.setVisibility(View.INVISIBLE);
+    }
+
+    private void showEmptyMessageIfPossible(){
+        if(getListManipulator().getCount() == 0){
+            mEmptyMsg.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideProgressWheelIfPossible(){
+        if(!Utility.isNetworkServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE))){
+            mProgressWheel.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    private void showProgressWheel(){
+        mProgressWheel.setVisibility(View.VISIBLE);
+    }
+
     public ListManipulator getListManipulator() {
         return mListFragment.getListManipulator();
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mDragDropManager != null) {
+            mDragDropManager.release();
+            mDragDropManager = null;
+        }
+
+        if (mSwipeManager != null) {
+            mSwipeManager.release();
+            mSwipeManager = null;
+        }
+
+        if (mTouchActionGuardManager != null) {
+            mTouchActionGuardManager.release();
+            mTouchActionGuardManager = null;
+        }
+
+        if (mRecyclerView != null) {
+            mRecyclerView.clearOnScrollListeners();
+            mRecyclerView.setItemAnimator(null);
+            mRecyclerView.setAdapter(null);
+            mRecyclerView = null;
+        }
+
+        if (mWrappedAdapter != null) {
+            WrapperAdapterUtils.releaseAll(mWrappedAdapter);
+            mWrappedAdapter = null;
+        }
+        mAdapter.release();
+        mAdapter = null;
+        mLayoutManager = null;
+        mListFragment = null;
+
+        super.onDestroy();
     }
 }

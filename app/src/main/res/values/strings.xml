@@ -19,8 +19,8 @@
     <string name="toast_already_up_to_date">Already up to date</string>
     <string name="toast_error_updating_list">Error updating list</string>
 
-    <!--Content Provider-->
-    <string name="unknown_uri">Unknown Uri: %1$s</string>
+    <!--RecyclerView-->
+    <string name="empty_list_msg">Use the search box above\nto add an item.</string>
 
     <!--content description-->
     <string name="content_description_stock_arrow">Stock arrow</string>
