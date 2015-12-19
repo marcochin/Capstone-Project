@@ -13,7 +13,7 @@ import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
-import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
+import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
@@ -33,16 +33,13 @@ import yahoofinance.quotes.stock.StockQuote;
  */
 public class NetworkService extends IntentService {
     private static final String TAG = NetworkService.class.getSimpleName();
-    public static final String KEY_SEARCH_QUERY ="searchQuery";
+    public static final String KEY_LOAD_SYMBOL_QUERY ="searchQuery";
     public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
-    public static final String KEY_LIST_REFRESH ="listResfresh";
-    public static final String KEY_ERROR ="error";
+    public static final String KEY_LIST_REFRESH ="listRefresh";
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
-    public static final String ACTION_STOCK_WITH_SYMBOL = "actionStockWithSymbol";
+    public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";
     public static final String ACTION_DETAILS = "actionDetails";
-
-    public static final int NETWORK_ERROR = -1;
 
     //needs to be 32 and 366 since we need to compare closing to prev day's closing price
     private static final int MONTH = 32;
@@ -53,22 +50,27 @@ public class NetworkService extends IntentService {
     private static final String NASDAQ = "NMS";
     private static final String NYSE = "NYQ";
 
+    public static final String KEY_LOAD_ERROR ="loadError";
+    public static final int LOAD_A_FEW_ERROR = -1;
+    public static final int LOAD_SYMBOL_ERROR = -2;
+
     public NetworkService(){
         super(TAG);
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        String action = intent.getAction();
+
         try {
             // check for internet
             if(!Utility.isNetworkAvailable(this)){
                 Utility.showToast(this, getString(R.string.toast_no_network));
                 return;
             }
-            String action = intent.getAction();
 
             switch(action) {
-                case ACTION_LOAD_A_FEW: {
+                case ACTION_LOAD_A_FEW:
                     String[] symbols = intent.getStringArrayExtra(KEY_LOAD_A_FEW_QUERY);
                     boolean listRefresh = intent.getBooleanExtra(KEY_LIST_REFRESH, false);
 
@@ -80,19 +82,19 @@ public class NetworkService extends IntentService {
                         performActionLoadAFewNonLatest(symbols);
                     }
                     break;
-                }
 
-                case ACTION_STOCK_WITH_SYMBOL:
-                    String symbol = intent.getStringExtra(KEY_SEARCH_QUERY);
-                    performActionStockWithSymbol(symbol);
+                case ACTION_LOAD_SYMBOL:
+                    String symbol = intent.getStringExtra(KEY_LOAD_SYMBOL_QUERY);
+                    performActionLoadSymbol(symbol);
                     break;
             }
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
             Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
 
-            Intent errorBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
-            errorBroadcast.putExtra(KEY_ERROR, NETWORK_ERROR);
+            Intent errorBroadcast = new Intent(ListManagerFragment.ERROR_BROADCAST_ACTION);
+            errorBroadcast.putExtra(KEY_LOAD_ERROR,
+                    action.equals(ACTION_LOAD_A_FEW)? LOAD_A_FEW_ERROR : LOAD_SYMBOL_ERROR);
             sendBroadcast(errorBroadcast);
         }
     }
@@ -160,7 +162,7 @@ public class NetworkService extends IntentService {
         applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
     }
 
-    private void performActionStockWithSymbol(String symbol)throws IOException{
+    private void performActionLoadSymbol(String symbol)throws IOException{
         Stock stock = YahooFinance.get(symbol);
         ContentValues values = getLatestMainValues(stock);
 
@@ -328,18 +330,6 @@ public class NetworkService extends IntentService {
         Log.d(TAG, prevStreak + " " + yearStreakHigh + " " + yearStreakLow);
 
         return values;
-    }
-
-    private void updateUpdateTime(){
-        ContentValues values = new ContentValues();
-        values.put(SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI, System.currentTimeMillis());
-
-        int rowsAffected = getContentResolver().update(SaveStateEntry.CONTENT_URI,
-                values, null, null);
-
-        if(rowsAffected < 1){
-            getContentResolver().insert(SaveStateEntry.CONTENT_URI, values);
-        }
     }
 
     private ContentProviderOperation getUpdateTimeOperation(){

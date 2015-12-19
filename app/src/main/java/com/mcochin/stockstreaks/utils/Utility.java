@@ -328,7 +328,6 @@ public class Utility {
      * @return returns true if running, false otherwise
      */
     public static boolean isNetworkServiceRunning(ActivityManager manager) {
-        //ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if ("com.mcochin.stockstreaks.services.NetworkService"
                     .equals(service.service.getClassName())) {

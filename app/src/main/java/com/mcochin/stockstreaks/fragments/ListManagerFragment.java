@@ -14,6 +14,7 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
@@ -26,29 +27,32 @@ import com.mcochin.stockstreaks.utils.Utility;
 import java.util.ArrayList;
 import java.util.Locale;
 
-public class ListManipulatorFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
-    public static final String TAG = ListManipulatorFragment.class.getSimpleName();
-    public static final String BROADCAST_ACTION = StockContract.CONTENT_AUTHORITY;
+public class ListManagerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+    public static final String TAG = ListManagerFragment.class.getSimpleName();
+    public static final String UPDATE_BROADCAST_ACTION = StockContract.CONTENT_AUTHORITY;
+    public static final String ERROR_BROADCAST_ACTION = StockContract.CONTENT_AUTHORITY + ".error";
     public static final int ID_LOADER_STOCK_WITH_SYMBOL = 2;
 
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
     private UpdateReceiver mUpdateReceiver;
+    private ErrorReceiver mErrorReceiver;
 
     /**
      * This is true if the list is updating to the latest values
      */
-    private volatile boolean mIsRefreshing;
+    private volatile boolean mRefreshing;
 
     /**
      * This is true if the list is loading a few. Latest values or not.
      */
-    private boolean mIsLoadingAFew;
+    private boolean mLoadingAFew;
 
     public interface EventListener{
-        void onLoadAFewFinished(boolean isSuccess);
+        void onLoadError(int errorCode);
+        void onLoadAFewFinished();
         void onLoadAllFromDbFinished();
-        void onLoadStockWithSymbolFinished(Loader<Cursor> loader, Cursor data);
+        void onLoadStockWithSymbolFinished();
     }
 
     @Override
@@ -58,8 +62,27 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
         // Register receiver
         if(mUpdateReceiver == null){
             mUpdateReceiver = new UpdateReceiver();
+            mErrorReceiver = new ErrorReceiver();
         }
-        getContext().registerReceiver(mUpdateReceiver, new IntentFilter(BROADCAST_ACTION));
+        context.registerReceiver(mUpdateReceiver, new IntentFilter(UPDATE_BROADCAST_ACTION));
+        context.registerReceiver(mErrorReceiver, new IntentFilter(ERROR_BROADCAST_ACTION));
+        recalibrateLoader();
+    }
+
+    /**
+     * When we rotate the device when a item is loading, the content provider might lose it's
+     */
+    private void recalibrateLoader(){
+        LoaderManager loaderManager = ((AppCompatActivity)getContext()).getSupportLoaderManager();
+        Loader<Cursor> loader = loaderManager.getLoader(
+                ListManagerFragment.ID_LOADER_STOCK_WITH_SYMBOL);
+
+        if(loader != null){
+            loaderManager.initLoader(
+                    ListManagerFragment.ID_LOADER_STOCK_WITH_SYMBOL,
+                    null,
+                    this);
+        }
     }
 
     @Override
@@ -86,6 +109,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
         mEventListener = null;
         // Unregister Receiver
         getContext().unregisterReceiver(mUpdateReceiver);
+        getContext().unregisterReceiver(mErrorReceiver);
         super.onDetach();
     }
 
@@ -94,7 +118,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
         CursorLoader loader = null;
         switch (id) {
             case ID_LOADER_STOCK_WITH_SYMBOL:
-                String symbol = args.getString(NetworkService.KEY_SEARCH_QUERY);
+                String symbol = args.getString(NetworkService.KEY_LOAD_SYMBOL_QUERY);
 
                 if(symbol != null) {
                     loader = new CursorLoader(
@@ -119,9 +143,11 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
 
         switch (id) {
             case ID_LOADER_STOCK_WITH_SYMBOL:
-
+                if (data.moveToFirst()) {
+                    mListManipulator.addItemToTop(Utility.getStockFromCursor(data));
+                }
                 if (mEventListener != null) {
-                    mEventListener.onLoadStockWithSymbolFinished(loader, data);
+                    mEventListener.onLoadStockWithSymbolFinished();
                 }
                 break;
         }
@@ -129,7 +155,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-
+        Log.d(TAG, "load reset");
     }
 
     public void initLoadFromDb(){
@@ -190,7 +216,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
             protected Void doInBackground(Void... params) {
                 // Give list to ListManipulator
                 mListManipulator.setLoadList(getLoadListFromDb());
-                mIsRefreshing = loadAFew();
+                mRefreshing = loadAFew();
                 return null;
             }
 
@@ -198,10 +224,11 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
             protected void onPostExecute(Void aVoid) {
                 //Loader must be run on main thread or crash
                 if (attachSymbol != null) {
-                    loadStockWithSymbol(attachSymbol);
-                }
-                if(!mIsRefreshing && mEventListener != null){
-                    mEventListener.onLoadAFewFinished(false);
+                    loadSymbol(attachSymbol);
+                }else if(!mRefreshing){
+                    if(mEventListener != null){
+                        mEventListener.onLoadAFewFinished();
+                    }
                 }
             }
         }.execute();
@@ -215,7 +242,7 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
         String[] aFewToLoad = mListManipulator.getAFewToLoad();
 
         if (aFewToLoad != null) {
-            mIsLoadingAFew = true;
+            mLoadingAFew = true;
 
             // Start service to load a few
             Intent serviceIntent = new Intent(getContext(), NetworkService.class);
@@ -230,21 +257,21 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
             return true;
         }
 
-        mIsLoadingAFew = false;
+        mLoadingAFew = false;
         return false;
     }
 
-    public void loadStockWithSymbol(String symbol){
+    public void loadSymbol(String symbol){
         // Start service to retrieve stock info
         Intent serviceIntent = new Intent(getContext(), NetworkService.class);
-        serviceIntent.putExtra(NetworkService.KEY_SEARCH_QUERY, symbol);
-        serviceIntent.setAction(NetworkService.ACTION_STOCK_WITH_SYMBOL);
+        serviceIntent.putExtra(NetworkService.KEY_LOAD_SYMBOL_QUERY, symbol);
+        serviceIntent.setAction(NetworkService.ACTION_LOAD_SYMBOL);
 
         getContext().startService(serviceIntent);
 
         //Start cursor loader to load the newly added stock
         Bundle args = new Bundle();
-        args.putString(NetworkService.KEY_SEARCH_QUERY, symbol);
+        args.putString(NetworkService.KEY_LOAD_SYMBOL_QUERY, symbol);
 
         ((AppCompatActivity)getContext()).getSupportLoaderManager()
                 .restartLoader(ID_LOADER_STOCK_WITH_SYMBOL, args, this);
@@ -284,10 +311,10 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
     }
 
     public boolean isRefreshing(){
-        return mIsRefreshing;
+        return mRefreshing;
     }
     public boolean isLoadingAFew(){
-        return mIsLoadingAFew;
+        return mLoadingAFew;
     }
 
     public void setEventListener(EventListener eventListener){
@@ -304,65 +331,73 @@ public class ListManipulatorFragment extends Fragment implements LoaderManager.L
     public class UpdateReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, final Intent intent) {
-            final int errorCode = intent.getIntExtra(NetworkService.KEY_ERROR, 0);
-
-                new AsyncTask<Void, Void, Boolean>() {
-                    boolean isSuccess = false;
+                new AsyncTask<Void, Void, Void>() {
 
                     @Override
-                    protected Boolean doInBackground(Void... params) {
-                        if(errorCode != NetworkService.NETWORK_ERROR) {
-                            isSuccess = true;
+                    protected Void doInBackground(Void... params) {
+                        ArrayList<ContentProviderOperation> ops = intent
+                                .getParcelableArrayListExtra(StockProvider.KEY_OPERATIONS);
+                        Cursor cursor = null;
 
-                            ArrayList<ContentProviderOperation> ops = intent
-                                    .getParcelableArrayListExtra(StockProvider.KEY_OPERATIONS);
-                            Cursor cursor = null;
+                        // Remove loading item if it exists
+                        mListManipulator.removeLoadingItem();
 
-                            // Remove loading item if it exists
-                            mListManipulator.removeLoadingItem();
+                        //Loop through results
+                        for (ContentProviderOperation op : ops) {
+                            try {
+                                // Filter out save state Uri
+                                if (!StockContract.isSaveStateUri(op.getUri())){
+                                    // Query the stocks from db
+                                    cursor = getContext().getContentResolver().query(
+                                            op.getUri(),
+                                            ListManipulator.STOCK_PROJECTION,
+                                            null,
+                                            null,
+                                            null);
 
-                            //Loop through results
-                            for (ContentProviderOperation op : ops) {
-                                try {
-                                    // Filter out save state Uri
-                                    if (!StockContract.isSaveStateUri(op.getUri())){
-                                        // Query the stocks from db
-                                        cursor = getContext().getContentResolver().query(
-                                                op.getUri(),
-                                                ListManipulator.STOCK_PROJECTION,
-                                                null,
-                                                null,
-                                                null);
-
-                                        if(mIsRefreshing){
-                                            mListManipulator.setShownListCursor(cursor);
-                                        }else {
-                                            // Insert stock in shownList
-                                            if (cursor != null && cursor.moveToFirst()) {
-                                                Stock stock = Utility.getStockFromCursor(cursor);
-                                                mListManipulator.addItemToBottom(stock);
-                                            }
+                                    if(mRefreshing){
+                                        mListManipulator.setShownListCursor(cursor);
+                                    }else {
+                                        // Insert stock in shownList
+                                        if (cursor != null && cursor.moveToFirst()) {
+                                            Stock stock = Utility.getStockFromCursor(cursor);
+                                            mListManipulator.addItemToBottom(stock);
                                         }
                                     }
-                                } finally {
-                                    if (cursor != null) {
-                                        cursor.close();
-                                    }
+                                }
+                            } finally {
+                                if (cursor != null) {
+                                    cursor.close();
                                 }
                             }
                         }
-                        return isSuccess;
+                    return null;
                     }
 
                     @Override
-                    protected void onPostExecute(Boolean isSuccess) {
+                    protected void onPostExecute(Void aVoid) {
                         if (mEventListener != null) {
-                            mEventListener.onLoadAFewFinished(isSuccess);
+                            mEventListener.onLoadAFewFinished();
                         }
-                        mIsRefreshing = false;
-                        mIsLoadingAFew = false;
+                        mRefreshing = false;
+                        mLoadingAFew = false;
                     }
                 }.execute();
+        }
+    }
+
+    public class ErrorReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int errorCode = intent.getIntExtra(NetworkService.KEY_LOAD_ERROR, 0);
+
+            if (mEventListener != null) {
+                mEventListener.onLoadError(errorCode);
+            }
+            if(errorCode == NetworkService.LOAD_A_FEW_ERROR) {
+                mRefreshing = false;
+                mLoadingAFew = false;
+            }
         }
     }
 }

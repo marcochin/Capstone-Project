@@ -2,7 +2,6 @@ package com.mcochin.stockstreaks.data;
 
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
-import android.content.ContentProviderResult;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.OperationApplicationException;
@@ -17,7 +16,7 @@ import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
-import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
+import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 
 import java.util.ArrayList;
 
@@ -70,7 +69,6 @@ public class StockProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        Log.d(TAG, "contentProvider create");
         mStockDbHelper = new StockDbHelper(getContext());
         return true;
     }
@@ -170,6 +168,7 @@ public class StockProvider extends ContentProvider {
         if(id < 0){
             throw new SQLException(ERROR_ROW_INSERT + uri);
         }
+
         if(getContext()!= null) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
@@ -269,7 +268,7 @@ public class StockProvider extends ContentProvider {
 
     private void updateItems(ArrayList<ContentProviderOperation> ops){
         if (getContext() != null) {
-            Intent updateBroadcast = new Intent(ListManipulatorFragment.BROADCAST_ACTION);
+            Intent updateBroadcast = new Intent(ListManagerFragment.UPDATE_BROADCAST_ACTION);
             updateBroadcast.putParcelableArrayListExtra(KEY_OPERATIONS, ops);
             getContext().sendBroadcast(updateBroadcast);
         }

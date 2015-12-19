@@ -22,7 +22,7 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultAct
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeableItemViewHolder;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
-import com.mcochin.stockstreaks.fragments.ListManipulatorFragment;
+import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.utils.Utility;
 
@@ -42,7 +42,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public static final int LIST_ITEM_FIRST = 1;
 
     private ListManipulator mListManipulator;
-    private ListManipulatorFragment mListFragment;
+    private ListManagerFragment mListFragment;
     private EventListener mEventListener;
     private RecyclerViewDragDropManager mDragDropManager;
     private Context mContext;
@@ -152,7 +152,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     // Constructor
     public MainAdapter (Context context, RecyclerViewDragDropManager dragDropManager,
-                        ListManipulatorFragment listFragment, EventListener eventListener){
+                        ListManagerFragment listFragment, EventListener eventListener){
 
         mEventListener = eventListener;
         mDragDropManager = dragDropManager;
