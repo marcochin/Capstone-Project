@@ -10,12 +10,12 @@
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"/>
 
-    <include layout="@layout/detail_main_section_center_vertical"
+    <include layout="@layout/detail_main_section"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"/>
 
-    <include layout="@layout/detail_extras_section_center_vertical"
+    <include layout="@layout/detail_extras_section"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight=".9"/>

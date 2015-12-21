@@ -44,7 +44,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 StockEntry.COLUMN_PREV_STREAK + " INTEGER, " +
                 StockEntry.COLUMN_STREAK_YEAR_HIGH + " INTEGER, " +
                 StockEntry.COLUMN_STREAK_YEAR_LOW + " INTEGER, " +
-                StockEntry.COLUMN_LIST_POSITION + " INTEGER, " +
+                StockEntry.COLUMN_LIST_POSITION + " INTEGER DEFAULT 0, " +
 
                 // All symbols should be unique
                 " UNIQUE (" + StockEntry.COLUMN_SYMBOL + "));";
@@ -52,9 +52,10 @@ public class StockDbHelper extends SQLiteOpenHelper {
         db.execSQL(SQL_CREATE_SAVE_STATE_TABLE);
         db.execSQL(SQL_CREATE_STOCKS_TABLE);
 
-        // Initialize starting update time
+        // Initialize starting update time and bookmark position
         ContentValues values = new ContentValues();
         values.put(SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI, 0);
+        values.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, 0);
         db.insert(SaveStateEntry.TABLE_NAME, null, values);
     }
 

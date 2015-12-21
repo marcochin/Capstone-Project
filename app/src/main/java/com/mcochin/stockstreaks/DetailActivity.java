@@ -6,9 +6,11 @@ import android.support.v7.app.AppCompatActivity;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 
 /**
- * Created by Marco on 10/31/2015.
+ * Activity for the phone to show the details of a stock.
  */
 public class DetailActivity extends AppCompatActivity {
+    public static final String KEY_ARGS = "args";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -16,17 +18,12 @@ public class DetailActivity extends AppCompatActivity {
 
         if(savedInstanceState == null) {
             DetailFragment detailFragment = new DetailFragment();
+            Bundle args = getIntent().getBundleExtra(KEY_ARGS);
+            detailFragment.setArguments(args);
+
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.detail_container, detailFragment, DetailFragment.TAG)
                     .commit();
         }
-
-//        final View rootView = findViewById(R.id.detail_container);
-//        rootView.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                rootView.invalidate();
-//            }
-//        }, 100);
     }
 }

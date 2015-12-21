@@ -251,14 +251,13 @@ public class ListManipulator {
         for(Stock stock: mShownList){
             // Save bookmark in db
             ContentValues positionValues = new ContentValues();
-            positionValues.put(StockEntry.COLUMN_LIST_POSITION, i);
+            positionValues.put(StockEntry.COLUMN_LIST_POSITION, i++);
 
             ops.add(ContentProviderOperation
                             .newUpdate(StockEntry.buildUri(stock.getSymbol()))
                             .withValues(positionValues)
                             .withYieldAllowed(true)
                             .build());
-            i++;
         }
 
         if(mLoadList != null) {
@@ -266,14 +265,13 @@ public class ListManipulator {
             for (int j = mLoadListPositionBookmark; j < mLoadList.length; j++) {
                 // Save bookmark in db
                 ContentValues positionValues = new ContentValues();
-                positionValues.put(StockEntry.COLUMN_LIST_POSITION, i);
+                positionValues.put(StockEntry.COLUMN_LIST_POSITION, i++);
 
                 ops.add(ContentProviderOperation
                         .newUpdate(StockEntry.buildUri(mLoadList[j]))
                         .withValues(positionValues)
                         .withYieldAllowed(true)
                         .build());
-                i++;
             }
         }
 

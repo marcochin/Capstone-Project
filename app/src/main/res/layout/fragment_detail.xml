@@ -19,12 +19,12 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <include layout="@layout/detail_main_section_center_vertical"
+            <include layout="@layout/detail_main_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"/>
 
-            <include layout="@layout/detail_extras_section_center_vertical"
+            <include layout="@layout/detail_extras_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
         </LinearLayout>

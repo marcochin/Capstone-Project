@@ -32,7 +32,6 @@
             android:gravity="bottom"
             app:layout_gravity="fill_vertical"
             app:layout_columnWeight="1"
-            android:text="$543.34"
             tools:text="$543.34"/>
 
         <TextView
@@ -54,16 +53,14 @@
                 android:layout_height="wrap_content"
                 android:textSize="@dimen/column_item_text_size"
                 android:textColor="@color/white"
-                android:text="33 days"
                 tools:text="33 days"/>
 
             <ImageView
                 style="@style/StreakArrow"
-                android:id="@+id/image_streak_arrow_last"
+                android:id="@+id/image_streak_arrow_prev"
                 android:layout_width="@dimen/stock_arrow_size_normal"
                 android:layout_height="@dimen/stock_arrow_size_normal"
                 android:contentDescription="@string/content_description_stock_arrow"
-                android:src="@drawable/ic_streak_up"
                 tools:src="@drawable/ic_streak_up"/>
         </LinearLayout>
 
@@ -86,7 +83,6 @@
                 android:layout_height="wrap_content"
                 android:textSize="@dimen/column_item_text_size"
                 android:textColor="@color/white"
-                android:text="33 days"
                 tools:text="33 days"/>
 
             <ImageView
@@ -95,8 +91,7 @@
                 android:layout_width="@dimen/stock_arrow_size_normal"
                 android:layout_height="@dimen/stock_arrow_size_normal"
                 android:contentDescription="@string/content_description_stock_arrow"
-                android:src="@drawable/ic_streak_up"
-                tools:src="@drawable/ic_streak_up"/>
+                android:src="@drawable/ic_streak_up"/>
         </LinearLayout>
 
         <TextView
@@ -118,7 +113,6 @@
                 android:layout_height="wrap_content"
                 android:textSize="@dimen/column_item_text_size"
                 android:textColor="@color/white"
-                android:text="33 days"
                 tools:text="33 days"/>
 
             <ImageView
@@ -127,8 +121,7 @@
                 android:layout_width="@dimen/stock_arrow_size_normal"
                 android:layout_height="@dimen/stock_arrow_size_normal"
                 android:contentDescription="@string/content_description_stock_arrow"
-                android:src="@drawable/ic_streak_down"
-                tools:src="@drawable/ic_streak_down"/>
+                android:src="@drawable/ic_streak_down"/>
         </LinearLayout>
 
         <android.support.v7.widget.Space

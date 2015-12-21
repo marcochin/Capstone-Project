@@ -36,6 +36,7 @@ public class NetworkService extends IntentService {
     public static final String KEY_LOAD_SYMBOL_QUERY ="searchQuery";
     public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
     public static final String KEY_LIST_REFRESH ="listRefresh";
+    public static final String KEY_LOAD_ERROR ="loadError";
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";
@@ -50,7 +51,6 @@ public class NetworkService extends IntentService {
     private static final String NASDAQ = "NMS";
     private static final String NYSE = "NYQ";
 
-    public static final String KEY_LOAD_ERROR ="loadError";
     public static final int LOAD_A_FEW_ERROR = -1;
     public static final int LOAD_SYMBOL_ERROR = -2;
 
@@ -191,9 +191,11 @@ public class NetworkService extends IntentService {
 
         if(stock == null){
             Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
+            throw new IOException();
 
         } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getCurrency().equals(USD))) {
             Utility.showToast(this, getString(R.string.toast_symbol_not_found));
+            throw new IOException();
 
         } else{
             // Get history from a month ago to today!
@@ -246,7 +248,7 @@ public class NetworkService extends IntentService {
         HistoricalQuote firstHistory = historyList.get(0);
         if(recentClose != 0){
             float firstHistoryAdjClose =
-                    Utility.roundTo2Decimals(firstHistory.getAdjClose().floatValue());
+                    Utility.roundTo2FloatDecimals(firstHistory.getAdjClose().floatValue());
 
             if(recentClose > firstHistoryAdjClose){
                 historyStreak++;
@@ -261,7 +263,7 @@ public class NetworkService extends IntentService {
 
         for (int i = 0; i < historyList.size(); i++) {
             HistoricalQuote history = historyList.get(i);
-            float historyAdjClose = Utility.roundTo2Decimals(history.getAdjClose().floatValue());
+            float historyAdjClose = Utility.roundTo2FloatDecimals(history.getAdjClose().floatValue());
             boolean shouldBreak = false;
 
             // Need to compare history adj close to its previous history's adj close.
@@ -270,7 +272,7 @@ public class NetworkService extends IntentService {
             // nothing to compare it to.
             if (i + 1 < historyList.size()) {
                 float prevHistoryAdjClose =
-                        Utility.roundTo2Decimals(historyList.get(i + 1).getAdjClose().floatValue());
+                        Utility.roundTo2FloatDecimals(historyList.get(i + 1).getAdjClose().floatValue());
 
                 if (historyAdjClose > prevHistoryAdjClose) {
                     // Down streak broken so break;

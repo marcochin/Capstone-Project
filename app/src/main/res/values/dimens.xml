@@ -15,7 +15,7 @@
 
     <!--Detail fragment-->
     <dimen name="full_name_text_size">16sp</dimen>
-    <dimen name="symbol_text_size">32sp</dimen>
+    <dimen name="symbol_text_size">30sp</dimen>
 
     <dimen name="column_item_text_size">18sp</dimen>
     <dimen name="column_item_vertical_margin">5dp</dimen>

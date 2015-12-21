@@ -70,7 +70,9 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
     }
 
     /**
-     * When we rotate the device when a item is loading, the content provider might lose it's
+     * When we rotate the device when a item is loading, Android somehow loses its reference to
+     * loader, and so we need to boot it up again if there exists one. This is a workaround.
+     * http://stackoverflow.com/questions/11618576/why-is-my-loader-destroyed
      */
     private void recalibrateLoader(){
         LoaderManager loaderManager = ((AppCompatActivity)getContext()).getSupportLoaderManager();
@@ -155,7 +157,6 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        Log.d(TAG, "load reset");
     }
 
     public void initLoadFromDb(){
@@ -167,24 +168,25 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
                 try {
                     ContentResolver cr = getContext().getContentResolver();
                     int shownPositionBookmark  = Utility.getShownPositionBookmark(cr);
+                    Log.d(TAG, "shown bookmrk: " + shownPositionBookmark);
 
-                    if(shownPositionBookmark >= 0) {
-                        // Query db for all data with the same updateDate as the first entry.
-                        cursor = cr.query(
-                                StockEntry.CONTENT_URI,
-                                ListManipulator.STOCK_PROJECTION,
-                                StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
-                                new String[]{Integer.toString(shownPositionBookmark)},
-                                StockProvider.ORDER_BY_LIST_POSITION_ASC);
+                    // Query db for all data with the same updateDate as the first entry.
+                    cursor = cr.query(
+                            StockEntry.CONTENT_URI,
+                            ListManipulator.STOCK_PROJECTION,
+                            shownPositionBookmark == 0 ?
+                                    StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION_ZERO
+                                    :StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
+                            new String[]{Integer.toString(shownPositionBookmark)},
+                            StockProvider.ORDER_BY_LIST_POSITION_ASC);
 
-                        // Extract Stock data from cursor
-                        if (cursor != null) {
-                            int cursorCount = cursor.getCount();
-                            if(cursorCount > 0) {
-                                mListManipulator.setShownListCursor(cursor);
-                                mListManipulator.setLoadList(getLoadListFromDb());
-                                mListManipulator.addToLoadListPositionBookmark(cursorCount);
-                            }
+                    // Extract Stock data from cursor
+                    if (cursor != null) {
+                        int cursorCount = cursor.getCount();
+                        if(cursorCount > 0) {
+                            mListManipulator.setShownListCursor(cursor);
+                            mListManipulator.setLoadList(getLoadListFromDb());
+                            mListManipulator.addToLoadListPositionBookmark(cursorCount);
                         }
                     }
                 }finally {
@@ -192,7 +194,6 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
                         cursor.close();
                     }
                 }
-
                 return null;
             }
 

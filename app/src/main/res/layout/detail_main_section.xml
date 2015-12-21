@@ -25,7 +25,6 @@
             android:textColor="@color/secondary_text"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
-            android:text="Updated: Thursday, April 03 \n @ 4:00pm"
             tools:text="Updated: Thursday, April 03 \n @ 4:00pm" />
 
         <TextView android:id="@+id/text_full_name"
@@ -37,7 +36,6 @@
             android:textSize="@dimen/full_name_text_size"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
-            android:text="GoPro, Inc."
             tools:text="GoPro, Inc."/>
 
         <TextView android:id="@+id/text_symbol"
@@ -47,7 +45,6 @@
             android:textColor="@android:color/black"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
-            android:text="GPRO"
             tools:text="GPRO"/>
 
         <TextView
@@ -64,7 +61,6 @@
             app:layout_gravity="fill_vertical"
             android:gravity="bottom"
             app:layout_columnWeight="1"
-            android:text="$333.33"
             tools:text="$333.33"/>
 
         <TextView
@@ -79,7 +75,6 @@
             android:layout_width="0dp"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
-            android:text="$-333.33"
             tools:text="$-333.33"/>
 
         <TextView
@@ -95,7 +90,6 @@
             android:textColor="@android:color/black"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
-            android:text="-333.33%"
             tools:text="-333.33%" />
 
         <TextView
@@ -116,7 +110,6 @@
                 android:layout_height="wrap_content"
                 android:textSize="@dimen/column_item_text_size"
                 android:textColor="@color/black"
-                android:text="33 days"
                 tools:text="33 days"/>
 
             <ImageView
@@ -125,7 +118,6 @@
                 android:layout_width="@dimen/stock_arrow_size_normal"
                 android:layout_height="@dimen/stock_arrow_size_normal"
                 android:contentDescription="@string/content_description_stock_arrow"
-                android:src="@drawable/ic_streak_down"
                 tools:src="@drawable/ic_streak_down"/>
         </LinearLayout>
 

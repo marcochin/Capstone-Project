@@ -9,9 +9,11 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
 import android.widget.Toast;
 
+import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
@@ -113,8 +115,12 @@ public class Utility {
         return new Pair<>(changeDollar, changePercent);
     }
 
-    public static float roundTo2Decimals(float f){
-        return Float.parseFloat(String.format("%.2f", f));
+    public static float roundTo2FloatDecimals(float f){
+        return Float.parseFloat(roundTo2StringDecimals(f));
+    }
+
+    public static String roundTo2StringDecimals(float f){
+        return String.format("%.2f", f);
     }
 
     public static Stock getStockFromCursor(Cursor cursor){

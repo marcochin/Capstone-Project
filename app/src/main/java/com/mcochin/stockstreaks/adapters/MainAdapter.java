@@ -208,26 +208,25 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             }
 
             Resources resources = mContext.getResources();
-
             // Set symbol
             holder.mSymbol.setText(stock.getSymbol());
-
             // Set full name
             holder.mFullName.setText(stock.getFullName());
-
             // Set recent close
-            String recentClose = String.format("%.2f", stock.getRecentClose());
+            String recentClose = Utility.roundTo2StringDecimals(stock.getRecentClose());
             holder.mRecentClose.setText(resources.getString(R.string.placeholder_dollar, recentClose));
 
             // Format dollar/percent change float values to 2 decimals
             String changeDollar = resources.getString(
-                    R.string.placeholder_dollar, String.format("%.2f", stock.getChangeDollar()));
+                    R.string.placeholder_dollar,
+                    Utility.roundTo2StringDecimals(stock.getChangeDollar()));
 
             String changePercent = resources.getString(
-                    R.string.placeholder_percent, String.format("%.2f", stock.getChangePercent()));
+                    R.string.placeholder_percent,
+                    Utility.roundTo2StringDecimals(stock.getChangePercent()));
 
             // Format streak String
-            String streak = String.format("%d", stock.getStreak());
+            int streak = stock.getStreak();
 
             // Get our dollar/percent change colors and set our stock arrow ImageView
             int color;
@@ -243,15 +242,13 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
                 color = ContextCompat.getColor(mContext, R.color.stock_neutral);
             }
 
-            // Set our dollar/percent change, change color, and streak
+            // Set our updateTime, dollar/percent change, change color, and streak
             if (position == 0) { //list_first_item
-                SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
-                        R.string.update_time_format_ref),
-                        Locale.US);
-
                 Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
-                holder.mUpdateTime.setText(resources.getString(
-                        R.string.placeholder_update_time, sdf.format(updateTime)));
+                SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
+                        R.string.update_time_format_ref), Locale.US);
+                holder.mUpdateTime.setText(resources.getString(R.string.placeholder_update_time,
+                        sdf.format(updateTime)));
 
                 holder.mChangeDollar.setText(changeDollar);
                 holder.mChangeDollar.setTextColor(color);
@@ -259,7 +256,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
                 holder.mChangePercent.setText(changePercent);
                 holder.mChangePercent.setTextColor(color);
 
-                holder.mStreak.setText(mContext.getString(R.string.placeholder_days, streak));
+                holder.mStreak.setText(mContext.getString(Math.abs(streak) == 1 ?
+                                R.string.placeholder_day : R.string.placeholder_days, streak));
 
             } else { //list_item
                 holder.mChangeAmt.setText(resources.getString(

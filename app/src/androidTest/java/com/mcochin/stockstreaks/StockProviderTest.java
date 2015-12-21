@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.test.ProviderTestCase2;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
@@ -238,10 +239,6 @@ public class StockProviderTest extends ProviderTestCase2<StockProvider> {
                 cursor.close();
             }
         }
-    }
-
-    public void testUpdateDate(){
-
     }
 
     private ContentValues createBareMinimumValues(String symbol, String fullName){

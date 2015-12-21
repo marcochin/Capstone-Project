@@ -46,6 +46,7 @@
     <string name="placeholder_change_amt">%1$s(%2$s)</string>
     <string name="placeholder_dollar">$%1$s</string>
     <string name="placeholder_percent">%1$s%%</string>
+    <string name="placeholder_day">%1$s day</string>
     <string name="placeholder_days">%1$s days</string>
     <string name="placeholder_d">%1$sd</string>
     <string name="placeholder_update_time">Updated: %1$s</string>
