@@ -28,7 +28,7 @@ public class ListManipulator {
 //            "Watermelon", "Grape", "PassionFruit", "DragonFruit", "Honey-dew",
 //            "Cantaloupe", "Papaya"};
 
-    public static final int A_FEW = 20;
+    public static final int A_FEW = 12;
     public static final String LOADING_ITEM = "loadingItem";
 
     public static final String[] STOCK_PROJECTION = new String[]{
@@ -74,8 +74,8 @@ public class ListManipulator {
     public void addItemToBottom(Stock stock){
         stock.setId(generateUniqueId());
         mShownList.add(stock);
-        mListUpdated = true;
         addToLoadListPositionBookmark(1);
+        mListUpdated = true;
     }
 
     public void addLoadingItem(){
@@ -143,10 +143,12 @@ public class ListManipulator {
         mUniqueId = 0;
         mShownList.clear();
 
-        while(cursor.moveToNext()) {
-            Stock stock = Utility.getStockFromCursor(cursor);
-            stock.setId(generateUniqueId());
-            mShownList.add(stock);
+        if(cursor != null) {
+            while (cursor.moveToNext()) {
+                Stock stock = Utility.getStockFromCursor(cursor);
+                stock.setId(generateUniqueId());
+                mShownList.add(stock);
+            }
         }
     }
 
@@ -235,6 +237,7 @@ public class ListManipulator {
 
     public void saveBookmarkAndListPositions(ContentResolver cr){
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+        removeLoadingItem();
 
         // Save bookmark in db
         ContentValues bookmarkValues = new ContentValues();

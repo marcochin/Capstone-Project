@@ -52,7 +52,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
         db.execSQL(SQL_CREATE_SAVE_STATE_TABLE);
         db.execSQL(SQL_CREATE_STOCKS_TABLE);
 
-        // Initialize starting update time and bookmark position
+        // Initialize starting update time and bookmark position so it only updates never inserts
         ContentValues values = new ContentValues();
         values.put(SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI, 0);
         values.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, 0);

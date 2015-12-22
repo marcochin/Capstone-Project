@@ -26,6 +26,8 @@ import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ListManagerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     public static final String TAG = ListManagerFragment.class.getSimpleName();
@@ -97,11 +99,19 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
 
     @Override
     public void onStop() {
-        ContentResolver cr  = getContext().getContentResolver();
-        mListManipulator.permanentlyDeleteLastRemoveItem(cr);
-        if(mListManipulator.isListUpdated()){
-            mListManipulator.saveBookmarkAndListPositions(cr);
-        }
+        new AsyncTask<Void, Void, Void>(){
+            @Override
+            protected Void doInBackground(Void... params) {
+                synchronized (this) {
+                    ContentResolver cr = getContext().getContentResolver();
+                    mListManipulator.permanentlyDeleteLastRemoveItem(cr);
+                    if (mListManipulator.isListUpdated()) {
+                        mListManipulator.saveBookmarkAndListPositions(cr);
+                    }
+                    return null;
+                }
+            }
+        }.execute();
         super.onStop();
     }
 
@@ -215,10 +225,16 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                // Give list to ListManipulator
-                mListManipulator.setLoadList(getLoadListFromDb());
-                mRefreshing = loadAFew();
-                return null;
+                synchronized (this) {
+                    // Give list to ListManipulator
+                    if (mListManipulator.isListUpdated()) {
+                        mListManipulator.saveBookmarkAndListPositions(getContext().getContentResolver());
+                    }
+                    mListManipulator.setLoadList(getLoadListFromDb());
+                    mRefreshing = loadAFew();
+
+                    return null;
+                }
             }
 
             @Override
@@ -226,6 +242,7 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
                 //Loader must be run on main thread or crash
                 if (attachSymbol != null) {
                     loadSymbol(attachSymbol);
+
                 }else if(!mRefreshing){
                     if(mEventListener != null){
                         mEventListener.onLoadAFewFinished();
@@ -247,11 +264,8 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
 
             // Start service to load a few
             Intent serviceIntent = new Intent(getContext(), NetworkService.class);
-            serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
 
-            if (mListManipulator.getLoadListPositionBookmark() == 0) {
-                serviceIntent.putExtra(NetworkService.KEY_LIST_REFRESH, true);
-            }
+            serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
             serviceIntent.putExtra(NetworkService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
             getContext().startService(serviceIntent);
 
@@ -336,43 +350,46 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
 
                     @Override
                     protected Void doInBackground(Void... params) {
-                        ArrayList<ContentProviderOperation> ops = intent
-                                .getParcelableArrayListExtra(StockProvider.KEY_OPERATIONS);
-                        Cursor cursor = null;
+                        synchronized (this){
+                            ArrayList<ContentProviderOperation> ops = intent
+                                    .getParcelableArrayListExtra(StockProvider.KEY_OPERATIONS);
+                            Cursor cursor = null;
 
-                        // Remove loading item if it exists
-                        mListManipulator.removeLoadingItem();
+                            if(mRefreshing){
+                                mListManipulator.setShownListCursor(null);
+                            }else{
+                                // Remove loading item if it exists
+                                mListManipulator.removeLoadingItem();
+                            }
 
-                        //Loop through results
-                        for (ContentProviderOperation op : ops) {
-                            try {
-                                // Filter out save state Uri
-                                if (!StockContract.isSaveStateUri(op.getUri())){
-                                    // Query the stocks from db
-                                    cursor = getContext().getContentResolver().query(
-                                            op.getUri(),
-                                            ListManipulator.STOCK_PROJECTION,
-                                            null,
-                                            null,
-                                            null);
+                            //Loop through results
+                            for (ContentProviderOperation op : ops) {
+                                try {
+                                    // Filter out save state Uri
+                                    if (!StockContract.isSaveStateUri(op.getUri())) {
+                                        // Query the stocks from db
+                                        cursor = getContext().getContentResolver().query(
+                                                op.getUri(),
+                                                ListManipulator.STOCK_PROJECTION,
+                                                null,
+                                                null,
+                                                null);
 
-                                    if(mRefreshing){
-                                        mListManipulator.setShownListCursor(cursor);
-                                    }else {
                                         // Insert stock in shownList
                                         if (cursor != null && cursor.moveToFirst()) {
                                             Stock stock = Utility.getStockFromCursor(cursor);
                                             mListManipulator.addItemToBottom(stock);
                                         }
                                     }
-                                }
-                            } finally {
-                                if (cursor != null) {
-                                    cursor.close();
+                                } finally {
+                                    if (cursor != null) {
+                                        cursor.close();
+                                    }
                                 }
                             }
+
+                            return null;
                         }
-                    return null;
                     }
 
                     @Override

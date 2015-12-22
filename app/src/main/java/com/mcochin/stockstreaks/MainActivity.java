@@ -15,6 +15,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -71,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private ListManagerFragment mListFragment;
 
     private boolean mTwoPane;
+
+    private long mStartTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -148,35 +151,37 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private void refreshShownList(String attachSymbol){
         // Dismiss Snackbar to prevent undo removal because the old data will not be in sync with
         // new data when list is refreshed.
-        if(!mListFragment.isRefreshing() && Utility.canUpdateList(getContentResolver())) {
+        //if(!mListFragment.isRefreshing() && Utility.canUpdateList(getContentResolver())) {
             showProgressWheel();
 
             if (mSnackbar != null && mSnackbar.isShown()) {
                 mSnackbar.dismiss();
             }
+
             mListFragment.initLoadAFew(attachSymbol);
-        }
+        //}
     }
 
     @Override // SwipeRefreshLayout.OnRefreshListener
     public void onRefresh() {
-        refreshShownList(null);
         mSwipeToRefresh.setRefreshing(false);
+        refreshShownList(null);
+
+        mStartTime = System.nanoTime();
     }
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadAFewFinished() {
-        //mAdapter.notifyDataSetChanged();
-        mAdapter.notifyItemInserted(getListManipulator().getCount());
+        mAdapter.notifyDataSetChanged();
 
         hideProgressWheelIfPossible();
         showEmptyMessageIfPossible();
+        Log.d("Time", System.nanoTime() - mStartTime + "");
     }
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadAllFromDbFinished() {
-        //mAdapter.notifyDataSetChanged();
-        mAdapter.notifyItemInserted(getListManipulator().getCount());
+        mAdapter.notifyDataSetChanged();
 
         hideProgressWheelIfPossible();
         showEmptyMessageIfPossible();
@@ -475,15 +480,16 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private void dynamicLoadAFew(){
         ListManipulator listManipulator = getListManipulator();
 
-        if(!listManipulator.isLoadingItemPresent()) {
-            if (mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount() - 1 &&
-                    !mListFragment.isRefreshing() && listManipulator.canLoadAFew()) {
-                mListFragment.loadAFew();
-                // Insert dummy item
-                listManipulator.addLoadingItem();
-                // Must notifyItemInserted AFTER loadAFew for mIsLoadingAFew to be updated
-                mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
-            }
+        if (!listManipulator.isLoadingItemPresent()
+                && mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount() - 1
+                && !mListFragment.isRefreshing() && listManipulator.canLoadAFew()
+                && !Utility.canUpdateList(getContentResolver())) {
+
+            mListFragment.loadAFew();
+            // Insert dummy item
+            listManipulator.addLoadingItem();
+            // Must notifyItemInserted AFTER loadAFew for mIsLoadingAFew to be updated
+            mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
         }
     }
 
