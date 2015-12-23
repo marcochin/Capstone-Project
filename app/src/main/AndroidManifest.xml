@@ -27,7 +27,8 @@
             android:parentActivityName="com.mcochin.stockstreaks.MainActivity">
         </activity>
 
-        <service android:name="com.mcochin.stockstreaks.services.NetworkService"/>
+        <service android:name=".services.MainService"/>
+        <service android:name=".services.DetailService"/>
 
         <provider
             android:name=".data.StockProvider"

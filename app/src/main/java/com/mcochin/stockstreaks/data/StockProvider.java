@@ -281,13 +281,14 @@ public class StockProvider extends ContentProvider {
         }
     }
 
+    private void insertItem(ArrayList<ContentProviderOperation> ops){
+        // Do nothing
+    }
+
     private void updateListPosition(ArrayList<ContentProviderOperation> ops){
         // Do nothing
     }
 
-    private void insertItem(ArrayList<ContentProviderOperation> ops){
-        // Do nothing
-    }
 }
 
 

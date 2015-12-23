@@ -13,9 +13,11 @@
     android:background="@color/detail_extras_background">
 
     <android.support.v7.widget.GridLayout
+        android:id="@+id/detail_extras_section"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="@dimen/detail_center_vertical"
+        android:visibility="invisible"
         app:columnCount="2">
 
         <TextView
@@ -123,9 +125,26 @@
                 android:contentDescription="@string/content_description_stock_arrow"
                 android:src="@drawable/ic_streak_down"/>
         </LinearLayout>
-
-        <android.support.v7.widget.Space
-            app:layout_columnSpan="2"/>
-
     </android.support.v7.widget.GridLayout>
+
+    <ProgressBar
+        android:id="@+id/progress_wheel"
+        android:layout_width="@dimen/progress_wheel_size"
+        android:layout_height="@dimen/progress_wheel_size"
+        android:layout_marginTop="@dimen/detail_extras_section_progress_retry_margin"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="@dimen/detail_center_vertical"
+        android:visibility="visible"/>
+
+    <Button
+        style="?android:attr/borderlessButtonStyle"
+        android:id="@+id/retry_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/detail_extras_section_progress_retry_margin"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="@dimen/detail_center_vertical"
+        android:textColor="@color/white"
+        android:text="@string/retry"
+        android:visibility="invisible"/>
 </RelativeLayout>

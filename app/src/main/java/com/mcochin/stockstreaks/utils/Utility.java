@@ -9,15 +9,14 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
 import android.widget.Toast;
 
-import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.services.MainService;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -329,7 +328,7 @@ public class Utility {
     }
 
     /**
-     * Detects to see if {@link com.mcochin.stockstreaks.services.NetworkService} is still running.
+     * Detects to see if {@link MainService} is still running.
      * @param manager ActivityManager
      * @return returns true if running, false otherwise
      */

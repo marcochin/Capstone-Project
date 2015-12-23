@@ -21,19 +21,17 @@ import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.Stock;
-import com.mcochin.stockstreaks.services.NetworkService;
+import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class ListManagerFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     public static final String TAG = ListManagerFragment.class.getSimpleName();
     public static final String UPDATE_BROADCAST_ACTION = StockContract.CONTENT_AUTHORITY;
     public static final String ERROR_BROADCAST_ACTION = StockContract.CONTENT_AUTHORITY + ".error";
-    public static final int ID_LOADER_STOCK_WITH_SYMBOL = 2;
+    public static final int ID_LOADER_STOCK_WITH_SYMBOL = 1;
 
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
@@ -130,7 +128,7 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
         CursorLoader loader = null;
         switch (id) {
             case ID_LOADER_STOCK_WITH_SYMBOL:
-                String symbol = args.getString(NetworkService.KEY_LOAD_SYMBOL_QUERY);
+                String symbol = args.getString(MainService.KEY_LOAD_SYMBOL_QUERY);
 
                 if(symbol != null) {
                     loader = new CursorLoader(
@@ -254,7 +252,7 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
 
     /**
      * Loads the next few symbols in the user's list.
-     * @return true is request can be sent to {@link NetworkService}, false otherwise.
+     * @return true is request can be sent to {@link MainService}, false otherwise.
      */
     public boolean loadAFew() {
         String[] aFewToLoad = mListManipulator.getAFewToLoad();
@@ -263,10 +261,10 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
             mLoadingAFew = true;
 
             // Start service to load a few
-            Intent serviceIntent = new Intent(getContext(), NetworkService.class);
+            Intent serviceIntent = new Intent(getContext(), MainService.class);
 
-            serviceIntent.setAction(NetworkService.ACTION_LOAD_A_FEW);
-            serviceIntent.putExtra(NetworkService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
+            serviceIntent.setAction(MainService.ACTION_LOAD_A_FEW);
+            serviceIntent.putExtra(MainService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
             getContext().startService(serviceIntent);
 
             return true;
@@ -278,15 +276,15 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
 
     public void loadSymbol(String symbol){
         // Start service to retrieve stock info
-        Intent serviceIntent = new Intent(getContext(), NetworkService.class);
-        serviceIntent.putExtra(NetworkService.KEY_LOAD_SYMBOL_QUERY, symbol);
-        serviceIntent.setAction(NetworkService.ACTION_LOAD_SYMBOL);
+        Intent serviceIntent = new Intent(getContext(), MainService.class);
+        serviceIntent.putExtra(MainService.KEY_LOAD_SYMBOL_QUERY, symbol);
+        serviceIntent.setAction(MainService.ACTION_LOAD_SYMBOL);
 
         getContext().startService(serviceIntent);
 
         //Start cursor loader to load the newly added stock
         Bundle args = new Bundle();
-        args.putString(NetworkService.KEY_LOAD_SYMBOL_QUERY, symbol);
+        args.putString(MainService.KEY_LOAD_SYMBOL_QUERY, symbol);
 
         ((AppCompatActivity)getContext()).getSupportLoaderManager()
                 .restartLoader(ID_LOADER_STOCK_WITH_SYMBOL, args, this);
@@ -407,12 +405,12 @@ public class ListManagerFragment extends Fragment implements LoaderManager.Loade
     public class ErrorReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
-            int errorCode = intent.getIntExtra(NetworkService.KEY_LOAD_ERROR, 0);
+            int errorCode = intent.getIntExtra(MainService.KEY_LOAD_ERROR, 0);
 
             if (mEventListener != null) {
                 mEventListener.onLoadError(errorCode);
             }
-            if(errorCode == NetworkService.LOAD_A_FEW_ERROR) {
+            if(errorCode == MainService.LOAD_A_FEW_ERROR) {
                 mRefreshing = false;
                 mLoadingAFew = false;
             }

@@ -3,13 +3,11 @@ package com.mcochin.stockstreaks;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.Loader;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -36,7 +34,7 @@ import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
-import com.mcochin.stockstreaks.services.NetworkService;
+import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
@@ -204,7 +202,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // ListManipulatorFragment.EventListener
     public void onLoadError(int errorCode) {
         switch (errorCode){
-            case NetworkService.LOAD_A_FEW_ERROR:
+            case MainService.LOAD_A_FEW_ERROR:
                 // Show retry button if there is loading item
                 int lastPosition = getListManipulator().getCount() - 1;
                 MainAdapter.MainViewHolder holder = (MainAdapter.MainViewHolder) mRecyclerView
@@ -215,7 +213,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 }
                 break;
 
-            case NetworkService.LOAD_SYMBOL_ERROR:
+            case MainService.LOAD_SYMBOL_ERROR:
                 enableSearch();
 
                 break;

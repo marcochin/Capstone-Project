@@ -35,15 +35,15 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 StockEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 StockEntry.COLUMN_SYMBOL + " TEXT NOT NULL, " +
                 StockEntry.COLUMN_FULL_NAME + " TEXT NOT NULL, " +
-                StockEntry.COLUMN_RECENT_CLOSE + " REAL, " +
-                StockEntry.COLUMN_CHANGE_DOLLAR + " REAL, " +
-                StockEntry.COLUMN_CHANGE_PERCENT + " REAL, " +
-                StockEntry.COLUMN_STREAK + " INTEGER, " +
-                StockEntry.COLUMN_PREV_STREAK_END_DATE + " INTEGER, " +
-                StockEntry.COLUMN_PREV_STREAK_END_PRICE + " REAL, " +
-                StockEntry.COLUMN_PREV_STREAK + " INTEGER, " +
-                StockEntry.COLUMN_STREAK_YEAR_HIGH + " INTEGER, " +
-                StockEntry.COLUMN_STREAK_YEAR_LOW + " INTEGER, " +
+                StockEntry.COLUMN_RECENT_CLOSE + " REAL DEFAULT 0, " +
+                StockEntry.COLUMN_CHANGE_DOLLAR + " REAL DEFAULT 0, " +
+                StockEntry.COLUMN_CHANGE_PERCENT + " REAL DEFAULT 0, " +
+                StockEntry.COLUMN_STREAK + " INTEGER DEFAULT 0, " +
+                StockEntry.COLUMN_PREV_STREAK_END_DATE + " INTEGER DEFAULT 0, " +
+                StockEntry.COLUMN_PREV_STREAK_END_PRICE + " REAL DEFAULT 0, " +
+                StockEntry.COLUMN_PREV_STREAK + " INTEGER DEFAULT 0, " +
+                StockEntry.COLUMN_STREAK_YEAR_HIGH + " INTEGER DEFAULT 0, " +
+                StockEntry.COLUMN_STREAK_YEAR_LOW + " INTEGER DEFAULT 0, " +
                 StockEntry.COLUMN_LIST_POSITION + " INTEGER DEFAULT 0, " +
 
                 // All symbols should be unique

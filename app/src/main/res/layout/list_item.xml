@@ -76,7 +76,7 @@
         android:layout_gravity="center"
         android:visibility="invisible" />
 
-    <TextView
+    <Button
         style="?android:attr/borderlessButtonStyle"
         android:id="@+id/retry_button"
         android:layout_width="match_parent"

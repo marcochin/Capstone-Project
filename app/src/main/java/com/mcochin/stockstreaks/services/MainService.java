@@ -4,7 +4,6 @@ import android.app.IntentService;
 import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.util.Pair;
 import android.util.Log;
@@ -30,10 +29,10 @@ import yahoofinance.histquotes.Interval;
 import yahoofinance.quotes.stock.StockQuote;
 
 /**
- * Service that goes online to retrieve our information!
+ * Service that goes online to retrieve our information for our list item!
  */
-public class NetworkService extends IntentService {
-    private static final String TAG = NetworkService.class.getSimpleName();
+public class MainService extends IntentService {
+    private static final String TAG = MainService.class.getSimpleName();
     public static final String KEY_LOAD_SYMBOL_QUERY ="searchQuery";
     public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
 //    public static final String KEY_LIST_REFRESH ="listRefresh";
@@ -41,11 +40,9 @@ public class NetworkService extends IntentService {
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";
-    public static final String ACTION_LOAD_DETAILS = "actionLoadDetails";
 
     //needs to be 32 and 366 since we need to compare closing to prev day's closing price
     private static final int MONTH = 32;
-    private static final int YEAR = 366;
 
     private static final String NOT_AVAILABLE = "N/A";
     private static final String USD = "USD";
@@ -54,9 +51,8 @@ public class NetworkService extends IntentService {
 
     public static final int LOAD_A_FEW_ERROR = -100;
     public static final int LOAD_SYMBOL_ERROR = -200;
-    public static final int LOAD_DETAILS_ERROR = -300;
 
-    public NetworkService(){
+    public MainService(){
         super(TAG);
     }
 
@@ -82,13 +78,6 @@ public class NetworkService extends IntentService {
                     String[] symbols = intent.getStringArrayExtra(KEY_LOAD_A_FEW_QUERY);
                     performActionLoadAFew(symbols);
                     break;
-
-                case ACTION_LOAD_DETAILS: {
-                    String symbol = intent.getStringExtra(KEY_LOAD_SYMBOL_QUERY);
-                    performActionLoadDetails(symbol);
-                    break;
-                }
-
             }
         } catch (IOException e) {
             Log.e(TAG, Log.getStackTraceString(e));
@@ -144,11 +133,6 @@ public class NetworkService extends IntentService {
         }
     }
 
-    private void performActionLoadDetails(String symbol)throws IOException{
-        ContentValues values = getDetailValues(symbol);
-        getContentResolver().update(StockEntry.buildUri(symbol), values, null, null);
-    }
-
     private ContentValues getLatestMainValues(Stock stock) throws IOException{
         float recentClose = 0;
         ContentValues values;
@@ -191,7 +175,6 @@ public class NetworkService extends IntentService {
             values = getValuesFromHistoryList(historyList, recentClose);
             values.put(StockEntry.COLUMN_SYMBOL, stock.getSymbol());
             values.put(StockEntry.COLUMN_FULL_NAME, stock.getName());
-
         }
 
         return values;
@@ -269,120 +252,6 @@ public class NetworkService extends IntentService {
         values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float)changeDollarAndPercentage.second);
         values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, prevStreakEndPrice);
         values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, prevStreakEndDate);
-
-        return values;
-    }
-
-    private ContentValues getDetailValues(String symbol) throws IOException{
-        Cursor cursor = null;
-        ContentValues values = null;
-
-        try {
-            int historyStreak = 0;
-            int prevStreak = 0;
-            int yearStreakHigh = 0;
-            int yearStreakLow = 0;
-
-            //projection
-            final String[] projection = new String[]{
-                    StockEntry.COLUMN_PREV_STREAK_END_DATE,
-                    StockEntry.COLUMN_STREAK
-            };
-
-            //indexes for the projection
-            final int indexPrevStreakEndDate = 0;
-            final int indexStreak = 1;
-
-
-            // Get streak end date and streak from the specified symbol
-            cursor = getContentResolver().query(
-                    StockContract.StockEntry.buildUri(symbol),
-                    projection,
-                    null,
-                    null,
-                    null);
-
-            if (cursor != null && cursor.moveToFirst()) {
-                long prevStreakEndDate;
-                prevStreakEndDate = cursor.getLong(indexPrevStreakEndDate);
-                int streak = cursor.getInt(indexStreak);
-
-                //set its current streak to yearHigh or yearLow
-                if (streak > 0) {
-                    yearStreakHigh = streak;
-                } else if (streak < 0) {
-                    yearStreakLow = streak;
-                }
-
-                Calendar fromCalendar = Utility.getNewYorkCalendarInstance();
-                fromCalendar.add(Calendar.DAY_OF_MONTH, -YEAR); //We want 1 year of history
-
-                Calendar toCalendar = Utility.getNewYorkCalendarInstance();
-                toCalendar.setTimeInMillis(prevStreakEndDate);
-                toCalendar.add(Calendar.DAY_OF_MONTH, 1); //Add 1 to for Yahoo's inconsistent offset
-
-                Stock stock = new Stock(symbol);
-                List<HistoricalQuote> historyList =
-                        stock.getHistory(fromCalendar, toCalendar, Interval.DAILY);
-
-                //loop through 1 year history to find highest high and low, and prev streak
-                for (int i = 0; i < historyList.size(); i++) {
-                    HistoricalQuote history = historyList.get(i);
-                    boolean resetHistoryStreak = false;
-
-                    if (i + 1 < historyList.size()) {
-                        float historyAdjClose = history.getAdjClose().floatValue();
-                        float prevHistoryAdjClose = historyList.get(i + 1).getAdjClose().floatValue();
-
-                        if (historyAdjClose > prevHistoryAdjClose) {
-                            // Down streak broken so break;
-                            if (historyStreak < 0) {
-                                resetHistoryStreak = true;
-                            } else {
-                                historyStreak++;
-                            }
-                        } else if (historyAdjClose < prevHistoryAdjClose) {
-                            // Up streak broken so break;
-                            if (historyStreak > 0) {
-                                resetHistoryStreak = true;
-                            } else {
-                                historyStreak--;
-                            }
-                        }
-                    }
-
-                    if (resetHistoryStreak) {
-                        //record the first history streak as the prev streak
-                        if (prevStreak == 0) {
-                            prevStreak = historyStreak;
-                        }
-                        //set the history high and lows if historyStreak exceeds them
-                        if (historyStreak > yearStreakHigh) {
-                            yearStreakHigh = historyStreak;
-                        } else if (historyStreak < yearStreakLow) {
-                            yearStreakLow = historyStreak;
-                        }
-
-                        //reset historyStreak to whatever broke the streak so we don't skip it
-                        if (historyStreak > 0) {
-                            historyStreak = -1;
-                        } else {
-                            historyStreak = 1;
-                        }
-                    }
-                }
-                values = new ContentValues();
-                values.put(StockEntry.COLUMN_PREV_STREAK, prevStreak);
-                values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, yearStreakHigh);
-                values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, yearStreakLow);
-                Log.d(TAG, prevStreak + " " + yearStreakHigh + " " + yearStreakLow);
-            }
-
-        }finally {
-            if (cursor != null){
-                cursor.close();
-            }
-        }
 
         return values;
     }
