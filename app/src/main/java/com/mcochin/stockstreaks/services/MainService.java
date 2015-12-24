@@ -14,6 +14,8 @@ import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
+import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
@@ -22,6 +24,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
+import de.greenrobot.event.EventBus;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
 import yahoofinance.histquotes.HistoricalQuote;
@@ -64,11 +67,10 @@ public class MainService extends IntentService {
             }
 
             switch(action) {
-                case ACTION_LOAD_SYMBOL: {
+                case ACTION_LOAD_SYMBOL:
                     String symbol = intent.getStringExtra(KEY_LOAD_SYMBOL_QUERY);
                     performActionLoadSymbol(symbol);
                     break;
-                }
 
                 case ACTION_LOAD_A_FEW:
                     String[] symbols = intent.getStringArrayExtra(KEY_LOAD_A_FEW_QUERY);
@@ -81,18 +83,15 @@ public class MainService extends IntentService {
                 Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
             }
 
-            Intent errorBroadcast = new Intent();
             switch(action) {
                 case ACTION_LOAD_SYMBOL:
-                    errorBroadcast.setAction(ListManagerFragment.BROADCAST_ACTION_LOAD_SYMBOL);
+                    EventBus.getDefault().postSticky(new LoadSymbolFinishedEvent(null, false));
                     break;
+
                 case ACTION_LOAD_A_FEW:
-                    errorBroadcast.setAction(ListManagerFragment.BROADCAST_ACTION_LOAD_A_FEW);
+                    EventBus.getDefault().postSticky(new LoadAFewFinishedEvent(null, false));
                     break;
             }
-
-            errorBroadcast.putExtra(KEY_LOAD_SUCCESS, false);
-            sendBroadcast(errorBroadcast);
         }
     }
 

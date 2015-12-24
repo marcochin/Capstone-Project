@@ -18,8 +18,16 @@ import android.util.Log;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
+import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import de.greenrobot.event.EventBus;
+import de.greenrobot.event.util.ThrowableFailureEvent;
 
 /**
  * Content Provider that gives us an interface to interact with the SQLite db.
@@ -60,12 +68,6 @@ public class StockProvider extends ContentProvider {
 
     // list_position ASC
     public static final String ORDER_BY_LIST_POSITION_ASC = StockEntry.COLUMN_LIST_POSITION + " ASC";
-
-    /**
-     * Broadcasts might be lost during orientation change, as broadcast receivers become unregistered
-     * This is to ensure that there are no lost broadcasts.
-     */
-    private Intent mLostBroadcastIntent;
 
     private static UriMatcher buildUriMatcher() {
         // All paths added to the UriMatcher have a corresponding code to return when a match is
@@ -253,54 +255,76 @@ public class StockProvider extends ContentProvider {
     @Nullable
     @Override
     public Bundle call(@NonNull String method, String arg, Bundle extras) {
-        try {
-            Intent broadcast = null;
-
             if(extras != null) {
                 ArrayList<ContentProviderOperation> operations =
                         extras.getParcelableArrayList(KEY_OPERATIONS);
 
                 if (operations != null) {
-                    applyBatch(operations);
+                    try {
+                        applyBatch(operations);
 
-                    broadcast = new Intent();
-                    broadcast.putParcelableArrayListExtra(KEY_OPERATIONS, operations);
+                        switch (method) {
+                            case METHOD_INSERT_ITEM:
+                                performInsertItem(operations);
+                                break;
 
-                    switch (method) {
-                        case METHOD_INSERT_ITEM:
-                            broadcast.setAction(ListManagerFragment.BROADCAST_ACTION_LOAD_SYMBOL);
-                            break;
+                            case METHOD_UPDATE_ITEMS:
+                                performUpdateItems(operations);
+                                break;
 
-                        case METHOD_UPDATE_ITEMS:
-                            broadcast.setAction(ListManagerFragment.BROADCAST_ACTION_LOAD_A_FEW);
-                            break;
-
-                        case METHOD_UPDATE_LIST_POSITION:
-                            //Do nothing
-                            break;
+                            case METHOD_UPDATE_LIST_POSITION:
+                                //Do nothing
+                                break;
+                        }
+                    }catch (OperationApplicationException e){
+                        Log.e(TAG, Log.getStackTraceString(e));
                     }
                 }
             }
-            else {
-                switch (method) {
-                    case METHOD_GET_LOST_BROADCAST:
-                        if (mLostBroadcastIntent != null) {
-                            broadcast = mLostBroadcastIntent;
-                            mLostBroadcastIntent = null;
-                        }
-                        break;
-                }
-            }
-            if(broadcast != null &&
-                    !LocalBroadcastManager.getInstance(getContext()).sendBroadcast(broadcast)){
-                mLostBroadcastIntent = broadcast;
-            }
-
-        }catch (OperationApplicationException e){
-            Log.e(TAG, Log.getStackTraceString(e));
-        }
 
         return super.call(method, arg, extras);
+    }
+
+    private void performInsertItem(ArrayList<ContentProviderOperation> ops){
+        List<Stock> stockList = loopThroughOperations(ops);
+        EventBus.getDefault().postSticky(new LoadSymbolFinishedEvent(stockList.get(0), true));
+    }
+
+    private void performUpdateItems(ArrayList<ContentProviderOperation> ops){
+        List<Stock> stockList = loopThroughOperations(ops);
+        EventBus.getDefault().postSticky(new LoadAFewFinishedEvent(stockList, true));
+    }
+
+    private List<Stock> loopThroughOperations(ArrayList<ContentProviderOperation> ops){
+        List<Stock> stockList = new ArrayList<>();
+        Cursor cursor = null;
+
+        //Loop through results
+        for (ContentProviderOperation op : ops) {
+            try {
+                // Filter out save state Uri
+                if (!StockContract.isSaveStateUri(op.getUri())) {
+                    // Query the stocks from db
+                    cursor = query(op.getUri(),
+                            ListManipulator.STOCK_PROJECTION,
+                            null,
+                            null,
+                            null);
+
+                    // Insert stock in shownList
+                    if (cursor != null && cursor.moveToFirst()) {
+                        Stock stock = Utility.getStockFromCursor(cursor);
+                        stockList.add(stock);
+                    }
+                }
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
+        }
+
+        return stockList;
     }
 }
 

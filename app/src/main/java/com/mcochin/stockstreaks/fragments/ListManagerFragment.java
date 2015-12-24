@@ -17,25 +17,24 @@ import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
+import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 
+import de.greenrobot.event.EventBus;
+
 public class ListManagerFragment extends Fragment{
     public static final String TAG = ListManagerFragment.class.getSimpleName();
-    public static final String BROADCAST_ACTION_LOAD_A_FEW = StockContract.CONTENT_AUTHORITY + ".few";
-    public static final String BROADCAST_ACTION_LOAD_SYMBOL = StockContract.CONTENT_AUTHORITY + ".symbol";
-    public static final int ID_LOADER_STOCK_WITH_SYMBOL = 1;
 
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
-    private LoadAFewReceiver mLoadAFewReceiver;
-    private LoadSymbolReceiver mLoadSymbolReceiver;
 
     /**
-     * This is true if the list is updating to the latest values
+     * This is true if the list is updating to the latest values.(Swipe to Refresh/ Refresh Menu Btn)
      */
     private volatile boolean mRefreshing;
 
@@ -59,33 +58,13 @@ public class ListManagerFragment extends Fragment{
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-
-        // Register receiver
-        if(mLoadAFewReceiver == null){
-            mLoadAFewReceiver = new LoadAFewReceiver();
-            mLoadSymbolReceiver = new LoadSymbolReceiver();
-        }
-
-        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(getContext());
-        broadcastManager.registerReceiver(
-                mLoadAFewReceiver,
-                new IntentFilter(BROADCAST_ACTION_LOAD_A_FEW));
-        broadcastManager.registerReceiver(
-                mLoadSymbolReceiver,
-                new IntentFilter(BROADCAST_ACTION_LOAD_SYMBOL));
-
-        getContext().getContentResolver().call(StockContract.BASE_CONTENT_URI,
-                StockProvider.METHOD_GET_LOST_BROADCAST, null, null);
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().registerSticky(this);
     }
 
     @Override
     public void onPause() {
-        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(getContext());
-        broadcastManager.unregisterReceiver(mLoadSymbolReceiver);
-        broadcastManager.unregisterReceiver(mLoadAFewReceiver);
-
         new AsyncTask<Context, Void, Void>(){
             @Override
             protected Void doInBackground(Context... params) {
@@ -101,6 +80,12 @@ public class ListManagerFragment extends Fragment{
         }.execute(getActivity().getApplicationContext());
 
         super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
     }
 
     @Override
@@ -266,6 +251,54 @@ public class ListManagerFragment extends Fragment{
         return loadList;
     }
 
+    public void onEventMainThread(LoadAFewFinishedEvent event){
+        EventBus.getDefault().removeStickyEvent(event);
+
+        if(event.isSuccessful()){
+            if (mRefreshing) {
+                mListManipulator.setShownListCursor(null);
+            } else {
+                // Remove loading item if it exists
+                mListManipulator.removeLoadingItem();
+            }
+
+            for(Stock stock: event.getStockList()){
+                mListManipulator.addItemToBottom(stock);
+            }
+        }
+
+        if (mEventListener != null) {
+            mEventListener.onLoadAFewFinished(event.isSuccessful());
+        }
+        mRefreshing = false;
+        mLoadingAFew = false;
+
+        LoadSymbolFinishedEvent loadSymbolFinishedEvent = EventBus.getDefault()
+                .getStickyEvent(LoadSymbolFinishedEvent.class);
+        if(loadSymbolFinishedEvent != null){
+            EventBus.getDefault().postSticky(loadSymbolFinishedEvent);
+        }
+    }
+
+    public void onEventMainThread(LoadSymbolFinishedEvent event){
+        LoadAFewFinishedEvent loadAFewFinishedEvent = EventBus.getDefault()
+                .getStickyEvent(LoadAFewFinishedEvent.class);
+
+        if(loadAFewFinishedEvent == null || !mRefreshing) {
+            EventBus.getDefault().removeStickyEvent(event);
+
+            if (event.isSuccessful()) {
+                mListManipulator.addItemToTop(event.getStock());
+            }
+
+            if (mEventListener != null) {
+                mEventListener.onLoadSymbolFinished(event.isSuccessful());
+            }
+        }else{
+            EventBus.getDefault().postSticky(loadAFewFinishedEvent);
+        }
+    }
+
     public boolean isRefreshing(){
         return mRefreshing;
     }
@@ -279,128 +312,5 @@ public class ListManagerFragment extends Fragment{
 
     public ListManipulator getListManipulator() {
         return mListManipulator;
-    }
-
-    /**
-     * Receiver that gets notified when there is a bulk update to the items in the db.
-     */
-    public class LoadAFewReceiver extends BroadcastReceiver{
-        @Override
-        public void onReceive(Context context, final Intent intent) {
-                new AsyncTask<Void, Void, Void>() {
-                    boolean success = intent.getBooleanExtra(MainService.KEY_LOAD_SUCCESS, true);
-
-                    @Override
-                    protected Void doInBackground(Void... params) {
-                        synchronized (this) {
-                            if (success) {
-                                ArrayList<ContentProviderOperation> ops =
-                                        intent.getParcelableArrayListExtra(StockProvider.KEY_OPERATIONS);
-                                Cursor cursor = null;
-
-                                if (mRefreshing) {
-                                    mListManipulator.setShownListCursor(null);
-                                } else {
-                                    // Remove loading item if it exists
-                                    mListManipulator.removeLoadingItem();
-                                }
-
-                                //Loop through results
-                                for (ContentProviderOperation op : ops) {
-                                    try {
-                                        // Filter out save state Uri
-                                        if (!StockContract.isSaveStateUri(op.getUri())) {
-                                            // Query the stocks from db
-                                            cursor = getContext().getContentResolver().query(
-                                                    op.getUri(),
-                                                    ListManipulator.STOCK_PROJECTION,
-                                                    null,
-                                                    null,
-                                                    null);
-
-                                            // Insert stock in shownList
-                                            if (cursor != null && cursor.moveToFirst()) {
-                                                Stock stock = Utility.getStockFromCursor(cursor);
-                                                mListManipulator.addItemToBottom(stock);
-                                            }
-                                        }
-                                    } finally {
-                                        if (cursor != null) {
-                                            cursor.close();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        return null;
-                    }
-
-                    @Override
-                    protected void onPostExecute(Void aVoid) {
-                        if (mEventListener != null) {
-                            mEventListener.onLoadAFewFinished(success);
-                        }
-                        mRefreshing = false;
-                        mLoadingAFew = false;
-                    }
-                }.execute();
-        }
-    }
-
-    /**
-     * Receiver that gets notified when there an item is inserted in the db.
-     */
-    public class LoadSymbolReceiver extends BroadcastReceiver{
-        @Override
-        public void onReceive(Context context, final Intent intent) {
-            new AsyncTask<Void, Void, Void>(){
-                boolean success = intent.getBooleanExtra(MainService.KEY_LOAD_SUCCESS, true);
-
-                @Override
-                protected Void doInBackground(Void... params) {
-                    synchronized (this) {
-                        if (success) {
-                            ArrayList<ContentProviderOperation> ops = intent
-                                    .getParcelableArrayListExtra(StockProvider.KEY_OPERATIONS);
-                            Cursor cursor = null;
-
-                            //Loop through results
-                            for (ContentProviderOperation op : ops) {
-                                try {
-                                    // Filter out save state Uri
-                                    if (!StockContract.isSaveStateUri(op.getUri())) {
-                                        // Query the stocks from db
-                                        cursor = getContext().getContentResolver().query(
-                                                op.getUri(),
-                                                ListManipulator.STOCK_PROJECTION,
-                                                null,
-                                                null,
-                                                null);
-
-                                        // Insert stock in shownList
-                                        if (cursor != null && cursor.moveToFirst()) {
-                                            Stock stock = Utility.getStockFromCursor(cursor);
-                                            mListManipulator.addItemToTop(stock);
-                                        }
-                                    }
-                                } finally {
-                                    if (cursor != null) {
-                                        cursor.close();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    return null;
-                }
-
-                @Override
-                protected void onPostExecute(Void aVoid) {
-                    if (mEventListener != null) {
-                        mEventListener.onLoadSymbolFinished(success);
-                    }
-                }
-            }.execute();
-        }
     }
 }

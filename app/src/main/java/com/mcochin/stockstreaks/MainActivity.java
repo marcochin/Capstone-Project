@@ -57,7 +57,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private RecyclerViewTouchActionGuardManager mTouchActionGuardManager;
 
     private EditText mSearchEditText;
-    private View mXButton;
     private TextView mLogo;
     private SearchBox mAppBar;
     private SwipeRefreshLayout mSwipeToRefresh;
@@ -83,7 +82,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mEmptyMsg = findViewById(R.id.text_empty_list);
         mAppBar = (SearchBox)findViewById(R.id.appBar);
         mLogo = (TextView)findViewById(R.id.logo);
-        mXButton = findViewById(R.id.mic);
         mSearchEditText = (EditText)findViewById(R.id.search);
         mSwipeToRefresh = (SwipeRefreshLayout)findViewById(R.id.swipe_to_refresh);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
@@ -193,9 +191,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             mAdapter.notifyItemInserted(0);
             mRecyclerView.smoothScrollToPosition(0);
             mSearchEditText.setText("");
-
-            getSupportLoaderManager().destroyLoader(
-                    ListManagerFragment.ID_LOADER_STOCK_WITH_SYMBOL);
         }
 
         hideEmptyMessage();
@@ -429,6 +424,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if (!mTwoPane) {
             ViewCompat.setElevation(mAppBar, 0);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                Log.d(TAG, "onScrolled");
 
                 mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                     @TargetApi(Build.VERSION_CODES.LOLLIPOP)

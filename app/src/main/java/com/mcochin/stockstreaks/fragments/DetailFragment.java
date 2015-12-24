@@ -27,8 +27,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import de.greenrobot.event.EventBus;
-
 /**
  * Fragment that contains more details of the list items in the main list.
  */
