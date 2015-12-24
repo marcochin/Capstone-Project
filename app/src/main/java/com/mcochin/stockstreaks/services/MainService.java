@@ -35,8 +35,7 @@ public class MainService extends IntentService {
     private static final String TAG = MainService.class.getSimpleName();
     public static final String KEY_LOAD_SYMBOL_QUERY ="searchQuery";
     public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
-//    public static final String KEY_LIST_REFRESH ="listRefresh";
-    public static final String KEY_LOAD_ERROR ="loadError";
+    public static final String KEY_LOAD_SUCCESS ="success";
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";
@@ -48,9 +47,6 @@ public class MainService extends IntentService {
     private static final String USD = "USD";
     private static final String NASDAQ = "NMS";
     private static final String NYSE = "NYQ";
-
-    public static final int LOAD_A_FEW_ERROR = -100;
-    public static final int LOAD_SYMBOL_ERROR = -200;
 
     public MainService(){
         super(TAG);
@@ -79,18 +75,34 @@ public class MainService extends IntentService {
                     performActionLoadAFew(symbols);
                     break;
             }
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             Log.e(TAG, Log.getStackTraceString(e));
-            Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
+            if(e instanceof  IOException) {
+                Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
+            }
 
-            Intent errorBroadcast = new Intent(ListManagerFragment.ERROR_BROADCAST_ACTION);
-            errorBroadcast.putExtra(KEY_LOAD_ERROR,
-                    action.equals(ACTION_LOAD_A_FEW)? LOAD_A_FEW_ERROR : LOAD_SYMBOL_ERROR);
+            Intent errorBroadcast = new Intent();
+            switch(action) {
+                case ACTION_LOAD_SYMBOL:
+                    errorBroadcast.setAction(ListManagerFragment.BROADCAST_ACTION_LOAD_SYMBOL);
+                    break;
+                case ACTION_LOAD_A_FEW:
+                    errorBroadcast.setAction(ListManagerFragment.BROADCAST_ACTION_LOAD_A_FEW);
+                    break;
+            }
+
+            errorBroadcast.putExtra(KEY_LOAD_SUCCESS, false);
             sendBroadcast(errorBroadcast);
         }
     }
 
-    private void performActionLoadSymbol(String symbol)throws IOException{
+    private void performActionLoadSymbol(String symbol)throws IOException, IllegalArgumentException{
+        if (Utility.isEntryExist(symbol, getContentResolver())) {
+            // Check if symbol already exists in database
+            Utility.showToast(this, getString(R.string.toast_symbol_exists_placeholder, symbol));
+            throw new IllegalArgumentException();
+        }
+
         Stock stock = YahooFinance.get(symbol);
         ContentValues values = getLatestMainValues(stock);
 
@@ -109,7 +121,7 @@ public class MainService extends IntentService {
         applyOperations(ops, StockProvider.METHOD_INSERT_ITEM, null);
     }
 
-    private void performActionLoadAFew(String[] symbolsToLoad) throws IOException{
+    private void performActionLoadAFew(String[] symbolsToLoad) throws IOException, IllegalArgumentException{
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
         Map<String, Stock> stockList =  YahooFinance.get(symbolsToLoad);
@@ -133,17 +145,17 @@ public class MainService extends IntentService {
         }
     }
 
-    private ContentValues getLatestMainValues(Stock stock) throws IOException{
+    private ContentValues getLatestMainValues(Stock stock) throws IOException, IllegalArgumentException{
         float recentClose = 0;
         ContentValues values;
 
         if(stock == null){
             Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
-            throw new IOException();
+            throw new IllegalArgumentException();
 
         } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getCurrency().equals(USD))) {
             Utility.showToast(this, getString(R.string.toast_symbol_not_found));
-            throw new IOException();
+            throw new IllegalArgumentException();
 
         } else{
             // Get history from a month ago to today!

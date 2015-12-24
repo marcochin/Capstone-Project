@@ -71,8 +71,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     private boolean mTwoPane;
 
-    private long mStartTime;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,11 +112,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
 
         mListFragment.setEventListener(this);
-
-        // Set our refresh listener for swiping down to refresh
         mSwipeToRefresh.setOnRefreshListener(this);
-
-        // Set our search callbacks
         mAppBar.setSearchListener(this);
 
         configureOverflowMenu();
@@ -164,17 +158,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     public void onRefresh() {
         mSwipeToRefresh.setRefreshing(false);
         refreshShownList(null);
-
-        mStartTime = System.nanoTime();
-    }
-
-    @Override // ListManipulatorFragment.EventListener
-    public void onLoadAFewFinished() {
-        mAdapter.notifyDataSetChanged();
-
-        hideProgressWheelIfPossible();
-        showEmptyMessageIfPossible();
-        Log.d("Time", System.nanoTime() - mStartTime + "");
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -186,41 +169,37 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // ListManipulatorFragment.EventListener
-    public void onLoadStockWithSymbolFinished() {
-        mAdapter.notifyItemInserted(0);
-        mRecyclerView.smoothScrollToPosition(0);
-        mSearchEditText.setText("");
+    public void onLoadAFewFinished(boolean success) {
+        if(success) {
+            mAdapter.notifyDataSetChanged();
+        }else{
+            //Show retry button if there is loading item
+            int lastPosition = getListManipulator().getCount() - 1;
+            MainAdapter.MainViewHolder holder = (MainAdapter.MainViewHolder) mRecyclerView
+                    .findViewHolderForAdapterPosition(lastPosition);
 
-        getSupportLoaderManager().destroyLoader(
-                ListManagerFragment.ID_LOADER_STOCK_WITH_SYMBOL);
-
-        hideEmptyMessage();
-        hideProgressWheelIfPossible();
-        enableSearch();
-    }
-
-    @Override // ListManipulatorFragment.EventListener
-    public void onLoadError(int errorCode) {
-        switch (errorCode){
-            case MainService.LOAD_A_FEW_ERROR:
-                // Show retry button if there is loading item
-                int lastPosition = getListManipulator().getCount() - 1;
-                MainAdapter.MainViewHolder holder = (MainAdapter.MainViewHolder) mRecyclerView
-                        .findViewHolderForAdapterPosition(lastPosition);
-
-                if (holder.getSymbol() == ListManipulator.LOADING_ITEM) {
-                    mAdapter.notifyItemChanged(lastPosition);
-                }
-                break;
-
-            case MainService.LOAD_SYMBOL_ERROR:
-                enableSearch();
-
-                break;
+            if (holder != null && holder.getSymbol() == ListManipulator.LOADING_ITEM) {
+                mAdapter.notifyItemChanged(lastPosition);
+            }
         }
 
         hideProgressWheelIfPossible();
         showEmptyMessageIfPossible();
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onLoadSymbolFinished(boolean success) {
+        if(success) {
+            mAdapter.notifyItemInserted(0);
+            mRecyclerView.smoothScrollToPosition(0);
+            mSearchEditText.setText("");
+
+            getSupportLoaderManager().destroyLoader(
+                    ListManagerFragment.ID_LOADER_STOCK_WITH_SYMBOL);
+        }
+
+        hideEmptyMessage();
+        hideProgressWheelIfPossible();
     }
 
     @Override // SearchBox.SearchListener
@@ -255,11 +234,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if (TextUtils.isEmpty(query)) {
             Toast.makeText(this, R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
             return;
-
-        } else if (Utility.isEntryExist(query, getContentResolver())) {
-            // Check if symbol already exists in database
-            Toast.makeText(this, R.string.toast_symbol_exists, Toast.LENGTH_SHORT).show();
-            return;
         }
 
         // Refresh the shownList BEFORE fetching a new stock. This is to prevent
@@ -272,7 +246,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         hideEmptyMessage();
         showProgressWheel();
-        disableSearch();
     }
 
     @Override // MainAdapter.EventListener
@@ -509,15 +482,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     private void showProgressWheel(){
         mProgressWheel.setVisibility(View.VISIBLE);
-    }
-
-    private void disableSearch(){
-        mSearchEditText.setEnabled(false);
-        mXButton.setEnabled(false);
-    }
-    private void enableSearch(){
-        mSearchEditText.setEnabled(true);
-        mXButton.setEnabled(true);
     }
 
     public ListManipulator getListManipulator() {

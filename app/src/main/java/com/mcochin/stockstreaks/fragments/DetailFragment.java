@@ -27,6 +27,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import de.greenrobot.event.EventBus;
+
 /**
  * Fragment that contains more details of the list items in the main list.
  */
@@ -86,7 +88,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 actionBar.setDisplayHomeAsUpEnabled(true);
             }
         }
-
         Bundle args = getArguments();
         mSymbol = args.getString(KEY_SYMBOL);
 
@@ -149,7 +150,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         // Set update time
         Date lastUpdate = Utility.getLastUpdateTime(getContext().getContentResolver()).getTime();
         SimpleDateFormat sdf = new SimpleDateFormat(
-                getString(R.string.update_time_format_ref), Locale.US);
+                getString(R.string.update_time_format), Locale.US);
 
         updateTime.setText(getString(R.string.placeholder_update_time,
                 sdf.format(lastUpdate)));

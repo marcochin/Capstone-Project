@@ -46,7 +46,7 @@ public class DetailService extends Service {
                     performActionLoadDetails(params[0]);
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, Log.getStackTraceString(e));
                 }
 
                 return null;

@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
@@ -33,6 +34,7 @@ public class StockProvider extends ContentProvider {
     public static final String METHOD_INSERT_ITEM = "insertItem";
     public static final String METHOD_UPDATE_ITEMS = "updateItems";
     public static final String METHOD_UPDATE_LIST_POSITION = "updateListPosition";
+    public static final String METHOD_GET_LOST_BROADCAST = "getLostBroadcast";
 
     private static final String UNKNOWN_URI = "Unknown Uri: ";
     private static final String ERROR_ROW_INSERT = "Failed to insert row: ";
@@ -58,6 +60,12 @@ public class StockProvider extends ContentProvider {
 
     // list_position ASC
     public static final String ORDER_BY_LIST_POSITION_ASC = StockEntry.COLUMN_LIST_POSITION + " ASC";
+
+    /**
+     * Broadcasts might be lost during orientation change, as broadcast receivers become unregistered
+     * This is to ensure that there are no lost broadcasts.
+     */
+    private Intent mLostBroadcastIntent;
 
     private static UriMatcher buildUriMatcher() {
         // All paths added to the UriMatcher have a corresponding code to return when a match is
@@ -246,49 +254,54 @@ public class StockProvider extends ContentProvider {
     @Override
     public Bundle call(@NonNull String method, String arg, Bundle extras) {
         try {
-            ArrayList<ContentProviderOperation> operations =
-                    extras.getParcelableArrayList(KEY_OPERATIONS);
-            if(operations != null) {
-                applyBatch(operations);
+            Intent broadcast = null;
 
+            if(extras != null) {
+                ArrayList<ContentProviderOperation> operations =
+                        extras.getParcelableArrayList(KEY_OPERATIONS);
+
+                if (operations != null) {
+                    applyBatch(operations);
+
+                    broadcast = new Intent();
+                    broadcast.putParcelableArrayListExtra(KEY_OPERATIONS, operations);
+
+                    switch (method) {
+                        case METHOD_INSERT_ITEM:
+                            broadcast.setAction(ListManagerFragment.BROADCAST_ACTION_LOAD_SYMBOL);
+                            break;
+
+                        case METHOD_UPDATE_ITEMS:
+                            broadcast.setAction(ListManagerFragment.BROADCAST_ACTION_LOAD_A_FEW);
+                            break;
+
+                        case METHOD_UPDATE_LIST_POSITION:
+                            //Do nothing
+                            break;
+                    }
+                }
+            }
+            else {
                 switch (method) {
-                    case METHOD_INSERT_ITEM:
-                        insertItem(operations);
-                        break;
-
-                    case METHOD_UPDATE_ITEMS:
-                        updateItems(operations);
-                        break;
-
-                    case METHOD_UPDATE_LIST_POSITION:
-                        updateListPosition(operations);
+                    case METHOD_GET_LOST_BROADCAST:
+                        if (mLostBroadcastIntent != null) {
+                            broadcast = mLostBroadcastIntent;
+                            mLostBroadcastIntent = null;
+                        }
                         break;
                 }
             }
+            if(broadcast != null &&
+                    !LocalBroadcastManager.getInstance(getContext()).sendBroadcast(broadcast)){
+                mLostBroadcastIntent = broadcast;
+            }
+
         }catch (OperationApplicationException e){
             Log.e(TAG, Log.getStackTraceString(e));
         }
 
         return super.call(method, arg, extras);
     }
-
-
-    private void updateItems(ArrayList<ContentProviderOperation> ops){
-        if (getContext() != null) {
-            Intent updateBroadcast = new Intent(ListManagerFragment.UPDATE_BROADCAST_ACTION);
-            updateBroadcast.putParcelableArrayListExtra(KEY_OPERATIONS, ops);
-            getContext().sendBroadcast(updateBroadcast);
-        }
-    }
-
-    private void insertItem(ArrayList<ContentProviderOperation> ops){
-        // Do nothing
-    }
-
-    private void updateListPosition(ArrayList<ContentProviderOperation> ops){
-        // Do nothing
-    }
-
 }
 
 
