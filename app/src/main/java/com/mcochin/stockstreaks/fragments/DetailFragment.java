@@ -20,12 +20,15 @@ import android.widget.TextView;
 
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.pojos.LoadDetailErrorEvent;
 import com.mcochin.stockstreaks.services.DetailService;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+import de.greenrobot.event.EventBus;
 
 /**
  * Fragment that contains more details of the list items in the main list.
@@ -34,6 +37,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public static final String TAG = DetailFragment.class.getSimpleName();
 
     public static final int ID_LOADER_DETAILS = 2;
+    public static final String KEY_REPLY_BUTTON_VISIBLE = "replyButtonVisible";
 
     public static final String KEY_SYMBOL = "symbol";
     public static final String KEY_FULL_NAME = "fullName";
@@ -65,6 +69,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private ImageView mImageStreakArrowPrev;
 
     private String mSymbol;
+    private boolean mReplyButtonVisible;
 
     @Nullable
     @Override
@@ -89,8 +94,30 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         Bundle args = getArguments();
         mSymbol = args.getString(KEY_SYMBOL);
 
+        if(savedInstanceState != null){
+            mReplyButtonVisible = savedInstanceState.getBoolean(KEY_REPLY_BUTTON_VISIBLE);
+        }
+
         initializeInitialViews(view, args);
         initializeDetailExtrasSection();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(KEY_REPLY_BUTTON_VISIBLE, mRetryButton.getVisibility() == View.VISIBLE);
+        super.onSaveInstanceState(outState);
     }
 
     private void initializeInitialViews(View view, Bundle args){
@@ -158,7 +185,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mProgressWheel.setVisibility(View.VISIBLE);
         mRetryButton.setVisibility(View.INVISIBLE);
         LoaderManager loaderManager = ((AppCompatActivity)getContext()).getSupportLoaderManager();
-        loaderManager.restartLoader(ID_LOADER_DETAILS, null, this);
+        loaderManager.initLoader(ID_LOADER_DETAILS, null, this);
     }
 
     @Override
@@ -211,7 +238,15 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
                 mProgressWheel.setVisibility(View.INVISIBLE);
                 mExtrasSection.setVisibility(View.VISIBLE);
-            }else{
+
+                ((AppCompatActivity)getContext()).getSupportLoaderManager()
+                        .destroyLoader(ID_LOADER_DETAILS);
+
+            }else if(mReplyButtonVisible){
+                mProgressWheel.setVisibility(View.INVISIBLE);
+                mRetryButton.setVisibility(View.VISIBLE);
+
+            } else{
                 Intent serviceIntent = new Intent(getContext(), DetailService.class);
                 serviceIntent.putExtra(DetailService.KEY_DETAIL_SYMBOL, mSymbol);
                 getContext().startService(serviceIntent);
@@ -222,5 +257,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
 
+    }
+
+    public void onEventMainThread(LoadDetailErrorEvent event){
+        mProgressWheel.setVisibility(View.INVISIBLE);
+        mRetryButton.setVisibility(View.VISIBLE);
     }
 }

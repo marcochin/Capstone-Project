@@ -3,7 +3,6 @@ package com.mcochin.stockstreaks.data;
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentValues;
-import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.content.UriMatcher;
 import android.database.Cursor;
@@ -12,22 +11,20 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
-import com.mcochin.stockstreaks.fragments.ListManagerFragment;
+import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.utils.ListEventQueue;
+import com.mcochin.stockstreaks.utils.ListManipulator;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import de.greenrobot.event.EventBus;
-import de.greenrobot.event.util.ThrowableFailureEvent;
+import java.util.PriorityQueue;
 
 /**
  * Content Provider that gives us an interface to interact with the SQLite db.
@@ -42,7 +39,6 @@ public class StockProvider extends ContentProvider {
     public static final String METHOD_INSERT_ITEM = "insertItem";
     public static final String METHOD_UPDATE_ITEMS = "updateItems";
     public static final String METHOD_UPDATE_LIST_POSITION = "updateListPosition";
-    public static final String METHOD_GET_LOST_BROADCAST = "getLostBroadcast";
 
     private static final String UNKNOWN_URI = "Unknown Uri: ";
     private static final String ERROR_ROW_INSERT = "Failed to insert row: ";
@@ -287,12 +283,14 @@ public class StockProvider extends ContentProvider {
 
     private void performInsertItem(ArrayList<ContentProviderOperation> ops){
         List<Stock> stockList = loopThroughOperations(ops);
-        EventBus.getDefault().postSticky(new LoadSymbolFinishedEvent(stockList.get(0), true));
+        LoadSymbolFinishedEvent event = new LoadSymbolFinishedEvent(stockList.get(0), true);
+        ListEventQueue.getInstance().post(event);
     }
 
     private void performUpdateItems(ArrayList<ContentProviderOperation> ops){
         List<Stock> stockList = loopThroughOperations(ops);
-        EventBus.getDefault().postSticky(new LoadAFewFinishedEvent(stockList, true));
+        LoadAFewFinishedEvent event = new LoadAFewFinishedEvent(stockList, true);
+        ListEventQueue.getInstance().post(event);
     }
 
     private List<Stock> loopThroughOperations(ArrayList<ContentProviderOperation> ops){

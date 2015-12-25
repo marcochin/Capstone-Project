@@ -13,9 +13,9 @@ import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
-import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.utils.ListEventQueue;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
@@ -24,7 +24,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
-import de.greenrobot.event.EventBus;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
 import yahoofinance.histquotes.HistoricalQuote;
@@ -62,8 +61,7 @@ public class MainService extends IntentService {
         try {
             // check for internet
             if(!Utility.isNetworkAvailable(this)){
-                Utility.showToast(this, getString(R.string.toast_no_network));
-                return;
+                throw new IOException(getString(R.string.toast_no_network));
             }
 
             switch(action) {
@@ -79,27 +77,30 @@ public class MainService extends IntentService {
             }
         } catch (IOException | IllegalArgumentException e) {
             Log.e(TAG, Log.getStackTraceString(e));
-            if(e instanceof  IOException) {
-                Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
-            }
+
+                if(e.getMessage().equals(getString(R.string.toast_no_network))
+                        || e instanceof IllegalArgumentException){
+                    Utility.showToast(this, e.getMessage());
+                }else {
+                    Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
+                }
 
             switch(action) {
                 case ACTION_LOAD_SYMBOL:
-                    EventBus.getDefault().postSticky(new LoadSymbolFinishedEvent(null, false));
+                    ListEventQueue.getInstance().post(new LoadSymbolFinishedEvent(null, false));
                     break;
 
                 case ACTION_LOAD_A_FEW:
-                    EventBus.getDefault().postSticky(new LoadAFewFinishedEvent(null, false));
+                    ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(null, false));
                     break;
             }
         }
     }
 
     private void performActionLoadSymbol(String symbol)throws IOException, IllegalArgumentException{
+        // Check if symbol already exists in database
         if (Utility.isEntryExist(symbol, getContentResolver())) {
-            // Check if symbol already exists in database
-            Utility.showToast(this, getString(R.string.toast_symbol_exists_placeholder, symbol));
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(getString(R.string.toast_symbol_exists_placeholder, symbol));
         }
 
         Stock stock = YahooFinance.get(symbol);
@@ -149,12 +150,10 @@ public class MainService extends IntentService {
         ContentValues values;
 
         if(stock == null){
-            Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(getString(R.string.toast_error_retrieving_data));
 
         } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getCurrency().equals(USD))) {
-            Utility.showToast(this, getString(R.string.toast_symbol_not_found));
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(getString(R.string.toast_symbol_not_found));
 
         } else{
             // Get history from a month ago to today!

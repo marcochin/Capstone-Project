@@ -5,8 +5,6 @@ import android.util.Log;
 
 import com.mcochin.stockstreaks.utils.Utility;
 
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;

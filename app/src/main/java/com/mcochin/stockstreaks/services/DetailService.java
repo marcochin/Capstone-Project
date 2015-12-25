@@ -9,7 +9,9 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract;
+import com.mcochin.stockstreaks.pojos.LoadDetailErrorEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
@@ -17,6 +19,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import de.greenrobot.event.EventBus;
 import yahoofinance.Stock;
 import yahoofinance.histquotes.HistoricalQuote;
 import yahoofinance.histquotes.Interval;
@@ -43,12 +46,23 @@ public class DetailService extends Service {
             @Override
             protected Void doInBackground(String... params) {
                 try {
+                    // check for internet
+                    if(!Utility.isNetworkAvailable(DetailService.this)){
+                        throw new IOException(getString(R.string.toast_no_network));
+                    }
+
                     performActionLoadDetails(params[0]);
 
                 } catch (IOException e) {
                     Log.e(TAG, Log.getStackTraceString(e));
-                }
 
+                    if(e.getMessage().equals(getString(R.string.toast_no_network))){
+                        Utility.showToast(DetailService.this, e.getMessage());
+                    }else {
+                        Utility.showToast(DetailService.this, getString(R.string.toast_error_retrieving_data));
+                    }
+                    EventBus.getDefault().post(new LoadDetailErrorEvent());
+                }
                 return null;
             }
 
@@ -195,7 +209,6 @@ public class DetailService extends Service {
 
         return values;
     }
-
 
     @Nullable
     @Override

@@ -1,16 +1,17 @@
-package com.mcochin.stockstreaks.data;
+package com.mcochin.stockstreaks.utils;
 
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 
+import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.Stock;
-import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,10 +117,6 @@ public class ListManipulator {
             throw new IndexOutOfBoundsException("index = " + index);
         }
         return mShownList.get(index);
-    }
-
-    public int getLoadListPositionBookmark(){
-        return mLoadListPositionBookmark;
     }
 
     public int generateUniqueId(){

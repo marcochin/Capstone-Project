@@ -1,20 +1,16 @@
 package com.mcochin.stockstreaks.fragments;
 
-import android.content.BroadcastReceiver;
-import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.mcochin.stockstreaks.data.ListManipulator;
-import com.mcochin.stockstreaks.data.StockContract;
+import com.mcochin.stockstreaks.utils.ListEventQueue;
+import com.mcochin.stockstreaks.utils.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
@@ -22,8 +18,6 @@ import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
-
-import java.util.ArrayList;
 
 import de.greenrobot.event.EventBus;
 
@@ -60,7 +54,10 @@ public class ListManagerFragment extends Fragment{
     @Override
     public void onStart() {
         super.onStart();
-        EventBus.getDefault().registerSticky(this);
+        EventBus.getDefault().register(this);
+        if(!ListEventQueue.getInstance().isEmpty()){
+            ListEventQueue.getInstance().postPop();
+        }
     }
 
     @Override
@@ -89,14 +86,7 @@ public class ListManagerFragment extends Fragment{
     }
 
     @Override
-    public void onDestroyView() {
-        Log.d(TAG, "onDestroyView");
-        super.onDestroyView();
-    }
-
-    @Override
     public void onDetach() {
-        Log.d(TAG, "onDetach");
         // Release references to activity or might cause memory leak;
         mEventListener = null;
 
@@ -252,6 +242,7 @@ public class ListManagerFragment extends Fragment{
     }
 
     public void onEventMainThread(LoadAFewFinishedEvent event){
+        Log.d(TAG, "LoadAFewFinishedEvent");
         EventBus.getDefault().removeStickyEvent(event);
 
         if(event.isSuccessful()){
@@ -273,29 +264,25 @@ public class ListManagerFragment extends Fragment{
         mRefreshing = false;
         mLoadingAFew = false;
 
-        LoadSymbolFinishedEvent loadSymbolFinishedEvent = EventBus.getDefault()
-                .getStickyEvent(LoadSymbolFinishedEvent.class);
-        if(loadSymbolFinishedEvent != null){
-            EventBus.getDefault().postSticky(loadSymbolFinishedEvent);
+        if(!ListEventQueue.getInstance().isEmpty()){
+            ListEventQueue.getInstance().postPop();
         }
     }
 
     public void onEventMainThread(LoadSymbolFinishedEvent event){
-        LoadAFewFinishedEvent loadAFewFinishedEvent = EventBus.getDefault()
-                .getStickyEvent(LoadAFewFinishedEvent.class);
+        Log.d(TAG, "LoadSymbolFinishedEvent");
+        EventBus.getDefault().removeStickyEvent(event);
 
-        if(loadAFewFinishedEvent == null || !mRefreshing) {
-            EventBus.getDefault().removeStickyEvent(event);
+        if (event.isSuccessful()) {
+            mListManipulator.addItemToTop(event.getStock());
+        }
 
-            if (event.isSuccessful()) {
-                mListManipulator.addItemToTop(event.getStock());
-            }
+        if (mEventListener != null) {
+            mEventListener.onLoadSymbolFinished(event.isSuccessful());
+        }
 
-            if (mEventListener != null) {
-                mEventListener.onLoadSymbolFinished(event.isSuccessful());
-            }
-        }else{
-            EventBus.getDefault().postSticky(loadAFewFinishedEvent);
+        if(!ListEventQueue.getInstance().isEmpty()){
+            ListEventQueue.getInstance().postPop();
         }
     }
 

@@ -12,15 +12,17 @@ import android.os.Looper;
 import android.support.v4.util.Pair;
 import android.widget.Toast;
 
-import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
+import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import de.greenrobot.event.EventBus;
 import yahoofinance.YahooFinance;
 
 /**
@@ -31,6 +33,25 @@ public class Utility {
     public static final int STOCK_MARKET_UPDATE_MINUTE = 30;
     public static final int STOCK_MARKET_OPEN_HOUR = 9;
     public static final int STOCK_MARKET_OPEN_MINUTE = 30;
+
+
+    /**
+     * Calculates the change in dollars and percentage between the two prices.
+     * @param recentClose Stock's recent close
+     * @param prevStreakEndPrice Previous streak's end price for the stock
+     * @return A Pair containing:
+     * <ul>
+     *     <li>Pair.first is the change in dollars</li>
+     *     <li>Pair.second is the change in percentage</li>
+     * </ul>
+     */
+    public static Pair<Float, Float> calculateChange(float recentClose, float prevStreakEndPrice){
+        float changeDollar = recentClose - prevStreakEndPrice;
+        float changePercent = changeDollar / prevStreakEndPrice * 100;
+
+        return new Pair<>(changeDollar, changePercent);
+    }
+
 
     /**
      * Returns true if the network is available or about to become available.
@@ -45,6 +66,43 @@ public class Utility {
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         return activeNetwork != null &&
                 activeNetwork.isConnectedOrConnecting();
+    }
+
+    /**
+     * Detects to see if {@link MainService} is still running.
+     * @param manager ActivityManager
+     * @return returns true if running, false otherwise
+     */
+    public static boolean isNetworkServiceRunning(ActivityManager manager) {
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if ("com.mcochin.stockstreaks.services.NetworkService"
+                    .equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Used to determine is a symbol already exists in the database
+     * @param symbol The symbol to look up
+     * @param cr The ContentResolver to access your ContentProvider
+     * @return true if exists, otherwise false
+     */
+    public static boolean isEntryExist(String symbol, ContentResolver cr){
+        Cursor cursor = null;
+        try{
+            cursor = cr.query(StockEntry.buildUri(symbol), null, null, null, null);
+            if(cursor != null){
+                return cursor.moveToFirst();
+            }
+
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
+        }
+        return false;
     }
 
     /**
@@ -97,31 +155,6 @@ public class Utility {
         return calendar;
     }
 
-    /**
-     * Calculates the change in dollars and percentage between the two prices.
-     * @param recentClose Stock's recent close
-     * @param prevStreakEndPrice Previous streak's end price for the stock
-     * @return A Pair containing:
-     * <ul>
-     *     <li>Pair.first is the change in dollars</li>
-     *     <li>Pair.second is the change in percentage</li>
-     * </ul>
-     */
-    public static Pair<Float, Float> calculateChange(float recentClose, float prevStreakEndPrice){
-        float changeDollar = recentClose - prevStreakEndPrice;
-        float changePercent = changeDollar / prevStreakEndPrice * 100;
-
-        return new Pair<>(changeDollar, changePercent);
-    }
-
-    public static float roundTo2FloatDecimals(float f){
-        return Float.parseFloat(roundTo2StringDecimals(f));
-    }
-
-    public static String roundTo2StringDecimals(float f){
-        return String.format("%.2f", f);
-    }
-
     public static Stock getStockFromCursor(Cursor cursor){
         String symbol = cursor.getString(ListManipulator.INDEX_SYMBOL);
         String fullName = cursor.getString(ListManipulator.INDEX_FULL_NAME);
@@ -140,28 +173,6 @@ public class Utility {
         stock.setStreak(streak);
 
         return stock;
-    }
-
-    /**
-     * Used to determine is a symbol already exists in the database
-     * @param symbol The symbol to look up
-     * @param cr The ContentResolver to access your ContentProvider
-     * @return true if exists, otherwise false
-     */
-    public static boolean isEntryExist(String symbol, ContentResolver cr){
-        Cursor cursor = null;
-        try{
-            cursor = cr.query(StockEntry.buildUri(symbol), null, null, null, null);
-            if(cursor != null){
-                return cursor.moveToFirst();
-            }
-
-        }finally {
-            if(cursor != null){
-                cursor.close();
-            }
-        }
-        return false;
     }
 
     /**
@@ -327,38 +338,11 @@ public class Utility {
         return calendar.before(fourThirtyTime);
     }
 
-    /**
-     * Detects to see if {@link MainService} is still running.
-     * @param manager ActivityManager
-     * @return returns true if running, false otherwise
-     */
-    public static boolean isNetworkServiceRunning(ActivityManager manager) {
-        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if ("com.mcochin.stockstreaks.services.NetworkService"
-                    .equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
+    public static float roundTo2FloatDecimals(float f){
+        return Float.parseFloat(roundTo2StringDecimals(f));
     }
 
-//    /**
-//     * @return true is should load from non latest data, else false
-//     * @throws IOException
-//     */
-//    public static boolean shouldLoadAFewNonLatest(ContentResolver cr) throws IOException{
-//
-//        yahoofinance.Stock stock = YahooFinance.get("GOOG");
-//        Calendar recentCloseTime = stock.getQuote().getLastTradeTime();
-//        recentCloseTime.set(Calendar.HOUR_OF_DAY, STOCK_MARKET_UPDATE_HOUR);
-//        recentCloseTime.set(Calendar.MINUTE, STOCK_MARKET_UPDATE_MINUTE);
-//        recentCloseTime.set(Calendar.MILLISECOND, 0);
-//
-//        Calendar lastUpdateTime = getLastUpdateTime(cr);
-//        if(lastUpdateTime == null){
-//            return false;
-//        }
-//        //If lastUpdateTime is before the most or would be recent close time then get the non latest
-//        return lastUpdateTime.before(recentCloseTime);
-//    }
+    public static String roundTo2StringDecimals(float f){
+        return String.format("%.2f", f);
+    }
 }
