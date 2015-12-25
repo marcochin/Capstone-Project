@@ -30,7 +30,7 @@ import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchAct
 import com.h6ah4i.android.widget.advrecyclerview.utils.WrapperAdapterUtils;
 import com.mcochin.stockstreaks.adapters.MainAdapter;
 import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
-import com.mcochin.stockstreaks.utils.ListManipulator;
+import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -294,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         int position = holder.getAdapterPosition();
 
         if(position != RecyclerView.NO_POSITION) {
-            getListManipulator().removeItem(position, getContentResolver());
+            getListManipulator().removeItem(position);
             mAdapter.notifyItemRemoved(position);
 
             mSnackbar = Snackbar.make(

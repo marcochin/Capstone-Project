@@ -7,10 +7,9 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 
-import com.mcochin.stockstreaks.utils.ListEventQueue;
-import com.mcochin.stockstreaks.utils.ListManipulator;
+import com.mcochin.stockstreaks.data.ListEventQueue;
+import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
@@ -69,7 +68,7 @@ public class ListManagerFragment extends Fragment{
                     ContentResolver cr = params[0].getContentResolver();
                     mListManipulator.permanentlyDeleteLastRemoveItem(cr);
                     if (mListManipulator.isListUpdated()) {
-                        mListManipulator.saveBookmarkAndListPositions(cr);
+                        mListManipulator.saveShownListState(cr);
                     }
                 }
                 return null;
@@ -95,12 +94,12 @@ public class ListManagerFragment extends Fragment{
 
     public void initLoadFromDb(){
         // Get load list of symbols to query
-        new AsyncTask<Void, Void, Void>(){
+        new AsyncTask<Context, Void, Void>(){
             @Override
-            protected Void doInBackground(Void... params) {
+            protected Void doInBackground(Context... params) {
                 Cursor cursor = null;
                 try {
-                    ContentResolver cr = getContext().getContentResolver();
+                    ContentResolver cr = params[0].getContentResolver();
                     int shownPositionBookmark  = Utility.getShownPositionBookmark(cr);
 
                     // Query db for all data with the same updateDate as the first entry.
@@ -136,7 +135,7 @@ public class ListManagerFragment extends Fragment{
                     mEventListener.onLoadAllFromDbFinished();
                 }
             }
-        }.execute();
+        }.execute(getActivity().getApplicationContext());
     }
 
     /**
@@ -145,13 +144,13 @@ public class ListManagerFragment extends Fragment{
      */
     public void initLoadAFew(final String attachSymbol){
         // Get load list of symbols to query
-        new AsyncTask<Void, Void, Void>() {
+        new AsyncTask<Context, Void, Void>() {
             @Override
-            protected Void doInBackground(Void... params) {
+            protected Void doInBackground(Context... params) {
                 synchronized (this) {
                     // Give list to ListManipulator
                     if (mListManipulator.isListUpdated()) {
-                        mListManipulator.saveBookmarkAndListPositions(getContext().getContentResolver());
+                        mListManipulator.saveShownListState(params[0].getContentResolver());
                     }
                     mListManipulator.setLoadList(getLoadListFromDb());
                     mRefreshing = loadAFew();
@@ -172,7 +171,7 @@ public class ListManagerFragment extends Fragment{
                     }
                 }
             }
-        }.execute();
+        }.execute(getActivity().getApplicationContext());
     }
 
     /**
@@ -208,6 +207,10 @@ public class ListManagerFragment extends Fragment{
         getContext().startService(serviceIntent);
     }
 
+    /**
+     * Should be called from a background thread.
+     * @return a list of ALL the symbols from the db. This will serve as our load list.
+     */
     private String[] getLoadListFromDb(){
         Cursor cursor = null;
         String[] loadList = null;
@@ -242,47 +245,47 @@ public class ListManagerFragment extends Fragment{
     }
 
     public void onEventMainThread(LoadAFewFinishedEvent event){
-        Log.d(TAG, "LoadAFewFinishedEvent");
-        EventBus.getDefault().removeStickyEvent(event);
+        synchronized (this) {
+            if (event.isSuccessful()) {
+                if (mRefreshing) {
+                    mListManipulator.setShownListCursor(null);
+                } else {
+                    // Remove loading item if it exists
+                    mListManipulator.removeLoadingItem();
+                }
 
-        if(event.isSuccessful()){
-            if (mRefreshing) {
-                mListManipulator.setShownListCursor(null);
-            } else {
-                // Remove loading item if it exists
-                mListManipulator.removeLoadingItem();
+                for (Stock stock : event.getStockList()) {
+                    mListManipulator.addItemToBottom(stock);
+                }
             }
 
-            for(Stock stock: event.getStockList()){
-                mListManipulator.addItemToBottom(stock);
+            if (mEventListener != null) {
+                mEventListener.onLoadAFewFinished(event.isSuccessful());
             }
-        }
+            mRefreshing = false;
+            mLoadingAFew = false;
 
-        if (mEventListener != null) {
-            mEventListener.onLoadAFewFinished(event.isSuccessful());
-        }
-        mRefreshing = false;
-        mLoadingAFew = false;
-
-        if(!ListEventQueue.getInstance().isEmpty()){
-            ListEventQueue.getInstance().postPop();
+            //Execute the next msg on the queue if there is one.
+            if (!ListEventQueue.getInstance().isEmpty()) {
+                ListEventQueue.getInstance().postPop();
+            }
         }
     }
 
     public void onEventMainThread(LoadSymbolFinishedEvent event){
-        Log.d(TAG, "LoadSymbolFinishedEvent");
-        EventBus.getDefault().removeStickyEvent(event);
+        synchronized (this) {
+            if (event.isSuccessful()) {
+                mListManipulator.addItemToTop(event.getStock());
+            }
 
-        if (event.isSuccessful()) {
-            mListManipulator.addItemToTop(event.getStock());
-        }
+            if (mEventListener != null) {
+                mEventListener.onLoadSymbolFinished(event.isSuccessful());
+            }
 
-        if (mEventListener != null) {
-            mEventListener.onLoadSymbolFinished(event.isSuccessful());
-        }
-
-        if(!ListEventQueue.getInstance().isEmpty()){
-            ListEventQueue.getInstance().postPop();
+            //Execute the next msg on the queue if there is one.
+            if (!ListEventQueue.getInstance().isEmpty()) {
+                ListEventQueue.getInstance().postPop();
+            }
         }
     }
 

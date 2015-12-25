@@ -1,4 +1,4 @@
-package com.mcochin.stockstreaks.utils;
+package com.mcochin.stockstreaks.data;
 
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;

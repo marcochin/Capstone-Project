@@ -12,17 +12,15 @@ import android.os.Looper;
 import android.support.v4.util.Pair;
 import android.widget.Toast;
 
+import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
-import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
-import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 
 import java.util.Calendar;
 import java.util.TimeZone;
 
-import de.greenrobot.event.EventBus;
 import yahoofinance.YahooFinance;
 
 /**

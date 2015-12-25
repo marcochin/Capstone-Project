@@ -18,13 +18,10 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
-import com.mcochin.stockstreaks.utils.ListEventQueue;
-import com.mcochin.stockstreaks.utils.ListManipulator;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PriorityQueue;
 
 /**
  * Content Provider that gives us an interface to interact with the SQLite db.

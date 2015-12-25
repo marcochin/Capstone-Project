@@ -1,4 +1,4 @@
-package com.mcochin.stockstreaks.utils;
+package com.mcochin.stockstreaks.data;
 
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
@@ -7,11 +7,10 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
-import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,12 +48,14 @@ public class ListManipulator {
     public static final int INDEX_CHANGE_PERCENT = 4;
     public static final int INDEX_STREAK = 5;
 
+
+    private List<Stock> mShownList = new ArrayList<>();
     private String[] mLoadList;
     private int mLoadListPositionBookmark = 0;
 
-    private List<Stock> mShownList = new ArrayList<>();
     private Stock mLastRemovedItem = null;
     private int mLastRemovedPosition = -1;
+
     private int mUniqueId = 0;
     private boolean mListUpdated;
 
@@ -128,15 +129,6 @@ public class ListManipulator {
     }
 
     public void setShownListCursor(Cursor cursor){
-    //TODO remove this, Using fruits array just to debug
-//        for(String fruit : FRUITS){
-//            Stock stock = new Stock();
-//            stock.setSymbol(fruit);
-//            stock.setId(mUniqueId);
-//
-//            mShownList.add(stock);
-//            mUniqueId++;
-//        }
         mUniqueId = 0;
         mShownList.clear();
 
@@ -155,18 +147,12 @@ public class ListManipulator {
     }
 
     public void moveItem(int fromPosition, int toPosition) {
-        if (fromPosition == toPosition) {
-            return;
-        }
-
         Stock stock = mShownList.remove(fromPosition);
         mShownList.add(toPosition, stock);
         mListUpdated = true;
     }
 
-    public void removeItem(int position, ContentResolver cr) {
-        permanentlyDeleteLastRemoveItem(cr);
-
+    public void removeItem(int position) {
         mLastRemovedItem = mShownList.remove(position);
         mLastRemovedPosition = position;
     }
@@ -191,11 +177,25 @@ public class ListManipulator {
         }
     }
 
-    public void permanentlyDeleteLastRemoveItem(ContentResolver cr){
+    public void permanentlyDeleteLastRemoveItem(final ContentResolver cr){
         if(mLastRemovedItem != null) {
-            cr.delete(StockEntry.buildUri(mLastRemovedItem.getSymbol()), null, null);
-            mLastRemovedItem = null;
-            mListUpdated = true;
+            new AsyncTask<Void, Void, Void>(){
+                @Override
+                protected Void doInBackground(Void... params) {
+                    cr.delete(
+                            StockEntry.buildUri(mLastRemovedItem.getSymbol()),
+                            null,
+                            null
+                    );
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Void aVoid) {
+                    mLastRemovedItem = null;
+                    mListUpdated = true;
+                }
+            }.execute();
         }
     }
 
@@ -232,7 +232,7 @@ public class ListManipulator {
         return false;
     }
 
-    public void saveBookmarkAndListPositions(ContentResolver cr){
+    public void saveShownListState(ContentResolver cr){
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
         removeLoadingItem();
 

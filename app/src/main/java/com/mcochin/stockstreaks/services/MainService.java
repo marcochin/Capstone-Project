@@ -15,7 +15,7 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.utils.ListEventQueue;
+import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
