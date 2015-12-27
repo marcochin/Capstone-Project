@@ -11,10 +11,6 @@ public class Stock {
     private int mStreak;
     private float mChangeDollar;
     private float mChangePercent;
-    private int mPrevStreak;
-    private float mPrevStreakPrice;
-    private int mYearStreakHigh;
-    private int mYearStreakLow;
 
     public int getId() {
         return mId;
@@ -70,37 +66,5 @@ public class Stock {
 
     public void setChangePercent(float percentChange) {
         this.mChangePercent = percentChange;
-    }
-
-    public int getPrevStreak() {
-        return mPrevStreak;
-    }
-
-    public void setPrevStreak(int prevStreak) {
-        this.mPrevStreak = prevStreak;
-    }
-
-    public float getPrevStreakPrice() {
-        return mPrevStreakPrice;
-    }
-
-    public void setPrevStreakPrice(float prevStreakPrice) {
-        this.mPrevStreakPrice = prevStreakPrice;
-    }
-
-    public int getYearStreakHigh() {
-        return mYearStreakHigh;
-    }
-
-    public void setYearStreakHigh(int yearStreakHigh) {
-        this.mYearStreakHigh = yearStreakHigh;
-    }
-
-    public int getYearStreakLow() {
-        return mYearStreakLow;
-    }
-
-    public void setYearStreakLow(int yearStreakLow) {
-        this.mYearStreakLow = yearStreakLow;
     }
 }

@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Intent;
 import android.graphics.drawable.NinePatchDrawable;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -64,10 +65,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private View mProgressWheel;
     private View mEmptyMsg;
 
-    private Bundle mSavedInstanceState;
     private ListManagerFragment mListFragment;
 
     private boolean mTwoPane;
+    private boolean mFirstOpen;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,8 +87,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mSwipeToRefresh = (SwipeRefreshLayout)findViewById(R.id.swipe_to_refresh);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
 
-        mSavedInstanceState = savedInstanceState;
-        if (mSavedInstanceState == null) {
+        if (savedInstanceState == null) {
+            mFirstOpen = true;
+
             // Initialize the fragment that stores the list
             mListFragment = new ListManagerFragment();
 
@@ -99,10 +102,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     .findFragmentByTag(ListManagerFragment.TAG));
 
             // If editText was focused, return that focus on orientation change
-            if (mSavedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
+            if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mAppBar.toggleSearch();
                 // Else if not focused, but logo is invisible, open search w/o the focus
-            } else if(!mSavedInstanceState.getBoolean(KEY_LOGO_VISIBLE)){
+            } else if(!savedInstanceState.getBoolean(KEY_LOGO_VISIBLE)){
                 mAppBar.toggleSearch();
                 mSearchEditText.clearFocus();
             }
@@ -115,8 +118,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         configureOverflowMenu();
         configureRecyclerView();
         configureDynamicScrollingEvents();
-
-        hideProgressWheelIfPossible();
     }
 
     @Override
@@ -127,10 +128,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     private void fetchStockList(){
-        if(!Utility.canUpdateList(getContentResolver()) || !Utility.isNetworkAvailable(this)){
-            if(mSavedInstanceState == null) {
-                // Only load from db on first load because listManipulator is storing the list.
+        if(!Utility.isNetworkAvailable(this) || !Utility.canUpdateList(getContentResolver())){
+            // Only load from db on first load because listManipulator is storing the list.
+            if(mFirstOpen) {
+                showProgressWheel();
                 mListFragment.initLoadFromDb();
+                mFirstOpen = false;
             }
         }else{
             refreshShownList(null);
@@ -166,35 +169,33 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // ListManipulatorFragment.EventListener
-    public void onLoadAFewFinished(boolean success) {
-        if(success) {
-            mAdapter.notifyDataSetChanged();
-        }else{
-            //Show retry button if there is loading item
-            int lastPosition = getListManipulator().getCount() - 1;
-            MainAdapter.MainViewHolder holder = (MainAdapter.MainViewHolder) mRecyclerView
-                    .findViewHolderForAdapterPosition(lastPosition);
-
-            if (holder != null && holder.getSymbol() == ListManipulator.LOADING_ITEM) {
-                mAdapter.notifyItemChanged(lastPosition);
-            }
-        }
-
-        hideProgressWheelIfPossible();
-        showEmptyMessageIfPossible();
-    }
-
-    @Override // ListManipulatorFragment.EventListener
     public void onLoadSymbolFinished(boolean success) {
         if(success) {
             mAdapter.notifyItemInserted(0);
             mRecyclerView.smoothScrollToPosition(0);
             mSearchEditText.setText("");
         }
-
         hideEmptyMessage();
         hideProgressWheelIfPossible();
     }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onLoadAFewFinished(boolean success) {
+        if(success) {
+            mAdapter.notifyDataSetChanged();
+        }else{
+            //Show retry button if there is loading item
+            int lastPosition = getListManipulator().getCount() - 1;
+            Stock lastStock = getListManipulator().getItem(lastPosition);
+
+            if (lastStock.getSymbol().equals(ListManipulator.LOADING_ITEM)){
+                mAdapter.notifyItemChanged(lastPosition);
+            }
+        }
+        hideProgressWheelIfPossible();
+        showEmptyMessageIfPossible();
+    }
+
 
     @Override // SearchBox.SearchListener
     public void onSearchOpened() {
@@ -283,7 +284,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // MainAdapter.EventListener
     public void onItemRetryClick(MainAdapter.MainViewHolder holder) {
-        if(!mListFragment.isRefreshing()) {
+        if(Utility.canUpdateList(getContentResolver())){
+            Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
+        }else if(!mListFragment.isRefreshing()) {
             mListFragment.loadAFew();
             mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
         }
@@ -312,7 +315,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                         @Override
                         public void onDismissed(Snackbar snackbar, int event) {
                             super.onDismissed(snackbar, event);
-                            getListManipulator().permanentlyDeleteLastRemoveItem(getContentResolver());
+                            new AsyncTask<Void, Void, Void>(){
+                                @Override
+                                protected Void doInBackground(Void... params) {
+                                    getListManipulator().permanentlyDeleteLastRemoveItem(
+                                            getContentResolver());
+                                    return null;
+                                }
+                            }.execute();
                         }
                     });
             mSnackbar.show();
@@ -337,6 +347,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override
     public void onPause() {
         mDragDropManager.cancelDrag();
+
+        if (mSnackbar != null && mSnackbar.isShown()) {
+            mSnackbar.dismiss();
+        }
         super.onPause();
     }
 
@@ -423,7 +437,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if (!mTwoPane) {
             ViewCompat.setElevation(mAppBar, 0);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                Log.d(TAG, "onScrolled");
 
                 mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -446,14 +459,17 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private void dynamicLoadAFew(){
         ListManipulator listManipulator = getListManipulator();
 
-        if (!listManipulator.isLoadingItemPresent()
-                && mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount() - 1
-                && !mListFragment.isRefreshing() && listManipulator.canLoadAFew()
-                && !Utility.canUpdateList(getContentResolver())) {
-
-            mListFragment.loadAFew();
+        if (mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount() - 1
+                && !listManipulator.isLoadingItemPresent()
+                && !mListFragment.isRefreshing()
+                && listManipulator.canLoadAFew()) {
             // Insert dummy item
             listManipulator.addLoadingItem();
+            if(!Utility.canUpdateList(getContentResolver())) {
+                mListFragment.loadAFew();
+            }else{
+                Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
+            }
             // Must notifyItemInserted AFTER loadAFew for mIsLoadingAFew to be updated
             mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
         }

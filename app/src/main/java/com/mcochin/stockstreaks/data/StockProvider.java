@@ -52,13 +52,6 @@ public class StockProvider extends ContentProvider {
     public static final String SHOWN_POSITION_BOOKMARK_SELECTION =
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_LIST_POSITION + " < ?";
 
-    // stocks.list_position <= ?
-    /**
-     * This is for an edge case in which the app closes while an item is still loading
-     */
-    public static final String SHOWN_POSITION_BOOKMARK_SELECTION_ZERO =
-            StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_LIST_POSITION + " <= ?";
-
     // list_position ASC
     public static final String ORDER_BY_LIST_POSITION_ASC = StockEntry.COLUMN_LIST_POSITION + " ASC";
 

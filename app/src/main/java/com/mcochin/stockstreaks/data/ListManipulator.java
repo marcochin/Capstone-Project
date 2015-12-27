@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
@@ -47,7 +48,6 @@ public class ListManipulator {
     public static final int INDEX_CHANGE_DOLLAR = 3;
     public static final int INDEX_CHANGE_PERCENT = 4;
     public static final int INDEX_STREAK = 5;
-
 
     private List<Stock> mShownList = new ArrayList<>();
     private String[] mLoadList;
@@ -96,6 +96,7 @@ public class ListManipulator {
     public boolean isLoadingItemPresent(){
         if(getCount() > 0) {
             Stock stock = mShownList.get(getCount() - 1);
+            Log.d(TAG, stock.getSymbol());
             return stock.getSymbol().equals(LOADING_ITEM);
         }
         return false;
@@ -179,23 +180,14 @@ public class ListManipulator {
 
     public void permanentlyDeleteLastRemoveItem(final ContentResolver cr){
         if(mLastRemovedItem != null) {
-            new AsyncTask<Void, Void, Void>(){
-                @Override
-                protected Void doInBackground(Void... params) {
-                    cr.delete(
-                            StockEntry.buildUri(mLastRemovedItem.getSymbol()),
-                            null,
-                            null
-                    );
-                    return null;
-                }
+            cr.delete(
+                    StockEntry.buildUri(mLastRemovedItem.getSymbol()),
+                    null,
+                    null
+            );
 
-                @Override
-                protected void onPostExecute(Void aVoid) {
-                    mLastRemovedItem = null;
-                    mListUpdated = true;
-                }
-            }.execute();
+            mLastRemovedItem = null;
+            mListUpdated = true;
         }
     }
 
@@ -232,14 +224,22 @@ public class ListManipulator {
         return false;
     }
 
+    /**
+     * Should be called from a background thread
+     * @param cr ContentResolver
+     */
     public void saveShownListState(ContentResolver cr){
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-        removeLoadingItem();
+
+        // Determine if the last item is a loading item. If so, skip it. We can't remove it
+        // because during orientation change, we need to persist the loading item.
+        int mShownListSize = getItem(mShownList.size()-1).getSymbol().equals(LOADING_ITEM)
+                ? mShownList.size()-1
+                : mShownList.size();
 
         // Save bookmark in db
         ContentValues bookmarkValues = new ContentValues();
-        bookmarkValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, getCount());
-
+        bookmarkValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, mShownListSize);
         ops.add(ContentProviderOperation
                 .newUpdate(SaveStateEntry.CONTENT_URI)
                 .withValues(bookmarkValues)
@@ -247,14 +247,13 @@ public class ListManipulator {
                 .build());
 
         // Save shown list positions in db
-        int i = 0;
-        for(Stock stock: mShownList){
+        int listPosition = 0;
+        for(int i = 0; i < mShownListSize; i++){
             // Save bookmark in db
             ContentValues positionValues = new ContentValues();
-            positionValues.put(StockEntry.COLUMN_LIST_POSITION, i++);
-
+            positionValues.put(StockEntry.COLUMN_LIST_POSITION, listPosition++);
             ops.add(ContentProviderOperation
-                            .newUpdate(StockEntry.buildUri(stock.getSymbol()))
+                            .newUpdate(StockEntry.buildUri(mShownList.get(i).getSymbol()))
                             .withValues(positionValues)
                             .withYieldAllowed(true)
                             .build());
@@ -265,8 +264,7 @@ public class ListManipulator {
             for (int j = mLoadListPositionBookmark; j < mLoadList.length; j++) {
                 // Save bookmark in db
                 ContentValues positionValues = new ContentValues();
-                positionValues.put(StockEntry.COLUMN_LIST_POSITION, i++);
-
+                positionValues.put(StockEntry.COLUMN_LIST_POSITION, listPosition++);
                 ops.add(ContentProviderOperation
                         .newUpdate(StockEntry.buildUri(mLoadList[j]))
                         .withValues(positionValues)
@@ -274,7 +272,6 @@ public class ListManipulator {
                         .build());
             }
         }
-
         // Apply operations
         Bundle extras = new Bundle();
         extras.putParcelableArrayList(StockProvider.KEY_OPERATIONS, ops);

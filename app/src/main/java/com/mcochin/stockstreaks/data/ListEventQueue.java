@@ -8,9 +8,10 @@ import java.util.PriorityQueue;
 import de.greenrobot.event.EventBus;
 
 /**
- * This is a queue for our EventBus events. If an event is sent with no subscriber, it will be put
- * into the queue.This can occur during orientation change causes a subscriber to unregister right
- * as the event is posted. After orientation change it should process events from this queue.
+ * This is a queue for our EventBus events. If an event is sent with no subscriber OR if queue not
+ * empty, it will be put into the queue. This can occur during orientation change which can cause
+ * a subscriber to unregister right as the event is posted. After orientation change it should
+ * process events from this queue.
  */
 public class ListEventQueue {
 
@@ -31,7 +32,7 @@ public class ListEventQueue {
 
     public void post(Object event){
         EventBus eventBus = EventBus.getDefault();
-        Class c = getClassFromEvent(event);
+        Class c = getEventType(event);
 
         if(eventBus.hasSubscriberForEvent(c) && mQueue.isEmpty()){
             eventBus.post(event);
@@ -40,16 +41,21 @@ public class ListEventQueue {
         }
     }
 
-    public void postPop(){
+    public void postAllFromQueue(){
         EventBus eventBus = EventBus.getDefault();
-        Class c = getClassFromEvent(mQueue.peek());
 
-        if(eventBus.hasSubscriberForEvent(c)){
-            eventBus.post(mQueue.poll());
+        while(!mQueue.isEmpty()){
+            Class event = getEventType(mQueue.peek());
+
+            if(eventBus.hasSubscriberForEvent(event)){
+                eventBus.post(mQueue.poll());
+            }else{
+                break;
+            }
         }
     }
 
-    private Class getClassFromEvent(Object event){
+    private Class getEventType(Object event){
         if(event instanceof LoadAFewFinishedEvent){
             return LoadAFewFinishedEvent.class;
         }else if (event instanceof LoadSymbolFinishedEvent){

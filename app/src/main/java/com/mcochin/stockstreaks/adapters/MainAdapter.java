@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -213,8 +214,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             // Set full name
             holder.mFullName.setText(stock.getFullName());
             // Set recent close
-            String recentClose = Utility.roundTo2StringDecimals(stock.getRecentClose());
-            holder.mRecentClose.setText(resources.getString(R.string.placeholder_dollar, recentClose));
+            holder.mRecentClose.setText(resources.getString(
+                    R.string.placeholder_dollar,
+                    Utility.roundTo2StringDecimals(stock.getRecentClose())));
 
             // Format dollar/percent change float values to 2 decimals
             String changeDollar = resources.getString(
@@ -225,11 +227,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
                     R.string.placeholder_percent,
                     Utility.roundTo2StringDecimals(stock.getChangePercent()));
 
-            // Format streak String
-            int streak = stock.getStreak();
-
-            // Get our dollar/percent change colors and set our stock arrow ImageView
             int color;
+            // Get our dollar/percent change colors and set our stock arrow ImageView
             if (stock.getChangeDollar() > 0) {
                 color = ContextCompat.getColor(mContext, R.color.stock_up_green);
                 holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_up);
@@ -242,6 +241,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
                 color = ContextCompat.getColor(mContext, R.color.stock_neutral);
             }
 
+            int streak = stock.getStreak();
             // Set our updateTime, dollar/percent change, change color, and streak
             if (position == 0) { //list_first_item
                 Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
@@ -271,13 +271,17 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             if (((dragState & Draggable.STATE_FLAG_IS_UPDATED) != 0)) {
                 int bgResId;
 
+                // We can't default bgResId to 0 because of this super rare case that removes the
+                // background if it is left at 0.
+                if (position == 0 && mIsPhone) {
+                    bgResId = R.drawable.list_item_first_selector;
+
+                } else {
+                    bgResId = R.drawable.list_item_selector;
+                }
                 // ACTIVE flags is the one being acted upon
                 if ((dragState & Draggable.STATE_FLAG_IS_ACTIVE) != 0) {
                     bgResId = R.drawable.bg_item_dragging_active_state;
-                } else if (position == 0 && mIsPhone) {
-                    bgResId = R.drawable.list_item_first_selector;
-                } else {
-                    bgResId = R.drawable.list_item_selector;
                 }
 
                 holder.mContainer.setBackgroundResource(bgResId);
@@ -338,7 +342,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 //        Log.d(TAG, "onGetSwipeReactionType");
 
         // This is what enables swiping
-        if (holder.getSymbol().equals(ListManipulator.LOADING_ITEM)) {
+        if (mListManipulator.getItem(position).getSymbol().equals(ListManipulator.LOADING_ITEM)) {
             return SwipeableItemConstants.REACTION_CAN_NOT_SWIPE_ANY;
         }
         return Swipeable.REACTION_CAN_SWIPE_BOTH_H;
@@ -366,7 +370,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         //Log.d(TAG, "onCheckCanStartDrag");
 
         // This is what enables dragging
-        return !holder.getSymbol().equals(ListManipulator.LOADING_ITEM);
+        return !mListManipulator.getItem(position).getSymbol().equals(ListManipulator.LOADING_ITEM);
     }
 
     @Override // DraggableItemAdapter

@@ -262,6 +262,9 @@ public class MainService extends IntentService {
         values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float)changeDollarAndPercentage.second);
         values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, prevStreakEndPrice);
         values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, prevStreakEndDate);
+        values.put(StockEntry.COLUMN_PREV_STREAK, 0);
+        values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, 0);
+        values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
 
         return values;
     }

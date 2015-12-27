@@ -32,7 +32,6 @@ public class Utility {
     public static final int STOCK_MARKET_OPEN_HOUR = 9;
     public static final int STOCK_MARKET_OPEN_MINUTE = 30;
 
-
     /**
      * Calculates the change in dollars and percentage between the two prices.
      * @param recentClose Stock's recent close

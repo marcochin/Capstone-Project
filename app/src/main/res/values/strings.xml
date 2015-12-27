@@ -18,6 +18,7 @@
     <string name="toast_no_network">No Network Connection</string>
     <string name="toast_already_up_to_date">Already up to date</string>
     <string name="toast_error_updating_list">Error updating list</string>
+    <string name="toast_error_refresh_list">List out of sync. Please refresh list.</string>
 
     <!--RecyclerView-->
     <string name="empty_list_msg">Use the search box above\nto add an item.</string>

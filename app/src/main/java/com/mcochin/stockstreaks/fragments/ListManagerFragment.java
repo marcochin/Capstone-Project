@@ -13,6 +13,7 @@ import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.pojos.LoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
@@ -54,26 +55,29 @@ public class ListManagerFragment extends Fragment{
     public void onStart() {
         super.onStart();
         EventBus.getDefault().register(this);
+
         if(!ListEventQueue.getInstance().isEmpty()){
-            ListEventQueue.getInstance().postPop();
+            ListEventQueue.getInstance().postAllFromQueue();
         }
     }
 
     @Override
     public void onPause() {
-        new AsyncTask<Context, Void, Void>(){
-            @Override
-            protected Void doInBackground(Context... params) {
-                synchronized (this) {
-                    ContentResolver cr = params[0].getContentResolver();
-                    mListManipulator.permanentlyDeleteLastRemoveItem(cr);
-                    if (mListManipulator.isListUpdated()) {
-                        mListManipulator.saveShownListState(cr);
+        if (mListManipulator.isListUpdated()) {
+            new AsyncTask<Context, Void, Void>() {
+                @Override
+                protected Void doInBackground(Context... params) {
+                    synchronized (this) {
+                        ContentResolver cr = params[0].getContentResolver();
+                        mListManipulator.permanentlyDeleteLastRemoveItem(cr);
+                        if (mListManipulator.isListUpdated()) {
+                            mListManipulator.saveShownListState(cr);
+                        }
                     }
+                    return null;
                 }
-                return null;
-            }
-        }.execute(getActivity().getApplicationContext());
+            }.execute(getActivity().getApplicationContext());
+        }
 
         super.onPause();
     }
@@ -106,9 +110,7 @@ public class ListManagerFragment extends Fragment{
                     cursor = cr.query(
                             StockEntry.CONTENT_URI,
                             ListManipulator.STOCK_PROJECTION,
-                            shownPositionBookmark == 0 ?
-                                    StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION_ZERO
-                                    :StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
+                            StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
                             new String[]{Integer.toString(shownPositionBookmark)},
                             StockProvider.ORDER_BY_LIST_POSITION_ASC);
 
@@ -126,14 +128,9 @@ public class ListManagerFragment extends Fragment{
                         cursor.close();
                     }
                 }
-                return null;
-            }
 
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                if (mEventListener != null) {
-                    mEventListener.onLoadAllFromDbFinished();
-                }
+                ListEventQueue.getInstance().post(new LoadFromDbFinishedEvent());
+                return null;
             }
         }.execute(getActivity().getApplicationContext());
     }
@@ -155,20 +152,13 @@ public class ListManagerFragment extends Fragment{
                     mListManipulator.setLoadList(getLoadListFromDb());
                     mRefreshing = loadAFew();
 
-                    return null;
-                }
-            }
+                    if (attachSymbol != null) {
+                        loadSymbol(attachSymbol);
 
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                //Loader must be run on main thread or crash
-                if (attachSymbol != null) {
-                    loadSymbol(attachSymbol);
-
-                }else if(!mRefreshing){
-                    if(mEventListener != null){
-                        mEventListener.onLoadAFewFinished(false);
+                    }else if(!mRefreshing){
+                        ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(null, false));
                     }
+                    return null;
                 }
             }
         }.execute(getActivity().getApplicationContext());
@@ -193,7 +183,6 @@ public class ListManagerFragment extends Fragment{
 
             return true;
         }
-
         mLoadingAFew = false;
         return false;
     }
@@ -244,7 +233,26 @@ public class ListManagerFragment extends Fragment{
         return loadList;
     }
 
+    public void onEventMainThread(LoadFromDbFinishedEvent event){
+        if (mEventListener != null) {
+            mEventListener.onLoadAllFromDbFinished();
+        }
+    }
+
+    public void onEventMainThread(LoadSymbolFinishedEvent event){
+        synchronized (this) {
+            if (event.isSuccessful()) {
+                mListManipulator.addItemToTop(event.getStock());
+            }
+
+            if (mEventListener != null) {
+                mEventListener.onLoadSymbolFinished(event.isSuccessful());
+            }
+        }
+    }
+
     public void onEventMainThread(LoadAFewFinishedEvent event){
+
         synchronized (this) {
             if (event.isSuccessful()) {
                 if (mRefreshing) {
@@ -258,33 +266,11 @@ public class ListManagerFragment extends Fragment{
                     mListManipulator.addItemToBottom(stock);
                 }
             }
-
-            if (mEventListener != null) {
-                mEventListener.onLoadAFewFinished(event.isSuccessful());
-            }
             mRefreshing = false;
             mLoadingAFew = false;
 
-            //Execute the next msg on the queue if there is one.
-            if (!ListEventQueue.getInstance().isEmpty()) {
-                ListEventQueue.getInstance().postPop();
-            }
-        }
-    }
-
-    public void onEventMainThread(LoadSymbolFinishedEvent event){
-        synchronized (this) {
-            if (event.isSuccessful()) {
-                mListManipulator.addItemToTop(event.getStock());
-            }
-
             if (mEventListener != null) {
-                mEventListener.onLoadSymbolFinished(event.isSuccessful());
-            }
-
-            //Execute the next msg on the queue if there is one.
-            if (!ListEventQueue.getInstance().isEmpty()) {
-                ListEventQueue.getInstance().postPop();
+                mEventListener.onLoadAFewFinished(event.isSuccessful());
             }
         }
     }
