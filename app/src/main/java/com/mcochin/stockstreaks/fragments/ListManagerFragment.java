@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
@@ -52,16 +53,6 @@ public class ListManagerFragment extends Fragment{
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        EventBus.getDefault().register(this);
-
-        if(!ListEventQueue.getInstance().isEmpty()){
-            ListEventQueue.getInstance().postAllFromQueue();
-        }
-    }
-
-    @Override
     public void onPause() {
         if (mListManipulator.isListUpdated()) {
             new AsyncTask<Context, Void, Void>() {
@@ -80,12 +71,6 @@ public class ListManagerFragment extends Fragment{
         }
 
         super.onPause();
-    }
-
-    @Override
-    public void onStop() {
-        EventBus.getDefault().unregister(this);
-        super.onStop();
     }
 
     @Override

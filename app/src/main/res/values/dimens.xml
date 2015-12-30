@@ -42,4 +42,10 @@
     <dimen name="list_item_horizontal_padding">@dimen/list_item_vertical_padding</dimen>
     <item name="text_change_amt_column_weight" type="dimen" format="integer">5</item>
     <dimen name="progress_wheel_size">40dp</dimen>
+
+    <!-- widget -->
+    <dimen name="widget_min_width">180dp</dimen>
+    <dimen name="widget_min_height">@dimen/widget_min_width</dimen>
+    <dimen name="widget_min_resize_width">250dp</dimen>
+    <dimen name="widget_min_resize_height">@dimen/widget_min_resize_width</dimen>
 </resources>

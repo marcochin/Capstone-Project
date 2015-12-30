@@ -9,9 +9,11 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
 import android.widget.Toast;
 
+import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
@@ -319,6 +321,27 @@ public class Utility {
         }
 
         return false;
+    }
+
+    public static Pair<Integer, Integer> getChangeColorAndArrowDrawableIds(float change){
+        Integer colorId;
+        Integer arrowDrawableId;
+
+        // Get our dollar/percent change colors and set our stock arrow ImageView
+        if (change > 0) {
+            colorId = R.color.stock_up_green;
+            arrowDrawableId = R.drawable.ic_streak_up;
+
+        } else if (change < 0) {
+            colorId = R.color.stock_down_red;
+            arrowDrawableId = R.drawable.ic_streak_down;
+
+        } else {
+            colorId = R.color.stock_neutral;
+            arrowDrawableId = 0;
+        }
+
+        return new Pair<>(colorId, arrowDrawableId);
     }
 
     /**

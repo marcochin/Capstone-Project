@@ -37,7 +37,6 @@ public class MainService extends IntentService {
     private static final String TAG = MainService.class.getSimpleName();
     public static final String KEY_LOAD_SYMBOL_QUERY ="searchQuery";
     public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
-    public static final String KEY_LOAD_SUCCESS ="success";
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";

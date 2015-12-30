@@ -28,5 +28,5 @@
         android:layout_height="@dimen/progress_wheel_size"
         android:layout_gravity="center"
         android:indeterminate="true"
-        android:visibility="visible"/>
+        android:visibility="invisible"/>
 </FrameLayout>

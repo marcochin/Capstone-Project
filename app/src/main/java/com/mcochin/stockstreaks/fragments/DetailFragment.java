@@ -9,6 +9,7 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.util.Pair;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -86,9 +87,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         activity.setSupportActionBar(toolbar);
         ActionBar actionBar = activity.getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setDisplayShowTitleEnabled(false);
             if(getResources().getBoolean(R.bool.is_phone)) {
+                actionBar.setDisplayShowTitleEnabled(false);
                 actionBar.setDisplayHomeAsUpEnabled(true);
+            }else{
+                toolbar.setVisibility(View.GONE);
             }
         }
         Bundle args = getArguments();
@@ -152,18 +155,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mRetryButton.setOnClickListener(this);
 
         // Get our dollar/percent change colors and set our stock arrow ImageView
-        int color;
-        if (changeDollar > 0) {
-            color = ContextCompat.getColor(getContext(), R.color.stock_up_green);
-            streakArrow.setBackgroundResource(R.drawable.ic_streak_up);
-
-        } else if (changeDollar < 0) {
-            color = ContextCompat.getColor(getContext(), R.color.stock_down_red);
-            streakArrow.setBackgroundResource(R.drawable.ic_streak_down);
-
-        } else {
-            color = ContextCompat.getColor(getContext(), R.color.stock_neutral);
-        }
+        //Determine the color and the arrow image of the changes
+        Pair<Integer, Integer> changeColorAndDrawableIds =
+                Utility.getChangeColorAndArrowDrawableIds(changeDollar);
+        int color = ContextCompat.getColor(getContext(), changeColorAndDrawableIds.first);
+        streakArrow.setBackgroundResource(changeColorAndDrawableIds.second);
 
         textChangeDollar.setText(getString(R.string.placeholder_dollar,
                 Utility.roundTo2StringDecimals(changeDollar)));
@@ -239,6 +235,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 mProgressWheel.setVisibility(View.INVISIBLE);
                 mExtrasSection.setVisibility(View.VISIBLE);
 
+                //TODO dont destroy loader because of tablet. When a user refreshes list
+                // the old fragment might still be in there
                 ((AppCompatActivity)getContext()).getSupportLoaderManager()
                         .destroyLoader(ID_LOADER_DETAILS);
 

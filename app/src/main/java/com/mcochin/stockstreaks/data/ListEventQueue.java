@@ -1,9 +1,14 @@
 package com.mcochin.stockstreaks.data;
 
+import android.util.Log;
+
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.pojos.LoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 
+import java.util.LinkedList;
 import java.util.PriorityQueue;
+import java.util.Queue;
 
 import de.greenrobot.event.EventBus;
 
@@ -14,12 +19,12 @@ import de.greenrobot.event.EventBus;
  * process events from this queue.
  */
 public class ListEventQueue {
-
+    private static final String TAG = ListEventQueue.class.getSimpleName();
     private static ListEventQueue sListEventQueue;
-    private PriorityQueue<Object> mQueue;
+    private Queue<Object> mQueue;
 
     private ListEventQueue(){
-        mQueue = new PriorityQueue<>();
+        mQueue = new LinkedList<>();
     }
 
     public synchronized static ListEventQueue getInstance(){
@@ -49,10 +54,16 @@ public class ListEventQueue {
 
             if(eventBus.hasSubscriberForEvent(event)){
                 eventBus.post(mQueue.poll());
+                Log.d(TAG, "posted");
             }else{
+                Log.d(TAG, "did not post");
                 break;
             }
         }
+    }
+
+    public void clearQueue(){
+        mQueue.clear();
     }
 
     private Class getEventType(Object event){
@@ -60,6 +71,8 @@ public class ListEventQueue {
             return LoadAFewFinishedEvent.class;
         }else if (event instanceof LoadSymbolFinishedEvent){
             return LoadSymbolFinishedEvent.class;
+        }else if (event instanceof LoadFromDbFinishedEvent){
+            return LoadFromDbFinishedEvent.class;
         }
 
         return null;

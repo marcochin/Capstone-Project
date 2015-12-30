@@ -4,8 +4,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Build;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.util.Pair;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -189,9 +189,10 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public void onBindViewHolder(final MainViewHolder holder, int position) {
 //        Log.d(TAG, "onBind");
         Stock stock = mListManipulator.getItem(position);
+        String symbol = stock.getSymbol();
 
         // Determine if this is a dummy "loading" item
-        if(stock.getSymbol().equals(ListManipulator.LOADING_ITEM)) {
+        if(symbol.equals(ListManipulator.LOADING_ITEM)) {
             holder.mContainer.setVisibility(View.INVISIBLE);
             if(mListFragment.isLoadingAFew()){
                 holder.mProgressWheel.setVisibility(View.VISIBLE);
@@ -209,51 +210,47 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             }
 
             Resources resources = mContext.getResources();
-            // Set symbol
-            holder.mSymbol.setText(stock.getSymbol());
-            // Set full name
-            holder.mFullName.setText(stock.getFullName());
-            // Set recent close
-            holder.mRecentClose.setText(resources.getString(
+
+            String fullName = stock.getFullName();
+            String recentClose = resources.getString(
                     R.string.placeholder_dollar,
-                    Utility.roundTo2StringDecimals(stock.getRecentClose())));
+                    Utility.roundTo2StringDecimals(stock.getRecentClose()));
+            float changeDollar = stock.getChangeDollar();
+            float changePercent = stock.getChangePercent();
+            int streak = stock.getStreak();
+
+            // Set symbol, full name, and recentClose
+            holder.mSymbol.setText(symbol);
+            holder.mFullName.setText(fullName);
+            holder.mRecentClose.setText(recentClose);
+
+            // Determine the color and the arrow image of the changes
+            Pair<Integer, Integer> changeColorAndDrawableIds =
+                    Utility.getChangeColorAndArrowDrawableIds(changeDollar);
+            int color = ContextCompat.getColor(mContext, changeColorAndDrawableIds.first);
+            holder.mStreakArrow.setBackgroundResource(changeColorAndDrawableIds.second);
 
             // Format dollar/percent change float values to 2 decimals
-            String changeDollar = resources.getString(
+            String changeDollarFormat = resources.getString(
                     R.string.placeholder_dollar,
-                    Utility.roundTo2StringDecimals(stock.getChangeDollar()));
+                    Utility.roundTo2StringDecimals(changeDollar));
 
-            String changePercent = resources.getString(
+            String changePercentFormat = resources.getString(
                     R.string.placeholder_percent,
-                    Utility.roundTo2StringDecimals(stock.getChangePercent()));
+                    Utility.roundTo2StringDecimals(changePercent));
 
-            int color;
-            // Get our dollar/percent change colors and set our stock arrow ImageView
-            if (stock.getChangeDollar() > 0) {
-                color = ContextCompat.getColor(mContext, R.color.stock_up_green);
-                holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_up);
-
-            } else if (stock.getChangeDollar() < 0) {
-                color = ContextCompat.getColor(mContext, R.color.stock_down_red);
-                holder.mStreakArrow.setBackgroundResource(R.drawable.ic_streak_down);
-
-            } else {
-                color = ContextCompat.getColor(mContext, R.color.stock_neutral);
-            }
-
-            int streak = stock.getStreak();
             // Set our updateTime, dollar/percent change, change color, and streak
-            if (position == 0) { //list_first_item
+            if (position == 0 && resources.getBoolean(R.bool.is_phone)) { //list_first_item
                 Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
                 SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
                         R.string.update_time_format_ref), Locale.US);
                 holder.mUpdateTime.setText(resources.getString(R.string.placeholder_update_time,
                         sdf.format(updateTime)));
 
-                holder.mChangeDollar.setText(changeDollar);
+                holder.mChangeDollar.setText(changeDollarFormat);
                 holder.mChangeDollar.setTextColor(color);
 
-                holder.mChangePercent.setText(changePercent);
+                holder.mChangePercent.setText(changePercentFormat);
                 holder.mChangePercent.setTextColor(color);
 
                 holder.mStreak.setText(mContext.getString(Math.abs(streak) == 1 ?
@@ -261,7 +258,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
             } else { //list_item
                 holder.mChangeAmt.setText(resources.getString(
-                        R.string.placeholder_change_amt, changeDollar, changePercent));
+                        R.string.placeholder_change_amt, changeDollarFormat, changePercentFormat));
                 holder.mChangeAmt.setTextColor(color);
                 holder.mStreak.setText(mContext.getString(R.string.placeholder_d, streak));
             }
