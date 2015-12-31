@@ -368,7 +368,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override
     public void onStop() {
-        EventBus.getDefault().unregister(this);
+        EventBus.getDefault().unregister(mListFragment);
         super.onStop();
     }
 

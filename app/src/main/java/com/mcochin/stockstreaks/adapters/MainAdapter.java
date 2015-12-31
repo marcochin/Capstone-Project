@@ -243,7 +243,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             if (position == 0 && resources.getBoolean(R.bool.is_phone)) { //list_first_item
                 Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
                 SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
-                        R.string.update_time_format_ref), Locale.US);
+                        R.string.main_update_time_format_ref), Locale.US);
                 holder.mUpdateTime.setText(resources.getString(R.string.placeholder_update_time,
                         sdf.format(updateTime)));
 

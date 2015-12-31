@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- We can't use the GridLayout because some of the attributes we need are only available to
+api 21+. We can't use the support version of the gridlayout either because it's not supported in widgets
+For list of support views go here :
+http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="@dimen/widget_list_item_padding"
+    android:baselineAligned="false">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_weight="5">
+
+        <TextView
+            style="@style/ListItemBlackText"
+            android:id="@+id/text_symbol"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="GPRO"/>
+
+        <TextView
+            android:id="@+id/text_full_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/secondary_text"
+            android:singleLine="true"
+            android:ellipsize="end"
+            tools:text="GoPro, Inc."/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_weight="@dimen/text_change_amt_column_weight">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                style="@style/ListItemBlackText"
+                android:id="@+id/text_recent_close"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_toLeftOf="@id/text_streak"
+                android:layout_toStartOf="@id/text_streak"
+                tools:text="$6333.26"/>
+
+            <TextView
+                style="@style/ListItemBlackText"
+                android:id="@+id/text_streak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toLeftOf="@id/image_streak_arrow"
+                android:layout_toStartOf="@id/image_streak_arrow"
+                tools:text="-33d"/>
+
+            <ImageView
+                style="@style/StreakArrow"
+                android:id="@+id/image_streak_arrow"
+                android:layout_width="@dimen/stock_arrow_size_normal"
+                android:layout_height="@dimen/stock_arrow_size_normal"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_alignBottom="@+id/text_streak"
+                android:contentDescription="@string/content_description_stock_arrow"
+                tools:src="@drawable/ic_streak_down"/>
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/text_change_amt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="$-2222.00 (-2223.44%)"
+            tools:textColor="@color/stock_down_red"/>
+
+    </LinearLayout>
+
+</LinearLayout>

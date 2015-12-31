@@ -11,4 +11,7 @@
     <!--list_item-->
     <dimen name="list_item_vertical_padding">15dp</dimen>
     <dimen name="list_item_horizontal_padding">88dp</dimen>
+    <!-- For the load items we want them to be the same size as a regular item, but since a regular
+    item is wrap_content we are just going by eye-->
+    <dimen name="list_item_estimated_height">70dp</dimen>
 </resources>

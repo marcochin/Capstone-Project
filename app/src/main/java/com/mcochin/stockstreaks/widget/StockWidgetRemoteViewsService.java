@@ -73,7 +73,7 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
                     return null;
                 }
                 RemoteViews views = new RemoteViews(getPackageName(),
-                        R.layout.list_item);
+                        R.layout.widget_list_item);
 
                 String symbol = data.getString(ListManipulator.INDEX_SYMBOL);
                 String fullName = data.getString(ListManipulator.INDEX_FULL_NAME);
@@ -111,12 +111,12 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
 
             @Override
             public RemoteViews getLoadingView() {
-                return new RemoteViews(getPackageName(), R.layout.list_item);
+                return new RemoteViews(getPackageName(), R.layout.widget_loading);
             }
 
             @Override
             public int getViewTypeCount() {
-                return 1;
+                return 3;
             }
 
             @Override

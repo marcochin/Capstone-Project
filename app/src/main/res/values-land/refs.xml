@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item type="string" name="update_time_format_ref">@string/update_time_format_wide</item>
+    <item type="string" name="main_update_time_format_ref">@string/update_time_format_wide</item>
 </resources>

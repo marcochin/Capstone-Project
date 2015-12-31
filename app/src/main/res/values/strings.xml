@@ -18,7 +18,8 @@
     <string name="toast_no_network">No Network Connection</string>
     <string name="toast_already_up_to_date">Already up to date</string>
     <string name="toast_error_updating_list">Error updating list</string>
-    <string name="toast_error_refresh_list">List out of sync. Please refresh list.</string>
+    <string name="toast_error_refresh_list">List out of sync. Please refresh list</string>
+    <string name="toast_error_stock_limit">Sorry, unable not exceed limit of $1%d stocks</string>
 
     <!--RecyclerView-->
     <string name="empty_list_msg">Use the search box above\nto add an item.</string>
@@ -37,7 +38,7 @@
     <string name="streak_year_low">365 Day\nStreak Low:</string>
 
     <!-- list_item load a few-->
-    <string name="retry">Retry</string>
+    <string name="button_retry">RETRY</string>
 
     <!-- Snackbar -->
     <string name="placeholder_snackbar_main_text">%1$s removed</string>
@@ -56,5 +57,6 @@
 
     <!-- Widget -->
     <string name="widget_empty_list">No Information Available</string>
+    <string name="widget_button_load_more">LOAD MORE</string>
 
 </resources>

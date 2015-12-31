@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/list_item_estimated_height">
+
+    <ProgressBar
+        android:id="@+id/progress_wheel_load_a_few"
+        android:layout_width="@dimen/progress_wheel_size"
+        android:layout_height="@dimen/progress_wheel_size"
+        android:layout_gravity="center"
+        android:paddingTop="@dimen/list_item_vertical_padding"
+        android:paddingBottom="@dimen/list_item_vertical_padding"
+        android:paddingLeft="@dimen/list_item_horizontal_padding"
+        android:paddingRight="@dimen/list_item_horizontal_padding"
+        android:indeterminate="true"
+        android:visibility="invisible" />
+
+    <Button
+        style="?android:attr/borderlessButtonStyle"
+        android:id="@+id/retry_button"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:text="@string/button_retry"
+        android:visibility="invisible"/>
+
+</FrameLayout>

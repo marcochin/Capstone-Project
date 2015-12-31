@@ -145,6 +145,6 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="@dimen/detail_center_vertical"
         android:textColor="@color/white"
-        android:text="@string/retry"
+        android:text="@string/button_retry"
         android:visibility="invisible"/>
 </RelativeLayout>

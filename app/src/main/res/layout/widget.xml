@@ -4,11 +4,20 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <include layout="@layout/widget_logo"/>
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:src="@drawable/logo"
+        android:paddingBottom="8dp"
+        android:paddingTop="8dp"
+        android:background="@color/colorPrimary"
+        android:contentDescription="@string/app_name"/>
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/white">
         <TextView
             android:id="@+id/widget_empty"
             android:layout_width="match_parent"

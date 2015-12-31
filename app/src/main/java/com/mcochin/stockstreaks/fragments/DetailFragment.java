@@ -171,7 +171,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         // Set update time
         Date lastUpdate = Utility.getLastUpdateTime(getContext().getContentResolver()).getTime();
         SimpleDateFormat sdf = new SimpleDateFormat(
-                getString(R.string.update_time_format), Locale.US);
+                getString(R.string.detail_update_time_format_ref), Locale.US);
 
         updateTime.setText(getString(R.string.placeholder_update_time,
                 sdf.format(lastUpdate)));

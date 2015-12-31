@@ -30,6 +30,7 @@ public class ListManipulator {
 //            "Cantaloupe", "Papaya"};
 
     public static final int A_FEW = 12;
+    public static final int STOCK_LIMIT = 200;
     public static final String LOADING_ITEM = "loadingItem";
 
     public static final String[] STOCK_PROJECTION = new String[]{
@@ -140,6 +141,7 @@ public class ListManipulator {
                 mShownList.add(stock);
             }
         }
+        mListUpdated = true;
     }
 
     public void setLoadList(String[] loadList) {

@@ -20,7 +20,6 @@
             android:id="@+id/text_update_time"
             android:layout_width="0dp"
             android:layout_marginBottom="8dp"
-            android:fontFamily="sans-serif"
             android:gravity="center_horizontal"
             android:textColor="@color/secondary_text"
             app:layout_columnSpan="2"
@@ -54,7 +53,7 @@
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
-            tools:text="$-282.91"/>
+            tools:text="$-1282.91"/>
 
         <TextView
             android:id="@+id/text_recent_close"
@@ -62,7 +61,7 @@
             android:gravity="center_horizontal"
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
-            tools:text="$220.23"/>
+            tools:text="$1220.23"/>
 
         <TextView
             android:id="@+id/text_change_percent"
@@ -71,7 +70,7 @@
             android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
-            tools:text="-120.23%"/>
+            tools:text="-1120.23%"/>
 
         <LinearLayout
             android:layout_width="0dp"
