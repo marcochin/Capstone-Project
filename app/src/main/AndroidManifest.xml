@@ -44,7 +44,7 @@
                 <action android:name="com.mcochin.stockstreaks.widget.ACTION_DATA_REFRESH"/>
                 <action android:name="com.mcochin.stockstreaks.widget.ACTION_DATA_MIRROR_APP" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider"
+            <meta-mData android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info_stock" />
         </receiver>
         <service

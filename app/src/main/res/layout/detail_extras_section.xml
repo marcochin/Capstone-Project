@@ -28,7 +28,7 @@
 
         <TextView
             style="@style/DetailColumnsCommon.TextSize.DetailRight"
-            android:id="@+id/text_streak_end_price_prev"
+            android:id="@+id/text_prev_streak_end_price"
             android:layout_width="0dp"
             android:textColor="@color/white"
             android:gravity="bottom"
@@ -59,7 +59,7 @@
 
             <ImageView
                 style="@style/StreakArrow"
-                android:id="@+id/image_streak_arrow_prev"
+                android:id="@+id/image_prev_streak_arrow"
                 android:layout_width="@dimen/stock_arrow_size_normal"
                 android:layout_height="@dimen/stock_arrow_size_normal"
                 android:contentDescription="@string/content_description_stock_arrow"

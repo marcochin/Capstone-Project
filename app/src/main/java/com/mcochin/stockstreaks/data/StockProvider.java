@@ -52,8 +52,13 @@ public class StockProvider extends ContentProvider {
     public static final String SHOWN_POSITION_BOOKMARK_SELECTION =
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_LIST_POSITION + " < ?";
 
+    // stocks.list_position <= ?
+    public static final String SHOWN_POSITION_BOOKMARK_SELECTION_LE =
+            StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_LIST_POSITION + " <= ?";
+
     // list_position ASC
-    public static final String ORDER_BY_LIST_POSITION_ASC = StockEntry.COLUMN_LIST_POSITION + " ASC";
+    public static final String ORDER_BY_LIST_POSITION_ASC_ID_DESC =
+            StockEntry.COLUMN_LIST_POSITION + " ASC, " + StockEntry._ID + " DESC";
 
     private static UriMatcher buildUriMatcher() {
         // All paths added to the UriMatcher have a corresponding code to return when a match is
@@ -80,14 +85,16 @@ public class StockProvider extends ContentProvider {
     @Override
     public String getType(@NonNull Uri uri) {
         final int match = sUriMatcher.match(uri);
-
         switch (match){
             case SAVE_STATE:
                 return SaveStateEntry.CONTENT_DIR_TYPE;
+
             case STOCKS:
                 return StockEntry.CONTENT_DIR_TYPE;
+
             case STOCKS_WITH_SYMBOL:
                 return StockEntry.CONTENT_ITEM_TYPE;
+
             default:
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);
         }
@@ -171,11 +178,9 @@ public class StockProvider extends ContentProvider {
         if(id < 0){
             throw new SQLException(ERROR_ROW_INSERT + uri);
         }
-
         if(getContext()!= null) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
-
         return uri;
     }
 
@@ -195,11 +200,9 @@ public class StockProvider extends ContentProvider {
             default:
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);
         }
-
         if (rowsDeleted != 0 && getContext() != null) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
-
         return rowsDeleted;
     }
 
@@ -230,11 +233,9 @@ public class StockProvider extends ContentProvider {
             default:
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);
         }
-
         if(getContext()!= null) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
-
         return rowsAffected;
     }
 
@@ -267,7 +268,6 @@ public class StockProvider extends ContentProvider {
                     }
                 }
             }
-
         return super.call(method, arg, extras);
     }
 
@@ -311,7 +311,6 @@ public class StockProvider extends ContentProvider {
                 }
             }
         }
-
         return stockList;
     }
 }

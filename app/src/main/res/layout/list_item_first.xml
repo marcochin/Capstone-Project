@@ -21,7 +21,6 @@
             android:layout_width="0dp"
             android:layout_marginBottom="8dp"
             android:gravity="center_horizontal"
-            android:textColor="@color/secondary_text"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
             tools:text="Updated: Thursday, April 03\n@ 4:00 PM" />
@@ -30,7 +29,6 @@
             android:id="@+id/text_full_name"
             android:layout_width="0dp"
             android:gravity="center_horizontal"
-            android:textColor="@color/secondary_text"
             android:singleLine="true"
             android:ellipsize="end"
             android:textSize="@dimen/full_name_text_size"

@@ -97,7 +97,6 @@ public class ListManipulator {
     public boolean isLoadingItemPresent(){
         if(getCount() > 0) {
             Stock stock = mShownList.get(getCount() - 1);
-            Log.d(TAG, stock.getSymbol());
             return stock.getSymbol().equals(LOADING_ITEM);
         }
         return false;

@@ -9,7 +9,6 @@ import com.mcochin.stockstreaks.fragments.DetailFragment;
  * Activity for the phone to show the details of a stock.
  */
 public class DetailActivity extends AppCompatActivity {
-    public static final String KEY_ARGS = "args";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,7 +17,8 @@ public class DetailActivity extends AppCompatActivity {
 
         if(savedInstanceState == null) {
             DetailFragment detailFragment = new DetailFragment();
-            Bundle args = getIntent().getBundleExtra(KEY_ARGS);
+            Bundle args = new Bundle();
+            args.putParcelable(DetailFragment.KEY_DETAIL_URI, getIntent().getData());
             detailFragment.setArguments(args);
 
             getSupportFragmentManager().beginTransaction()

@@ -2,6 +2,7 @@ package com.mcochin.stockstreaks.fragments;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -20,6 +21,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.mcochin.stockstreaks.R;
+import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.pojos.LoadDetailErrorEvent;
 import com.mcochin.stockstreaks.services.DetailService;
@@ -39,15 +41,16 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     public static final int ID_LOADER_DETAILS = 2;
     public static final String KEY_REPLY_BUTTON_VISIBLE = "replyButtonVisible";
+    public static final String KEY_DETAIL_URI = "detailUri";
 
-    public static final String KEY_SYMBOL = "symbol";
-    public static final String KEY_FULL_NAME = "fullName";
-    public static final String KEY_RECENT_CLOSE = "recentCLose";
-    public static final String KEY_DOLLAR_CHANGE = "dollarChange";
-    public static final String KEY_PERCENT_CHANGE = "percentChange";
-    public static final String KEY_STREAK = "streak";
 
     public static final String[] DETAIL_PROJECTION = new String[]{
+            StockEntry.COLUMN_SYMBOL,
+            StockEntry.COLUMN_FULL_NAME,
+            StockEntry.COLUMN_RECENT_CLOSE,
+            StockEntry.COLUMN_CHANGE_DOLLAR,
+            StockEntry.COLUMN_CHANGE_PERCENT,
+            StockEntry.COLUMN_STREAK,
             StockEntry.COLUMN_PREV_STREAK,
             StockEntry.COLUMN_PREV_STREAK_END_PRICE,
             StockEntry.COLUMN_STREAK_YEAR_HIGH,
@@ -55,21 +58,36 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     };
 
     //index must match projection
-    public static final int INDEX_PREV_STREAK = 0;
-    public static final int INDEX_PREV_STREAK_END_PRICE = 1;
-    public static final int INDEX_STREAK_YEAR_HIGH = 2;
-    public static final int INDEX_STREAK_YEAR_LOW = 3;
+    public static final int INDEX_SYMBOL = 0;
+    public static final int INDEX_FULL_NAME = 1;
+    public static final int INDEX_RECENT_CLOSE = 2;
+    public static final int INDEX_CHANGE_DOLLAR = 3;
+    public static final int INDEX_CHANGE_PERCENT = 4;
+    public static final int INDEX_STREAK = 5;
+    public static final int INDEX_PREV_STREAK = 6;
+    public static final int INDEX_PREV_STREAK_END_PRICE = 7;
+    public static final int INDEX_STREAK_YEAR_HIGH = 8;
+    public static final int INDEX_STREAK_YEAR_LOW = 9;
 
     private View mProgressWheel;
     private View mRetryButton;
     private View mExtrasSection;
-    private TextView mTextStreakEndPricePrev;
+
+    private TextView mTextUpdateTime;
+    private TextView mTextSymbol;
+    private TextView mTextFullName;
+    private TextView mTextRecentClose;
+    private TextView mTextChangeDollar;
+    private TextView mTextChangePercent;
+    private TextView mTextStreak;
+    private TextView mTextPrevStreakEndPrice;
+    private TextView mTextPrevStreak;
     private TextView mTextStreakYearHigh;
     private TextView mTextStreakYearLow;
-    private TextView mTextPrevStreak;
-    private ImageView mImageStreakArrowPrev;
+    private ImageView mImageStreakArrow;
+    private ImageView mImagePrevStreakArrow;
 
-    private String mSymbol;
+    private Uri mDetailUri;
     private boolean mReplyButtonVisible;
 
     @Nullable
@@ -81,6 +99,13 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        Bundle args = getArguments();
+        mDetailUri = args.getParcelable(KEY_DETAIL_URI);
+
+        if(savedInstanceState != null){
+            mReplyButtonVisible = savedInstanceState.getBoolean(KEY_REPLY_BUTTON_VISIBLE);
+        }
 
         AppCompatActivity activity = (AppCompatActivity) getActivity();
         Toolbar toolbar = (Toolbar) view.findViewById(R.id.toolbar);
@@ -94,14 +119,25 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 toolbar.setVisibility(View.GONE);
             }
         }
-        Bundle args = getArguments();
-        mSymbol = args.getString(KEY_SYMBOL);
+        mTextUpdateTime = (TextView)view.findViewById(R.id.text_update_time);
+        mTextSymbol = (TextView)view.findViewById(R.id.text_symbol);
+        mTextFullName = (TextView)view.findViewById(R.id.text_full_name);
+        mTextRecentClose = (TextView)view.findViewById(R.id.text_recent_close);
+        mTextChangeDollar = (TextView)view.findViewById(R.id.text_change_dollar);
+        mTextChangePercent = (TextView)view.findViewById(R.id.text_change_percent);
+        mTextStreak = (TextView)view.findViewById(R.id.text_streak);
+        mTextPrevStreak = (TextView)view.findViewById(R.id.text_streak_prev);
+        mTextPrevStreakEndPrice = (TextView)view.findViewById(R.id.text_prev_streak_end_price);
+        mTextStreakYearHigh = (TextView)view.findViewById(R.id.text_streak_year_high);
+        mTextStreakYearLow = (TextView)view.findViewById(R.id.text_streak_year_low);
+        mImageStreakArrow = (ImageView)view.findViewById(R.id.image_streak_arrow);
+        mImagePrevStreakArrow = (ImageView)view.findViewById(R.id.image_prev_streak_arrow);
 
-        if(savedInstanceState != null){
-            mReplyButtonVisible = savedInstanceState.getBoolean(KEY_REPLY_BUTTON_VISIBLE);
-        }
+        mExtrasSection = view.findViewById(R.id.detail_extras_section);
+        mProgressWheel = view.findViewById(R.id.progress_wheel);
+        mRetryButton = view.findViewById(R.id.retry_button);
+        mRetryButton.setOnClickListener(this);
 
-        initializeInitialViews(view, args);
         initializeDetailExtrasSection();
     }
 
@@ -123,81 +159,36 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         super.onSaveInstanceState(outState);
     }
 
-    private void initializeInitialViews(View view, Bundle args){
-        String symbol = args.getString(KEY_SYMBOL);
-        String fullName = args.getString(KEY_FULL_NAME);
-        float recentClose = args.getFloat(KEY_RECENT_CLOSE);
-        float changeDollar = args.getFloat(KEY_DOLLAR_CHANGE);
-        float changePercent = args.getFloat(KEY_PERCENT_CHANGE);
-        int streak = args.getInt(KEY_STREAK);
-
-        mProgressWheel = view.findViewById(R.id.progress_wheel);
-        mRetryButton = view.findViewById(R.id.retry_button);
-        mExtrasSection = view.findViewById(R.id.detail_extras_section);
-        mTextPrevStreak = (TextView)view.findViewById(R.id.text_streak_prev);
-        mTextStreakEndPricePrev = (TextView)view.findViewById(R.id.text_streak_end_price_prev);
-        mTextStreakYearHigh = (TextView)view.findViewById(R.id.text_streak_year_high);
-        mTextStreakYearLow = (TextView)view.findViewById(R.id.text_streak_year_low);
-        mImageStreakArrowPrev = (ImageView)view.findViewById(R.id.image_streak_arrow_prev);
-
-        ((TextView)view.findViewById(R.id.text_symbol)).setText(symbol);
-        ((TextView)view.findViewById(R.id.text_full_name)).setText(fullName);
-        ((TextView)view.findViewById(R.id.text_recent_close))
-                .setText(Utility.roundTo2StringDecimals(recentClose));
-        ((TextView)view.findViewById(R.id.text_streak)).setText(getString(Math.abs(streak) == 1 ?
-                R.string.placeholder_day : R.string.placeholder_days, streak));
-
-        TextView textChangeDollar = (TextView)view.findViewById(R.id.text_change_dollar);
-        TextView textChangePercent = (TextView)view.findViewById(R.id.text_change_percent);
-        ImageView streakArrow = (ImageView)view.findViewById(R.id.image_streak_arrow);
-        TextView updateTime = (TextView)view.findViewById(R.id.text_update_time);
-
-        mRetryButton.setOnClickListener(this);
-
-        // Get our dollar/percent change colors and set our stock arrow ImageView
-        //Determine the color and the arrow image of the changes
-        Pair<Integer, Integer> changeColorAndDrawableIds =
-                Utility.getChangeColorAndArrowDrawableIds(changeDollar);
-        int color = ContextCompat.getColor(getContext(), changeColorAndDrawableIds.first);
-        streakArrow.setBackgroundResource(changeColorAndDrawableIds.second);
-
-        textChangeDollar.setText(getString(R.string.placeholder_dollar,
-                Utility.roundTo2StringDecimals(changeDollar)));
-        textChangePercent.setText(getString(R.string.placeholder_percent,
-                Utility.roundTo2StringDecimals(changePercent)));
-        textChangeDollar.setTextColor(color);
-        textChangePercent.setTextColor(color);
-
-        // Set update time
-        Date lastUpdate = Utility.getLastUpdateTime(getContext().getContentResolver()).getTime();
-        SimpleDateFormat sdf = new SimpleDateFormat(
-                getString(R.string.detail_update_time_format_ref), Locale.US);
-
-        updateTime.setText(getString(R.string.placeholder_update_time,
-                sdf.format(lastUpdate)));
-    }
-
-    private void initializeDetailExtrasSection(){
-        mProgressWheel.setVisibility(View.VISIBLE);
-        mRetryButton.setVisibility(View.INVISIBLE);
-        LoaderManager loaderManager = ((AppCompatActivity)getContext()).getSupportLoaderManager();
-        loaderManager.initLoader(ID_LOADER_DETAILS, null, this);
-    }
-
     @Override
     public void onClick(View v) {
         int id = v.getId();
         switch (id){
             case R.id.retry_button:
-                initializeDetailExtrasSection();
+                startDetailService();
                 break;
         }
+    }
+
+    private void initializeDetailExtrasSection(){
+        showProgressWheel();
+
+        LoaderManager loaderManager = ((AppCompatActivity)getContext()).getSupportLoaderManager();
+        loaderManager.restartLoader(ID_LOADER_DETAILS, null, this);
+    }
+
+    private void startDetailService(){
+        showProgressWheel();
+
+        Intent serviceIntent = new Intent(getContext(), DetailService.class);
+        serviceIntent.putExtra(DetailService.KEY_DETAIL_SYMBOL,
+                StockContract.getSymbolFromUri(mDetailUri));
+        getContext().startService(serviceIntent);
     }
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         return new CursorLoader(getContext(),
-                StockEntry.buildUri(mSymbol),
+                mDetailUri,
                 DETAIL_PROJECTION,
                 null,
                 null,
@@ -208,16 +199,57 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         if(data != null && data.moveToFirst()){
 
+            String symbol = data.getString(INDEX_SYMBOL);
+            String fullName = data.getString(INDEX_FULL_NAME);
+            float recentClose = data.getFloat(INDEX_RECENT_CLOSE);
+            float changeDollar = data.getFloat(INDEX_CHANGE_DOLLAR);
+            float changePercent = data.getFloat(INDEX_CHANGE_PERCENT);
+            int streak = data.getInt(INDEX_STREAK);
             int prevStreak = data.getInt(INDEX_PREV_STREAK);
             float prevStreakEndPrice = data.getFloat(INDEX_PREV_STREAK_END_PRICE);
             int streakYearHigh = data.getInt(INDEX_STREAK_YEAR_HIGH);
             int streakYearLow = data.getInt(INDEX_STREAK_YEAR_LOW);
 
+            // Set update time
+            Date lastUpdate = Utility.getLastUpdateTime(
+                    getContext().getContentResolver()).getTime();
+            SimpleDateFormat sdf = new SimpleDateFormat(
+                    getString(R.string.detail_update_time_format_ref), Locale.US);
+            String lastUpdateString = getString(R.string.placeholder_update_time,
+                    sdf.format(lastUpdate));
+
+            // Main Section
+            if(!mTextUpdateTime.getText().toString().equals(lastUpdateString)) {
+                mTextUpdateTime.setText(getString(R.string.placeholder_update_time,
+                        sdf.format(lastUpdate)));
+
+                mTextSymbol.setText(symbol);
+                mTextFullName.setText(fullName);
+                mTextRecentClose.setText(Utility.roundTo2StringDecimals(recentClose));
+                mTextStreak.setText(getString(Math.abs(streak) == 1 ?
+                        R.string.placeholder_day : R.string.placeholder_days, streak));
+
+                // Get our dollar/percent change colors and set our stock arrow ImageView
+                //Determine the color and the arrow image of the changes
+                Pair<Integer, Integer> changeColorAndDrawableIds =
+                        Utility.getChangeColorAndArrowDrawableIds(changeDollar);
+                int color = ContextCompat.getColor(getContext(), changeColorAndDrawableIds.first);
+                mImageStreakArrow.setBackgroundResource(changeColorAndDrawableIds.second);
+
+                mTextChangeDollar.setText(getString(R.string.placeholder_dollar,
+                        Utility.roundTo2StringDecimals(changeDollar)));
+                mTextChangePercent.setText(getString(R.string.placeholder_percent,
+                        Utility.roundTo2StringDecimals(changePercent)));
+                mTextChangeDollar.setTextColor(color);
+                mTextChangePercent.setTextColor(color);
+            }
+
+            // Extras Section
             if(prevStreak != 0) {
                 mTextPrevStreak.setText(getString(Math.abs(prevStreak) == 1 ?
                         R.string.placeholder_day : R.string.placeholder_days, prevStreak));
 
-                mTextStreakEndPricePrev.setText(getString(R.string.placeholder_dollar,
+                mTextPrevStreakEndPrice.setText(getString(R.string.placeholder_dollar,
                         Utility.roundTo2StringDecimals(prevStreakEndPrice)));
 
                 mTextStreakYearHigh.setText(getString(Math.abs(streakYearHigh) == 1 ?
@@ -227,27 +259,17 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                         R.string.placeholder_day : R.string.placeholder_days, streakYearLow));
 
                 if (prevStreak > 0) {
-                    mImageStreakArrowPrev.setBackgroundResource(R.drawable.ic_streak_up);
+                    mImagePrevStreakArrow.setBackgroundResource(R.drawable.ic_streak_up);
                 } else if (prevStreak < 0) {
-                    mImageStreakArrowPrev.setBackgroundResource(R.drawable.ic_streak_down);
+                    mImagePrevStreakArrow.setBackgroundResource(R.drawable.ic_streak_down);
                 }
-
-                mProgressWheel.setVisibility(View.INVISIBLE);
-                mExtrasSection.setVisibility(View.VISIBLE);
-
-                //TODO dont destroy loader because of tablet. When a user refreshes list
-                // the old fragment might still be in there
-                ((AppCompatActivity)getContext()).getSupportLoaderManager()
-                        .destroyLoader(ID_LOADER_DETAILS);
+                showExtrasSection();
 
             }else if(mReplyButtonVisible){
-                mProgressWheel.setVisibility(View.INVISIBLE);
-                mRetryButton.setVisibility(View.VISIBLE);
+                showRetryButton();
 
-            } else{
-                Intent serviceIntent = new Intent(getContext(), DetailService.class);
-                serviceIntent.putExtra(DetailService.KEY_DETAIL_SYMBOL, mSymbol);
-                getContext().startService(serviceIntent);
+            }else{
+                startDetailService();
             }
         }
     }
@@ -258,7 +280,24 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     }
 
     public void onEventMainThread(LoadDetailErrorEvent event){
+        showRetryButton();
+    }
+
+    private void showProgressWheel(){
+        mProgressWheel.setVisibility(View.VISIBLE);
+        mRetryButton.setVisibility(View.INVISIBLE);
+        mExtrasSection.setVisibility(View.INVISIBLE);
+    }
+
+    private void showRetryButton(){
         mProgressWheel.setVisibility(View.INVISIBLE);
         mRetryButton.setVisibility(View.VISIBLE);
+        mExtrasSection.setVisibility(View.INVISIBLE);
+    }
+
+    private void showExtrasSection(){
+        mProgressWheel.setVisibility(View.INVISIBLE);
+        mRetryButton.setVisibility(View.INVISIBLE);
+        mExtrasSection.setVisibility(View.VISIBLE);
     }
 }

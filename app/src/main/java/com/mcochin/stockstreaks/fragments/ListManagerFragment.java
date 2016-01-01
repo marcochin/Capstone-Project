@@ -7,7 +7,6 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
@@ -19,8 +18,6 @@ import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
-
-import de.greenrobot.event.EventBus;
 
 public class ListManagerFragment extends Fragment{
     public static final String TAG = ListManagerFragment.class.getSimpleName();
@@ -91,13 +88,13 @@ public class ListManagerFragment extends Fragment{
                     ContentResolver cr = params[0].getContentResolver();
                     int shownPositionBookmark  = Utility.getShownPositionBookmark(cr);
 
-                    // Query db for all data with the same updateDate as the first entry.
+                    // Query db for data up to the list position bookmark;
                     cursor = cr.query(
                             StockEntry.CONTENT_URI,
                             ListManipulator.STOCK_PROJECTION,
                             StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
                             new String[]{Integer.toString(shownPositionBookmark)},
-                            StockProvider.ORDER_BY_LIST_POSITION_ASC);
+                            StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 
                     // Extract Stock data from cursor
                     if (cursor != null) {
@@ -198,7 +195,7 @@ public class ListManagerFragment extends Fragment{
                     projection,
                     null,
                     null,
-                    StockProvider.ORDER_BY_LIST_POSITION_ASC);
+                    StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 
             // Grab symbols from cursor and put them in array
             if(cursor != null){

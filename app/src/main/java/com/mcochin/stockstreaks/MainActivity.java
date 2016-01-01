@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Intent;
 import android.graphics.drawable.NinePatchDrawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,7 +15,6 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -33,6 +33,7 @@ import com.mcochin.stockstreaks.adapters.MainAdapter;
 import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
+import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -134,7 +135,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
         // Fetch the stock list
         fetchStockList();
-
     }
 
     private void fetchStockList(){
@@ -154,17 +154,16 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // Dismiss Snackbar to prevent undo removal because the old data will not be in sync with
         // new data when list is refreshed.
         showProgressWheel();
-
         if (mSnackbar != null && mSnackbar.isShown()) {
             mSnackbar.dismiss();
         }
-
         mListFragment.initLoadAFew(attachSymbol);
     }
 
     @Override // SwipeRefreshLayout.OnRefreshListener
     public void onRefresh() {
         mSwipeToRefresh.setRefreshing(false);
+        //TODO uncomment bottom line. it is only there for testing
         //if(!mListFragment.isRefreshing() && Utility.canUpdateList(getContentResolver())) {
             refreshShownList(null);
         //}
@@ -184,8 +183,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             mAdapter.notifyItemInserted(0);
             mRecyclerView.smoothScrollToPosition(0);
             mSearchEditText.setText("");
+        }else{
+            showEmptyMessageIfPossible();
         }
-        hideEmptyMessage();
         hideProgressWheelIfPossible();
     }
 
@@ -202,11 +202,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     mAdapter.notifyItemChanged(lastPosition);
                 }
             }
+            showEmptyMessageIfPossible();
         }
         hideProgressWheelIfPossible();
-        showEmptyMessageIfPossible();
     }
-
 
     @Override // SearchBox.SearchListener
     public void onSearchOpened() {
@@ -260,20 +259,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if(position != RecyclerView.NO_POSITION) {
             Stock stock = getListManipulator().getItem(position);
-            String symbol = stock.getSymbol();
-            String fullName = stock.getFullName();
-            float recentClose = stock.getRecentClose();
-            float changeDollar = stock.getChangeDollar();
-            float changePercent = stock.getChangePercent();
-            int streak = stock.getStreak();
-
+            Uri detailUri = StockEntry.buildUri(stock.getSymbol());
             Bundle args = new Bundle();
-            args.putString(DetailFragment.KEY_SYMBOL, symbol);
-            args.putString(DetailFragment.KEY_FULL_NAME, fullName);
-            args.putFloat(DetailFragment.KEY_RECENT_CLOSE, recentClose);
-            args.putFloat(DetailFragment.KEY_DOLLAR_CHANGE, changeDollar);
-            args.putFloat(DetailFragment.KEY_PERCENT_CHANGE, changePercent);
-            args.putInt(DetailFragment.KEY_STREAK, streak);
+            args.putParcelable(DetailFragment.KEY_DETAIL_URI, detailUri);
 
             if (mTwoPane) {
                 //If tablet insert fragment into container
@@ -287,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 mSearchEditText.clearFocus();
                 //If phone open activity
                 Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
-                openDetail.putExtra(DetailActivity.KEY_ARGS, args);
+                openDetail.setData(detailUri);
                 startActivity(openDetail);
             }
         }
@@ -338,7 +326,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                         }
                     });
             mSnackbar.show();
-
             showEmptyMessageIfPossible();
         }
     }
@@ -394,7 +381,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     private void configureRecyclerView(){
-
         // Touch guard manager  (this class is required to suppress scrolling while swipe-dismiss animation is running)
         mTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
         mTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
@@ -468,7 +454,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                             mAppBar.setElevation(
                                     getResources().getDimension(R.dimen.appbar_elevation));
                         }
-
                         dynamicLoadAFew();
                     }
                 });

@@ -4,11 +4,13 @@ import android.app.IntentService;
 import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.util.Pair;
 import android.util.Log;
 
 import com.mcochin.stockstreaks.R;
+import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
@@ -40,6 +42,7 @@ public class MainService extends IntentService {
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";
+    public static final String ACTION_LOAD_WIDGET_REFRESH ="widgetRefreshQuery";
 
     //needs to be 32 and 366 since we need to compare closing to prev day's closing price
     private static final int MONTH = 32;
@@ -56,7 +59,6 @@ public class MainService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         String action = intent.getAction();
-
         try {
             // check for internet
             if(!Utility.isNetworkAvailable(this)){
@@ -73,6 +75,9 @@ public class MainService extends IntentService {
                     String[] symbols = intent.getStringArrayExtra(KEY_LOAD_A_FEW_QUERY);
                     performActionLoadAFew(symbols);
                     break;
+
+                case ACTION_LOAD_WIDGET_REFRESH:
+                    performActionWidgetRefresh();
             }
         } catch (IOException | IllegalArgumentException e) {
             Log.e(TAG, Log.getStackTraceString(e));
@@ -99,7 +104,7 @@ public class MainService extends IntentService {
     private void performActionLoadSymbol(String symbol)throws IOException, IllegalArgumentException{
         // Check if symbol already exists in database
         if (Utility.isEntryExist(symbol, getContentResolver())) {
-            throw new IllegalArgumentException(getString(R.string.toast_symbol_exists_placeholder, symbol));
+            throw new IllegalArgumentException(getString(R.string.toast_placeholder_symbol_exists, symbol));
         }
 
         Stock stock = YahooFinance.get(symbol);
@@ -141,6 +146,40 @@ public class MainService extends IntentService {
             ops.add(getUpdateTimeOperation());
             // Apply operations
             applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
+        }
+    }
+
+    private void performActionWidgetRefresh()throws IOException, IllegalArgumentException{
+        Cursor cursor = null;
+        try{
+            final String [] projection = new String[]{StockEntry.COLUMN_SYMBOL,
+                    StockEntry.COLUMN_LIST_POSITION};
+            final int indexSymbol = 0;
+            final int indexListPosition = 1;
+
+            // Query db for the FIRST FEW as a normal refresh would do.
+            cursor = getContentResolver().query(
+                    StockEntry.CONTENT_URI,
+                    projection,
+                    StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
+                    new String[]{Integer.toString(ListManipulator.A_FEW)},
+                    StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
+
+            if(cursor != null) {
+                int cursorCount = cursor.getCount();
+                String[] symbolsToLoad = new String[cursorCount];
+                for(int i = 0; i < cursorCount; i++){
+                    cursor.moveToPosition(i);
+                    symbolsToLoad[i] = cursor.getString(indexSymbol);
+                }
+
+                performActionLoadAFew(symbolsToLoad);
+            }
+
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
         }
     }
 
@@ -286,43 +325,3 @@ public class MainService extends IntentService {
         getContentResolver().call(StockContract.BASE_CONTENT_URI, method, arg, extras);
     }
 }
-
-//    private void performActionLoadAFewNonLatest(String[] symbolsToLoad) throws IOException {
-//        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-//
-//        // Change symbols array to a stock array
-//        Stock[] stocks = new Stock[symbolsToLoad.length];
-//        for(int i = 0; i < symbolsToLoad.length; i++){
-//            Stock stock = new Stock(symbolsToLoad[i]);
-//            stocks[i] = stock;
-//        }
-//
-//        // Create "To" Time
-//        Calendar lastUpdateTime = Utility.getLastUpdateTime(getContentResolver());
-//        if(Utility.isBeforeFourThirty(lastUpdateTime)){
-//            lastUpdateTime.add(Calendar.DAY_OF_MONTH, -1);
-//        }
-//
-//        // Create "From" Time
-//        Calendar fromTime = Utility.getNewYorkCalendarInstance();
-//        fromTime.setTimeInMillis(lastUpdateTime.getTimeInMillis());
-//        fromTime.add(Calendar.DAY_OF_MONTH, -MONTH);
-//
-//        //Loop through stocks to get their history to calculate main values
-//        for(Stock stock: stocks){
-//            List<HistoricalQuote> historyList = stock.getHistory(fromTime, lastUpdateTime, Interval.DAILY);
-//
-//            // Create ContentValues and put in ops
-//            ContentValues values = getValuesFromHistoryList(historyList, 0);
-//
-//            // Add update operations to list
-//            ops.add(ContentProviderOperation
-//                    .newUpdate(StockEntry.buildUri(stock.getSymbol()))
-//                    .withValues(values)
-//                    .withYieldAllowed(true)
-//                    .build());
-//        }
-//
-//        // Apply operations
-//        applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
-//    }

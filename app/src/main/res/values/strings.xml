@@ -11,15 +11,15 @@
     <string name="logo_font_name">harlowsi.TTF</string>
 
     <!-- toast msgs -->
-    <string name="toast_symbol_exists_placeholder">%1$s already exists</string>
-    <string name="toast_error_retrieving_data">Error retrieving data from server</string>
+    <string name="toast_error_retrieving_data">Error retrieving mData from server</string>
     <string name="toast_symbol_not_found">Symbol not found</string>
     <string name="toast_empty_search">Please enter a symbol</string>
     <string name="toast_no_network">No Network Connection</string>
     <string name="toast_already_up_to_date">Already up to date</string>
     <string name="toast_error_updating_list">Error updating list</string>
     <string name="toast_error_refresh_list">List out of sync. Please refresh list</string>
-    <string name="toast_error_stock_limit">Sorry, unable not exceed limit of $1%d stocks</string>
+    <string name="toast_placeholder_symbol_exists">%1$s already exists</string>
+    <string name="toast_placeholder_error_stock_limit">Sorry, unable not exceed limit of $1%d stocks</string>
 
     <!--RecyclerView-->
     <string name="empty_list_msg">Use the search box above\nto add an item.</string>
