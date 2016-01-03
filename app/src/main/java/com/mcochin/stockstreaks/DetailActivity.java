@@ -1,5 +1,6 @@
 package com.mcochin.stockstreaks;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
@@ -16,9 +17,17 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_detail);
 
         if(savedInstanceState == null) {
+            Uri detailUri = getIntent().getData();
+
+            // Activity launched with pending intent always gives a null savedInstanceState?
+            // When we click "LOAD MORE" in widget it will be a null uri
+            if(detailUri == null){
+                finish();
+            }
+
             DetailFragment detailFragment = new DetailFragment();
             Bundle args = new Bundle();
-            args.putParcelable(DetailFragment.KEY_DETAIL_URI, getIntent().getData());
+            args.putParcelable(DetailFragment.KEY_DETAIL_URI, detailUri);
             detailFragment.setArguments(args);
 
             getSupportFragmentManager().beginTransaction()

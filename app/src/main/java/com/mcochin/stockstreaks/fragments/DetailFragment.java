@@ -135,7 +135,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
         mExtrasSection = view.findViewById(R.id.detail_extras_section);
         mProgressWheel = view.findViewById(R.id.progress_wheel);
-        mRetryButton = view.findViewById(R.id.retry_button);
+        mRetryButton = view.findViewById(R.id.button_retry);
         mRetryButton.setOnClickListener(this);
 
         initializeDetailExtrasSection();
@@ -163,7 +163,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public void onClick(View v) {
         int id = v.getId();
         switch (id){
-            case R.id.retry_button:
+            case R.id.button_retry:
                 startDetailService();
                 break;
         }

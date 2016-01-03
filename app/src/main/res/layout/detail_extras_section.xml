@@ -138,7 +138,7 @@
 
     <Button
         style="?android:attr/borderlessButtonStyle"
-        android:id="@+id/retry_button"
+        android:id="@+id/button_retry"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/detail_extras_section_progress_retry_margin"

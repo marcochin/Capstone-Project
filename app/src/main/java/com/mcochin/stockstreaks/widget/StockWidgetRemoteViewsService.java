@@ -1,6 +1,5 @@
 package com.mcochin.stockstreaks.widget;
 
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Binder;
@@ -10,7 +9,6 @@ import android.widget.AdapterView;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
-import com.mcochin.stockstreaks.MainActivity;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
@@ -48,7 +46,7 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
 
         return new RemoteViewsFactory() {
             private Cursor mData = null;
-            private int mShownPositionBookmark;
+            private int mShownPositionBookmarkAndOne;
 
             @Override
             public void onCreate() {
@@ -65,15 +63,15 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
                 // data. Therefore we need to clear (and finally restore) the calling identity so
                 // that calls use our process and permission
                 final long identityToken = Binder.clearCallingIdentity();
-                mShownPositionBookmark = Utility.getShownPositionBookmark(
-                        getContentResolver());
+                //We add one because we want to know if we should show the load more button or not
+                mShownPositionBookmarkAndOne = Utility.getShownPositionBookmark(
+                        getContentResolver()) + 1;
 
                 mData = getContentResolver().query(StockEntry.CONTENT_URI,
                         STOCK_PROJECTION,
                         StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION_LE,
-                        new String[]{Integer.toString(mShownPositionBookmark)},
+                        new String[]{Integer.toString(mShownPositionBookmarkAndOne)},
                         StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
-
                 Binder.restoreCallingIdentity(identityToken);
             }
 
@@ -84,32 +82,30 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
                     return null;
                 }
                 RemoteViews views;
-                int layoutId;
 
-                if(mData.getInt(INDEX_LIST_POSITION) == mShownPositionBookmark){
+                if(mData.getInt(INDEX_LIST_POSITION) == mShownPositionBookmarkAndOne){
                     // Set the load more button item
                     views = new RemoteViews(getPackageName(), R.layout.widget_list_item_load_more);
-                    Intent intent = new Intent(StockWidgetRemoteViewsService.this,
-                            MainActivity.class);
-                    PendingIntent pendingIntent = PendingIntent.getActivity(
-                            StockWidgetRemoteViewsService.this, 0, intent, 0);
-
-                    views.setOnClickPendingIntent(R.id.logo, pendingIntent);
+                    // Fill in intent
+                    final Intent fillInIntent = new Intent();
+                    fillInIntent.setData(null);
+                    views.setOnClickFillInIntent(R.id.widget_list_item, fillInIntent);
 
                 }else {
                     if (position == 0) { // widget_list_item_first
+                        final long identityToken = Binder.clearCallingIdentity();
                         Date updateTime = Utility.getLastUpdateTime(getContentResolver()).getTime();
+                        Binder.restoreCallingIdentity(identityToken);
+
                         SimpleDateFormat sdf = new SimpleDateFormat(
                                 getString(R.string.update_time_format_wide), Locale.US);
 
-                        layoutId = R.layout.widget_list_item_first;
-                        views = new RemoteViews(getPackageName(), layoutId);
+                        views = new RemoteViews(getPackageName(), R.layout.widget_list_item_first);
                         views.setTextViewText(R.id.text_update_time,
                                 getString(R.string.placeholder_update_time, sdf.format(updateTime)));
 
                     } else { // widget_list_item
-                        layoutId = R.layout.widget_list_item;
-                        views = new RemoteViews(getPackageName(), layoutId);
+                        views = new RemoteViews(getPackageName(),  R.layout.widget_list_item);
                     }
 
                     String symbol = mData.getString(INDEX_SYMBOL);
@@ -151,7 +147,7 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
                     // Fill in intent
                     final Intent fillInIntent = new Intent();
                     fillInIntent.setData(StockEntry.buildUri(symbol));
-                    views.setOnClickFillInIntent(layoutId, fillInIntent);
+                    views.setOnClickFillInIntent(R.id.widget_list_item, fillInIntent);
                 }
 
                 return views;

@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
@@ -18,6 +19,7 @@ import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
+import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 
 public class ListManagerFragment extends Fragment{
     public static final String TAG = ListManagerFragment.class.getSimpleName();
@@ -58,9 +60,9 @@ public class ListManagerFragment extends Fragment{
                     synchronized (this) {
                         ContentResolver cr = params[0].getContentResolver();
                         mListManipulator.permanentlyDeleteLastRemoveItem(cr);
-                        if (mListManipulator.isListUpdated()) {
-                            mListManipulator.saveShownListState(cr);
-                        }
+                        mListManipulator.saveShownListState(cr);
+                        //Update widget to reflect changes
+                        params[0].sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
                     }
                     return null;
                 }
@@ -92,7 +94,7 @@ public class ListManagerFragment extends Fragment{
                     cursor = cr.query(
                             StockEntry.CONTENT_URI,
                             ListManipulator.STOCK_PROJECTION,
-                            StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
+                            StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION_LE,
                             new String[]{Integer.toString(shownPositionBookmark)},
                             StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 

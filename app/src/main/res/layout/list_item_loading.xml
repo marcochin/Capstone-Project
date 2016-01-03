@@ -17,7 +17,7 @@
 
     <Button
         style="?android:attr/borderlessButtonStyle"
-        android:id="@+id/retry_button"
+        android:id="@+id/button_retry"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"

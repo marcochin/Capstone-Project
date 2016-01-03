@@ -6,6 +6,7 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widget_list_item"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"

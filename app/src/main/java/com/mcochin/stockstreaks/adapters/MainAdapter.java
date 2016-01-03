@@ -103,7 +103,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             mStreak = (TextView) itemView.findViewById(R.id.text_streak);
             mStreakArrow = (ImageView)itemView.findViewById(R.id.image_streak_arrow);
             mProgressWheel = itemView.findViewById(R.id.progress_wheel_load_a_few);
-            mRetryButton = itemView.findViewById(R.id.retry_button);
+            mRetryButton = itemView.findViewById(R.id.button_retry);
 
             mContainer.setOnClickListener(this);
             mContainer.setOnTouchListener(this);
@@ -123,7 +123,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
                         mEventListener.onItemClick(this);
                         break;
 
-                    case R.id.retry_button:
+                    case R.id.button_retry:
                         mEventListener.onItemRetryClick(this);
                         break;
                 }

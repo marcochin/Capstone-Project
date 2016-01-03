@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.util.Pair;
 import android.util.Log;
 
@@ -19,6 +20,7 @@ import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.utils.Utility;
+import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -97,6 +99,10 @@ public class MainService extends IntentService {
                 case ACTION_LOAD_A_FEW:
                     ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(null, false));
                     break;
+
+                case ACTION_LOAD_WIDGET_REFRESH:
+                    sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
+                    break;
             }
         }
     }
@@ -142,6 +148,12 @@ public class MainService extends IntentService {
                         .build());
 
             }
+
+            // Save the shown list position every time load a few is performed. This is primarily
+            // for the widget refreshes, but also for one edge case in which the list updates after
+            // onPause() is called and the shown list position will not be reflected on next app
+            // open if user exits our app.
+            ops.add(getListPositionBookmarkOperation(symbolsToLoad[symbolsToLoad.length-1]));
             // Add update time operation to list
             ops.add(getUpdateTimeOperation());
             // Apply operations
@@ -152,10 +164,11 @@ public class MainService extends IntentService {
     private void performActionWidgetRefresh()throws IOException, IllegalArgumentException{
         Cursor cursor = null;
         try{
-            final String [] projection = new String[]{StockEntry.COLUMN_SYMBOL,
-                    StockEntry.COLUMN_LIST_POSITION};
+            final String [] projection = new String[]{StockEntry.COLUMN_SYMBOL};
             final int indexSymbol = 0;
-            final int indexListPosition = 1;
+
+            // Update widget to reflect that we are currently updating
+            sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATING));
 
             // Query db for the FIRST FEW as a normal refresh would do.
             cursor = getContentResolver().query(
@@ -173,9 +186,19 @@ public class MainService extends IntentService {
                     symbolsToLoad[i] = cursor.getString(indexSymbol);
                 }
 
-                performActionLoadAFew(symbolsToLoad);
-            }
+                if(symbolsToLoad.length != 0) {
+                    performActionLoadAFew(symbolsToLoad);
 
+                } else{
+                    ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+                    // Add update time operation to list
+                    ops.add(getUpdateTimeOperation());
+                    // Apply operations
+                    applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
+                }
+                // Update widget to reflect changes
+                sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
+            }
         }finally {
             if(cursor != null){
                 cursor.close();
@@ -310,6 +333,35 @@ public class MainService extends IntentService {
     private ContentProviderOperation getUpdateTimeOperation(){
         ContentValues values = new ContentValues();
         values.put(SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI, System.currentTimeMillis());
+
+        return ContentProviderOperation
+                .newUpdate(SaveStateEntry.CONTENT_URI)
+                .withValues(values)
+                .withYieldAllowed(true)
+                .build();
+    }
+
+    private ContentProviderOperation getListPositionBookmarkOperation(String symbol){
+        Cursor cursor = null;
+        int listPosition = ListManipulator.A_FEW; //Default to a few in case something goes wrong
+        try{
+            final String [] projection = new String[]{StockEntry.COLUMN_LIST_POSITION};
+            final int indexListPosition = 0;
+
+            cursor = getContentResolver().query(StockEntry.buildUri(symbol),
+                    projection, null, null, null);
+
+            if(cursor != null && cursor.moveToFirst()){
+                listPosition = cursor.getInt(indexListPosition);
+            }
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
+        }
+
+        ContentValues values = new ContentValues();
+        values.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, listPosition);
 
         return ContentProviderOperation
                 .newUpdate(SaveStateEntry.CONTENT_URI)

@@ -140,7 +140,6 @@ public class ListManipulator {
                 mShownList.add(stock);
             }
         }
-        mListUpdated = true;
     }
 
     public void setLoadList(String[] loadList) {
@@ -240,7 +239,7 @@ public class ListManipulator {
 
         // Save bookmark in db
         ContentValues bookmarkValues = new ContentValues();
-        bookmarkValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, mShownListSize);
+        bookmarkValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, mShownListSize - 1);
         ops.add(ContentProviderOperation
                 .newUpdate(SaveStateEntry.CONTENT_URI)
                 .withValues(bookmarkValues)

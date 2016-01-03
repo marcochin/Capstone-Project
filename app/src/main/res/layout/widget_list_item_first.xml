@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
+    android:id="@+id/widget_list_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:orientation="vertical"
     android:paddingTop="@dimen/widget_list_item_padding">
 
     <TextView
@@ -12,6 +13,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:layout_gravity="center"
+        android:textColor="@color/secondary_text"
         tools:text="Updated: Thursday, April 03 @ 4:00 PM"/>
 
     <include layout="@layout/widget_list_item"/>

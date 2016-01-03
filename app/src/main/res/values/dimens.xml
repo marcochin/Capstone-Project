@@ -47,10 +47,10 @@
     <dimen name="list_item_estimated_height">60dp</dimen>
 
     <!-- widget (formula 70dp x n - 30 dp)-->
-    <dimen name="widget_min_width">180dp</dimen>
-    <dimen name="widget_min_height">@dimen/widget_min_width</dimen>
-    <dimen name="widget_min_resize_width">180dp</dimen>
-    <dimen name="widget_min_resize_height">@dimen/widget_min_resize_width</dimen>
+    <dimen name="widget_min_width">250dp</dimen>
+    <dimen name="widget_min_height">110dp</dimen>
+    <dimen name="widget_min_resize_width">@dimen/widget_min_width</dimen>
+    <dimen name="widget_min_resize_height">@dimen/widget_min_height</dimen>
     <dimen name="widget_list_item_padding">10dp</dimen>
     <dimen name="widget_list_item_estimated_height">60dp</dimen>
 

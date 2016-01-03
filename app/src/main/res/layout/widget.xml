@@ -3,30 +3,47 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <ImageView
-        android:id="@+id/logo"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="42dp"
-        android:src="@drawable/logo"
-        android:paddingBottom="8dp"
-        android:paddingTop="8dp"
-        android:background="@color/colorPrimary"
-        android:contentDescription="@string/app_name"/>
+        android:layout_height="40dp"
+        android:background="@color/colorPrimary">
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/logo"
+            android:layout_centerHorizontal="true"
+            android:paddingBottom="8dp"
+            android:paddingTop="8dp"
+            android:contentDescription="@string/app_name"/>
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/logo"
+            android:layout_toEndOf="@+id/logo"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true">
+
+            <ImageView
+                android:id="@+id/button_refresh"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_refresh"
+                android:paddingBottom="4dp"
+                android:paddingTop="4dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_gravity="end"
+                android:visibility="invisible"
+                android:contentDescription="@string/content_description_button_refresh" />
+        </FrameLayout>
+    </RelativeLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/white">
-        <TextView
-            android:id="@+id/widget_empty"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:fontFamily="sans-serif-condensed"
-            android:textAppearance="?android:textAppearanceLarge"
-            android:text="@string/widget_empty_list"/>
-
         <ListView
             android:id="@+id/widget_list"
             android:layout_width="match_parent"
@@ -34,5 +51,23 @@
             android:divider="@null"
             android:dividerHeight="0dp"
             tools:listitem="@layout/list_item"/>
+
+        <TextView
+            android:id="@+id/widget_empty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:fontFamily="sans-serif-condensed"
+            android:textColor="@color/black"
+            android:textSize="22sp"
+            android:visibility="invisible"
+            android:text="@string/widget_empty_list"/>
+
+        <ProgressBar
+            android:id="@+id/progress_wheel"
+            android:layout_width="@dimen/progress_wheel_size"
+            android:layout_height="@dimen/progress_wheel_size"
+            android:layout_gravity="center"
+            android:visibility="invisible"/>
     </FrameLayout>
 </LinearLayout>

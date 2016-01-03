@@ -10,11 +10,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -38,6 +40,7 @@ import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.utils.Utility;
+import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
@@ -145,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 mListFragment.initLoadFromDb();
                 mFirstOpen = false;
             }
-        }else if(!mListFragment.isRefreshing()){
+        }else if(!mListFragment.isRefreshing()){ // check for orientation change while refreshing
             refreshShownList(null);
         }
     }
@@ -183,16 +186,16 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             mAdapter.notifyItemInserted(0);
             mRecyclerView.smoothScrollToPosition(0);
             mSearchEditText.setText("");
-        }else{
-            showEmptyMessageIfPossible();
         }
         hideProgressWheelIfPossible();
+        showEmptyMessageIfPossible();
     }
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadAFewFinished(boolean success) {
         if(success) {
             mAdapter.notifyDataSetChanged();
+
         }else{
             //Show retry button if there is loading item
             int lastPosition = getListManipulator().getCount() - 1;
@@ -202,9 +205,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     mAdapter.notifyItemChanged(lastPosition);
                 }
             }
-            showEmptyMessageIfPossible();
         }
         hideProgressWheelIfPossible();
+        showEmptyMessageIfPossible();
     }
 
     @Override // SearchBox.SearchListener
@@ -485,6 +488,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     private void showEmptyMessageIfPossible(){
+        // because showEmptyMessageIfPossible relies on progress wheel to be invisible, try
+        // to hide the progress wheel before calling this method if it is necessary
         if(getListManipulator().getCount() == 0 && mProgressWheel.getVisibility() == View.INVISIBLE){
             mEmptyMsg.setVisibility(View.VISIBLE);
         }
