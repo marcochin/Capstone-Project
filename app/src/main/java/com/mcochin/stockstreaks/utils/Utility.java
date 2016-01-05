@@ -72,10 +72,9 @@ public class Utility {
      * @param manager ActivityManager
      * @return returns true if running, false otherwise
      */
-    public static boolean isNetworkServiceRunning(ActivityManager manager) {
+    public static boolean isMainServiceRunning(ActivityManager manager) {
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if ("com.mcochin.stockstreaks.services.NetworkService"
-                    .equals(service.service.getClassName())) {
+            if (MainService.class.getName().equals(service.service.getClassName())) {
                 return true;
             }
         }

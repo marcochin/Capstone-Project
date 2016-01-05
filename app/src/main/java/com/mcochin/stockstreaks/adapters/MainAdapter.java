@@ -43,7 +43,6 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public static final int LIST_ITEM_FIRST = 1;
 
     private ListManipulator mListManipulator;
-    private ListManagerFragment mListFragment;
     private EventListener mEventListener;
     private RecyclerViewDragDropManager mDragDropManager;
     private Context mContext;
@@ -153,12 +152,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     // Constructor
     public MainAdapter (Context context, RecyclerViewDragDropManager dragDropManager,
-                        ListManagerFragment listFragment, EventListener eventListener){
+                        ListManipulator listManipulator, EventListener eventListener){
 
         mEventListener = eventListener;
         mDragDropManager = dragDropManager;
-        mListFragment = listFragment;
-        mListManipulator = listFragment.getListManipulator();
+        mListManipulator = listManipulator;
         mContext = context;
 //        mListManipulator.setShownListCursor(null); //TODO remove this, only for debugging
 
@@ -194,7 +192,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         // Determine if this is a dummy "loading" item
         if(symbol.equals(ListManipulator.LOADING_ITEM)) {
             holder.mContainer.setVisibility(View.INVISIBLE);
-            if(mListFragment.isLoadingAFew()){
+            if(ListManagerFragment.isLoadingAFew()){
                 holder.mProgressWheel.setVisibility(View.VISIBLE);
                 holder.mRetryButton.setVisibility(View.INVISIBLE);
             }else{
@@ -392,7 +390,6 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     public void release(){
         mDragDropManager = null;
         mListManipulator = null;
-        mListFragment = null;
         mContext = null;
     }
 

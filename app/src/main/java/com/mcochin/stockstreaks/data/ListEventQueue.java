@@ -5,9 +5,9 @@ import android.util.Log;
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.pojos.WidgetRefreshEvent;
 
 import java.util.LinkedList;
-import java.util.PriorityQueue;
 import java.util.Queue;
 
 import de.greenrobot.event.EventBus;
@@ -40,7 +40,7 @@ public class ListEventQueue {
         Class c = getEventType(event);
 
         if(eventBus.hasSubscriberForEvent(c) && mQueue.isEmpty()){
-            eventBus.post(event);
+            eventBus.postSticky(event);
         }else{
             mQueue.offer(event);
         }
@@ -53,32 +53,53 @@ public class ListEventQueue {
             Class event = getEventType(mQueue.peek());
 
             if(eventBus.hasSubscriberForEvent(event)){
-                eventBus.post(mQueue.poll());
-                Log.d(TAG, "posted");
+                eventBus.postSticky(mQueue.poll());
             }else{
-                Log.d(TAG, "did not post");
                 break;
             }
         }
+    }
+    /**
+     * Determines what class the event is.
+     * @param event The event to figure out the type for.
+     * @return Class obj that represents the event class.
+     */
+
+    private Class getEventType(Object event) {
+        if (event instanceof LoadAFewFinishedEvent) {
+            return LoadAFewFinishedEvent.class;
+
+        } else if (event instanceof LoadSymbolFinishedEvent) {
+            return LoadSymbolFinishedEvent.class;
+
+        } else if (event instanceof LoadFromDbFinishedEvent) {
+            return LoadFromDbFinishedEvent.class;
+
+        } else if (event instanceof WidgetRefreshEvent) {
+            return WidgetRefreshEvent.class;
+        }
+        return null;
+    }
+
+    public Object peek(){
+        return mQueue.peek();
     }
 
     public void clearQueue(){
         mQueue.clear();
     }
 
-    private Class getEventType(Object event){
-        if(event instanceof LoadAFewFinishedEvent){
-            return LoadAFewFinishedEvent.class;
-        }else if (event instanceof LoadSymbolFinishedEvent){
-            return LoadSymbolFinishedEvent.class;
-        }else if (event instanceof LoadFromDbFinishedEvent){
-            return LoadFromDbFinishedEvent.class;
-        }
-
-        return null;
-    }
-
     public boolean isEmpty(){
         return mQueue.isEmpty();
     }
 }
+
+//    public boolean fastForwardToWidgetRefreshEvent(){
+//        // Pop all events til you reach a WidgetRefreshEvent
+//        while(!(mQueue.peek() instanceof WidgetRefreshEvent) && !mQueue.isEmpty()){
+//            mQueue.poll();
+//        }
+//        return !mQueue.isEmpty();
+//    }
+
+

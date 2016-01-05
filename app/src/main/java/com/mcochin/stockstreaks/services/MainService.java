@@ -10,6 +10,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.util.Pair;
 import android.util.Log;
 
+import com.mcochin.stockstreaks.MainActivity;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
@@ -19,6 +20,7 @@ import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.data.ListEventQueue;
+import com.mcochin.stockstreaks.pojos.WidgetRefreshEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 
@@ -28,6 +30,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
+import de.greenrobot.event.EventBus;
 import yahoofinance.Stock;
 import yahoofinance.YahooFinance;
 import yahoofinance.histquotes.HistoricalQuote;
@@ -81,6 +84,8 @@ public class MainService extends IntentService {
                 case ACTION_LOAD_WIDGET_REFRESH:
                     performActionWidgetRefresh();
             }
+
+
         } catch (IOException | IllegalArgumentException e) {
             Log.e(TAG, Log.getStackTraceString(e));
 
@@ -127,15 +132,15 @@ public class MainService extends IntentService {
 
         // Add update time operation to list
         ops.add(getUpdateTimeOperation());
-        // Apply operations
         applyOperations(ops, StockProvider.METHOD_INSERT_ITEM, null);
     }
 
     private void performActionLoadAFew(String[] symbolsToLoad) throws IOException, IllegalArgumentException{
+
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
-        Map<String, Stock> stockList =  YahooFinance.get(symbolsToLoad);
-        if(stockList != null) {
+        Map<String, Stock> stockList = YahooFinance.get(symbolsToLoad);
+        if (stockList != null) {
             for (String symbol : symbolsToLoad) {
                 Stock stock = stockList.get(symbol);
                 ContentValues values = getLatestMainValues(stock);
@@ -148,60 +153,62 @@ public class MainService extends IntentService {
                         .build());
 
             }
-
-            // Save the shown list position every time load a few is performed. This is primarily
-            // for the widget refreshes, but also for one edge case in which the list updates after
-            // onPause() is called and the shown list position will not be reflected on next app
-            // open if user exits our app.
-            ops.add(getListPositionBookmarkOperation(symbolsToLoad[symbolsToLoad.length-1]));
-            // Add update time operation to list
-            ops.add(getUpdateTimeOperation());
-            // Apply operations
-            applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
         }
+
+        // Save the shown list position every time load a few is performed. This is primarily
+        // for the widget refreshes, but also for one edge case in which the list updates after
+        // onPause() is called and the shown list position will not be reflected on next app
+        // open if user exits our app.
+        ops.add(getListPositionBookmarkOperation(symbolsToLoad[symbolsToLoad.length-1]));
+        // Add update time operation to list
+        ops.add(getUpdateTimeOperation());
+        applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
     }
 
     private void performActionWidgetRefresh()throws IOException, IllegalArgumentException{
-        Cursor cursor = null;
-        try{
-            final String [] projection = new String[]{StockEntry.COLUMN_SYMBOL};
-            final int indexSymbol = 0;
+        if(EventBus.getDefault().hasSubscriberForEvent(WidgetRefreshEvent.class)){
+            // Update app to reflect that we ware currently updating
+            ListEventQueue.getInstance().post(new WidgetRefreshEvent(false));
 
-            // Update widget to reflect that we are currently updating
-            sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATING));
+        }else {
+            Cursor cursor = null;
+            try {
+                final String[] projection = new String[]{StockEntry.COLUMN_SYMBOL};
+                final int indexSymbol = 0;
 
-            // Query db for the FIRST FEW as a normal refresh would do.
-            cursor = getContentResolver().query(
-                    StockEntry.CONTENT_URI,
-                    projection,
-                    StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
-                    new String[]{Integer.toString(ListManipulator.A_FEW)},
-                    StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
+                // Update widget to reflect that we are currently updating
+                sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATING));
+                // Clear queue or their might be an infinite build up of events
+                ListEventQueue.getInstance().clearQueue();
+                // Update app to reflect that we ware currently updating
+                ListEventQueue.getInstance().post(new WidgetRefreshEvent(true));
 
-            if(cursor != null) {
-                int cursorCount = cursor.getCount();
-                String[] symbolsToLoad = new String[cursorCount];
-                for(int i = 0; i < cursorCount; i++){
-                    cursor.moveToPosition(i);
-                    symbolsToLoad[i] = cursor.getString(indexSymbol);
+                // Query db for the FIRST FEW as a normal refresh would do.
+                cursor = getContentResolver().query(
+                        StockEntry.CONTENT_URI,
+                        projection,
+                        StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
+                        new String[]{Integer.toString(ListManipulator.A_FEW)},
+                        StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
+
+                if (cursor != null) {
+                    int cursorCount = cursor.getCount();
+                    String[] symbolsToLoad = new String[cursorCount];
+                    for (int i = 0; i < cursorCount; i++) {
+                        cursor.moveToPosition(i);
+                        symbolsToLoad[i] = cursor.getString(indexSymbol);
+                    }
+
+                    if (symbolsToLoad.length != 0) {
+                        performActionLoadAFew(symbolsToLoad);
+                    }
+                    // Update widget to reflect changes
+                    sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
                 }
-
-                if(symbolsToLoad.length != 0) {
-                    performActionLoadAFew(symbolsToLoad);
-
-                } else{
-                    ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-                    // Add update time operation to list
-                    ops.add(getUpdateTimeOperation());
-                    // Apply operations
-                    applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
                 }
-                // Update widget to reflect changes
-                sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
-            }
-        }finally {
-            if(cursor != null){
-                cursor.close();
             }
         }
     }

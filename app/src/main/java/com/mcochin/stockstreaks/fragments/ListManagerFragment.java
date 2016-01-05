@@ -17,6 +17,7 @@ import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.pojos.WidgetRefreshEvent;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
@@ -30,17 +31,18 @@ public class ListManagerFragment extends Fragment{
     /**
      * This is true if the list is updating to the latest values.(Swipe to Refresh/ Refresh Menu Btn)
      */
-    private volatile boolean mRefreshing;
+    private static volatile boolean mRefreshing;
 
     /**
      * This is true if the list is loading a few. Latest values or not.
      */
-    private boolean mLoadingAFew;
+    private static volatile boolean mLoadingAFew;
 
     public interface EventListener{
         void onLoadAllFromDbFinished();
         void onLoadAFewFinished(boolean success);
         void onLoadSymbolFinished(boolean success);
+        void onWidgetRefresh();
     }
 
     @Override
@@ -78,6 +80,21 @@ public class ListManagerFragment extends Fragment{
         mEventListener = null;
 
         super.onDetach();
+    }
+
+    /**
+     * We load our stock list from the queue only if the widget has updated the app for us
+     * and it's events are in the queue.
+     */
+    public void initLoadFromEventQueue(){
+        new AsyncTask<Context, Void, Void>(){
+            @Override
+            protected Void doInBackground(Context... params) {
+                mListManipulator.setLoadList(getLoadListFromDb());
+                ListEventQueue.getInstance().postAllFromQueue();
+                return null;
+            }
+        }.execute();
     }
 
     public void initLoadFromDb(){
@@ -124,17 +141,18 @@ public class ListManagerFragment extends Fragment{
      * @param attachSymbol An option to query a symbol once the list has done refreshing.
      */
     public void initLoadAFew(final String attachSymbol){
+        mRefreshing = true;
         // Get load list of symbols to query
         new AsyncTask<Context, Void, Void>() {
             @Override
             protected Void doInBackground(Context... params) {
                 synchronized (this) {
-                    // Give list to ListManipulator
                     if (mListManipulator.isListUpdated()) {
                         mListManipulator.saveShownListState(params[0].getContentResolver());
                     }
+                    // Give list to ListManipulator
                     mListManipulator.setLoadList(getLoadListFromDb());
-                    mRefreshing = loadAFew();
+                    loadAFew();
 
                     if (attachSymbol != null) {
                         loadSymbol(attachSymbol);
@@ -150,9 +168,8 @@ public class ListManagerFragment extends Fragment{
 
     /**
      * Loads the next few symbols in the user's list.
-     * @return true is request can be sent to {@link MainService}, false otherwise.
      */
-    public boolean loadAFew() {
+    public void loadAFew() {
         String[] aFewToLoad = mListManipulator.getAFewToLoad();
 
         if (aFewToLoad != null) {
@@ -160,15 +177,14 @@ public class ListManagerFragment extends Fragment{
 
             // Start service to load a few
             Intent serviceIntent = new Intent(getContext(), MainService.class);
-
             serviceIntent.setAction(MainService.ACTION_LOAD_A_FEW);
             serviceIntent.putExtra(MainService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
             getContext().startService(serviceIntent);
 
-            return true;
+        }else{
+            mRefreshing = false;
+            mLoadingAFew = false;
         }
-        mLoadingAFew = false;
-        return false;
     }
 
     public void loadSymbol(String symbol){
@@ -176,7 +192,6 @@ public class ListManagerFragment extends Fragment{
         Intent serviceIntent = new Intent(getContext(), MainService.class);
         serviceIntent.putExtra(MainService.KEY_LOAD_SYMBOL_QUERY, symbol);
         serviceIntent.setAction(MainService.ACTION_LOAD_SYMBOL);
-
         getContext().startService(serviceIntent);
     }
 
@@ -201,14 +216,14 @@ public class ListManagerFragment extends Fragment{
 
             // Grab symbols from cursor and put them in array
             if(cursor != null){
-                loadList = new String[cursor.getCount()];
-                int i = 0;
-                while(cursor.moveToNext()){
+                int cursorCount = cursor.getCount();
+                loadList = new String[cursorCount];
+
+                for(int i = 0; i < cursorCount; i ++){
+                    cursor.moveToPosition(i);
                     loadList[i] = cursor.getString(indexSymbol);
-                    i++;
                 }
             }
-
         }finally {
             if(cursor != null){
                 cursor.close();
@@ -236,7 +251,6 @@ public class ListManagerFragment extends Fragment{
     }
 
     public void onEventMainThread(LoadAFewFinishedEvent event){
-
         synchronized (this) {
             if (event.isSuccessful()) {
                 if (mRefreshing) {
@@ -259,10 +273,24 @@ public class ListManagerFragment extends Fragment{
         }
     }
 
-    public boolean isRefreshing(){
+    public void onEventMainThread(WidgetRefreshEvent event){
+        if(event.isRefreshThroughWidget()) {
+            mRefreshing = true;
+            mLoadingAFew = true;
+
+        }else{
+            initLoadAFew(null);
+        }
+
+        if (mEventListener != null) {
+            mEventListener.onWidgetRefresh();
+        }
+    }
+
+    public static boolean isRefreshing(){
         return mRefreshing;
     }
-    public boolean isLoadingAFew(){
+    public static boolean isLoadingAFew(){
         return mLoadingAFew;
     }
 
