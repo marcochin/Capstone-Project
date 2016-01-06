@@ -6,7 +6,6 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Binder;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 import android.view.View;
@@ -123,7 +122,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
 
     private Intent getServiceRefreshIntent(Context context){
         Intent serviceIntent = new Intent(context, MainService.class);
-        serviceIntent.setAction(MainService.ACTION_LOAD_WIDGET_REFRESH);
+        serviceIntent.setAction(MainService.ACTION_LOAD_REFRESH);
         return serviceIntent;
     }
 

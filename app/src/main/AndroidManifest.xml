@@ -32,7 +32,8 @@
             android:authorities="com.mcochin.stockstreaks"
             android:exported="false" />
 
-        <service android:name=".services.MainService"/>
+        <service android:name=".services.MainService"
+            android:stopWithTask="true"/>
         <service android:name=".services.DetailService"/>
 
         <!-- Widget -->

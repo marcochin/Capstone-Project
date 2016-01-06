@@ -6,21 +6,19 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.util.Pair;
 import android.util.Log;
 
-import com.mcochin.stockstreaks.MainActivity;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
-import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
-import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.data.ListEventQueue;
-import com.mcochin.stockstreaks.pojos.WidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 
@@ -47,7 +45,8 @@ public class MainService extends IntentService {
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";
-    public static final String ACTION_LOAD_WIDGET_REFRESH ="widgetRefreshQuery";
+    public static final String ACTION_APP_REFRESH ="actionAppRefresh";
+    public static final String ACTION_WIDGET_REFRESH ="actionWidgetRefresh";
 
     //needs to be 32 and 366 since we need to compare closing to prev day's closing price
     private static final int MONTH = 32;
@@ -81,8 +80,11 @@ public class MainService extends IntentService {
                     performActionLoadAFew(symbols);
                     break;
 
-                case ACTION_LOAD_WIDGET_REFRESH:
+                case ACTION_WIDGET_REFRESH:
                     performActionWidgetRefresh();
+
+                case ACTION_APP_REFRESH:
+                    performActionAppRefresh();
             }
 
 
@@ -102,10 +104,11 @@ public class MainService extends IntentService {
                     break;
 
                 case ACTION_LOAD_A_FEW:
+                case ACTION_APP_REFRESH:
                     ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(null, false));
                     break;
 
-                case ACTION_LOAD_WIDGET_REFRESH:
+                case ACTION_WIDGET_REFRESH:
                     sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
                     break;
             }
@@ -151,7 +154,6 @@ public class MainService extends IntentService {
                         .withValues(values)
                         .withYieldAllowed(true)
                         .build());
-
             }
         }
 
@@ -159,10 +161,16 @@ public class MainService extends IntentService {
         // for the widget refreshes, but also for one edge case in which the list updates after
         // onPause() is called and the shown list position will not be reflected on next app
         // open if user exits our app.
-        ops.add(getListPositionBookmarkOperation(symbolsToLoad[symbolsToLoad.length-1]));
+        ops.add(getListPositionBookmarkOperation(symbolsToLoad[symbolsToLoad.length - 1]));
         // Add update time operation to list
         ops.add(getUpdateTimeOperation());
         applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
+    }
+
+    private void performActionAppRefresh()throws IOException, IllegalArgumentException{
+        if(!refreshList()){
+            ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(null, false));
+        }
     }
 
     private void performActionWidgetRefresh()throws IOException, IllegalArgumentException{
@@ -171,46 +179,58 @@ public class MainService extends IntentService {
             ListEventQueue.getInstance().post(new WidgetRefreshEvent(false));
 
         }else {
-            Cursor cursor = null;
-            try {
-                final String[] projection = new String[]{StockEntry.COLUMN_SYMBOL};
-                final int indexSymbol = 0;
+            // Update widget to reflect that we are currently updating
+            sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATING));
+            // Clear queue or their might be an infinite build up of events
+            ListEventQueue.getInstance().clearQueue();
+            // Update app to reflect that we ware currently updating
+            ListEventQueue.getInstance().post(new WidgetRefreshEvent(true));
 
-                // Update widget to reflect that we are currently updating
-                sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATING));
-                // Clear queue or their might be an infinite build up of events
-                ListEventQueue.getInstance().clearQueue();
-                // Update app to reflect that we ware currently updating
-                ListEventQueue.getInstance().post(new WidgetRefreshEvent(true));
+            refreshList();
+            // Update widget to reflect changes
+            sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
+        }
+    }
 
-                // Query db for the FIRST FEW as a normal refresh would do.
-                cursor = getContentResolver().query(
-                        StockEntry.CONTENT_URI,
-                        projection,
-                        StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
-                        new String[]{Integer.toString(ListManipulator.A_FEW)},
-                        StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
+    /**
+     * @return true there are items to be refreshed, false if there are no items in the list
+     * @throws IOException
+     * @throws IllegalArgumentException
+     */
+    private boolean refreshList()throws IOException, IllegalArgumentException{
+        Cursor cursor = null;
+        try {
+            final String[] projection = new String[]{StockEntry.COLUMN_SYMBOL};
+            final int indexSymbol = 0;
 
-                if (cursor != null) {
-                    int cursorCount = cursor.getCount();
-                    String[] symbolsToLoad = new String[cursorCount];
-                    for (int i = 0; i < cursorCount; i++) {
-                        cursor.moveToPosition(i);
-                        symbolsToLoad[i] = cursor.getString(indexSymbol);
-                    }
+            // Query db for the FIRST FEW as a normal refresh would do.
+            cursor = getContentResolver().query(
+                    StockEntry.CONTENT_URI,
+                    projection,
+                    StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
+                    new String[]{Integer.toString(ListManipulator.A_FEW)},
+                    StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 
-                    if (symbolsToLoad.length != 0) {
-                        performActionLoadAFew(symbolsToLoad);
-                    }
-                    // Update widget to reflect changes
-                    sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
+            if (cursor != null) {
+                int cursorCount = cursor.getCount();
+                String[] symbolsToLoad = new String[cursorCount];
+                for (int i = 0; i < cursorCount; i++) {
+                    cursor.moveToPosition(i);
+                    symbolsToLoad[i] = cursor.getString(indexSymbol);
                 }
-            } finally {
-                if (cursor != null) {
-                    cursor.close();
+
+                if (symbolsToLoad.length != 0) {
+                    performActionLoadAFew(symbolsToLoad);
+                    return true;
                 }
             }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
         }
+
+        return false;
     }
 
     private ContentValues getLatestMainValues(Stock stock) throws IOException, IllegalArgumentException{

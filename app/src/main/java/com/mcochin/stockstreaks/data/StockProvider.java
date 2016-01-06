@@ -15,8 +15,8 @@ import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
-import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.utils.Utility;
 

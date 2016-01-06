@@ -7,17 +7,16 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
 
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
-import com.mcochin.stockstreaks.pojos.LoadAFewFinishedEvent;
-import com.mcochin.stockstreaks.pojos.LoadFromDbFinishedEvent;
-import com.mcochin.stockstreaks.pojos.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadFromDbFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
-import com.mcochin.stockstreaks.pojos.WidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
@@ -39,7 +38,7 @@ public class ListManagerFragment extends Fragment{
     private static volatile boolean mLoadingAFew;
 
     public interface EventListener{
-        void onLoadAllFromDbFinished();
+        void onLoadFromDbFinished();
         void onLoadAFewFinished(boolean success);
         void onLoadSymbolFinished(boolean success);
         void onWidgetRefresh();
@@ -82,22 +81,7 @@ public class ListManagerFragment extends Fragment{
         super.onDetach();
     }
 
-    /**
-     * We load our stock list from the queue only if the widget has updated the app for us
-     * and it's events are in the queue.
-     */
-    public void initLoadFromEventQueue(){
-        new AsyncTask<Context, Void, Void>(){
-            @Override
-            protected Void doInBackground(Context... params) {
-                mListManipulator.setLoadList(getLoadListFromDb());
-                ListEventQueue.getInstance().postAllFromQueue();
-                return null;
-            }
-        }.execute();
-    }
-
-    public void initLoadFromDb(){
+    public void initFromDb(){
         // Get load list of symbols to query
         new AsyncTask<Context, Void, Void>(){
             @Override
@@ -140,30 +124,41 @@ public class ListManagerFragment extends Fragment{
      * Refreshes the list.
      * @param attachSymbol An option to query a symbol once the list has done refreshing.
      */
-    public void initLoadAFew(final String attachSymbol){
+    public void initRefresh(final String attachSymbol){
         mRefreshing = true;
         // Get load list of symbols to query
         new AsyncTask<Context, Void, Void>() {
             @Override
             protected Void doInBackground(Context... params) {
-                synchronized (this) {
                     if (mListManipulator.isListUpdated()) {
                         mListManipulator.saveShownListState(params[0].getContentResolver());
                     }
-                    // Give list to ListManipulator
-                    mListManipulator.setLoadList(getLoadListFromDb());
-                    loadAFew();
+                    // Start service to refresh app
+                    Intent serviceIntent = new Intent(getContext(), MainService.class);
+                    serviceIntent.setAction(MainService.ACTION_APP_REFRESH);
+                    getContext().startService(serviceIntent);
 
                     if (attachSymbol != null) {
                         loadSymbol(attachSymbol);
-
-                    }else if(!mRefreshing){
-                        ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(null, false));
                     }
                     return null;
                 }
-            }
         }.execute(getActivity().getApplicationContext());
+    }
+
+    /**
+     * We load our stock list from the queue only if the widget has updated the app for us
+     * and it's events are in the queue.
+     */
+    public void initFromWidgetRefresh(){
+        new AsyncTask<Context, Void, Void>(){
+            @Override
+            protected Void doInBackground(Context... params) {
+                mListManipulator.setLoadList(getLoadListFromDb());
+                ListEventQueue.getInstance().postAllFromQueue();
+                return null;
+            }
+        }.execute();
     }
 
     /**
@@ -182,7 +177,6 @@ public class ListManagerFragment extends Fragment{
             getContext().startService(serviceIntent);
 
         }else{
-            mRefreshing = false;
             mLoadingAFew = false;
         }
     }
@@ -234,43 +228,64 @@ public class ListManagerFragment extends Fragment{
 
     public void onEventMainThread(LoadFromDbFinishedEvent event){
         if (mEventListener != null) {
-            mEventListener.onLoadAllFromDbFinished();
+            mEventListener.onLoadFromDbFinished();
         }
     }
 
-    public void onEventMainThread(LoadSymbolFinishedEvent event){
-        synchronized (this) {
-            if (event.isSuccessful()) {
-                mListManipulator.addItemToTop(event.getStock());
+    public void onEventMainThread(final LoadSymbolFinishedEvent event){
+        // We use async task for the benefit of them executing sequentially in a single
+        // background thread. And in order to prevent using the synchronized keyword in the main
+        // thread which may block it.
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                return null;
             }
 
-            if (mEventListener != null) {
-                mEventListener.onLoadSymbolFinished(event.isSuccessful());
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if (event.isSuccessful()) {
+                    mListManipulator.addItemToTop(event.getStock());
+                }
+
+                if (mEventListener != null) {
+                    mEventListener.onLoadSymbolFinished(event.isSuccessful());
+                }
             }
-        }
+        }.execute();
     }
 
-    public void onEventMainThread(LoadAFewFinishedEvent event){
-        synchronized (this) {
-            if (event.isSuccessful()) {
-                if (mRefreshing) {
-                    mListManipulator.setShownListCursor(null);
-                } else {
-                    // Remove loading item if it exists
-                    mListManipulator.removeLoadingItem();
-                }
+    public void onEventMainThread(final LoadAFewFinishedEvent event){
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
 
-                for (Stock stock : event.getStockList()) {
-                    mListManipulator.addItemToBottom(stock);
+                if (event.isSuccessful()) {
+                    if (mRefreshing) {
+                        mListManipulator.setShownListCursor(null);
+                        // Give list to ListManipulator
+                        mListManipulator.setLoadList(getLoadListFromDb());
+                        mRefreshing = false;
+                    } else {
+                        // Remove loading item if it exists
+                        mListManipulator.removeLoadingItem();
+                    }
+
+                    for (Stock stock : event.getStockList()) {
+                        mListManipulator.addItemToBottom(stock);
+                    }
+                }
+                mLoadingAFew = false;
+                return null;
+            }
+            @Override
+            protected void onPostExecute(Void aVoid) {
+
+                if (mEventListener != null) {
+                    mEventListener.onLoadAFewFinished(event.isSuccessful());
                 }
             }
-            mRefreshing = false;
-            mLoadingAFew = false;
-
-            if (mEventListener != null) {
-                mEventListener.onLoadAFewFinished(event.isSuccessful());
-            }
-        }
+        }.execute();
     }
 
     public void onEventMainThread(WidgetRefreshEvent event){
@@ -279,7 +294,7 @@ public class ListManagerFragment extends Fragment{
             mLoadingAFew = true;
 
         }else{
-            initLoadAFew(null);
+            initRefresh(null);
         }
 
         if (mEventListener != null) {
@@ -293,6 +308,13 @@ public class ListManagerFragment extends Fragment{
     public static boolean isLoadingAFew(){
         return mLoadingAFew;
     }
+    public static void setRefreshing(boolean refreshing){
+        mRefreshing = refreshing;
+    }
+    public static void setLoadingAfew(boolean loadingAFew){
+        mLoadingAFew = loadingAFew;
+    }
+
 
     public void setEventListener(EventListener eventListener){
         mEventListener = eventListener;

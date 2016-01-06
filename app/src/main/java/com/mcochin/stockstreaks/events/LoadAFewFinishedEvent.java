@@ -1,4 +1,6 @@
-package com.mcochin.stockstreaks.pojos;
+package com.mcochin.stockstreaks.events;
+
+import com.mcochin.stockstreaks.pojos.Stock;
 
 import java.util.List;
 

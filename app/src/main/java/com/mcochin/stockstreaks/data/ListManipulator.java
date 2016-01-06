@@ -140,6 +140,8 @@ public class ListManipulator {
                 mShownList.add(stock);
             }
         }
+
+        mListUpdated = true;
     }
 
     public void setLoadList(String[] loadList) {

@@ -15,7 +15,6 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -35,10 +34,14 @@ import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.events.LoadAFewFinishedCallback;
+import com.mcochin.stockstreaks.events.LoadFromDbFinishedCallback;
+import com.mcochin.stockstreaks.events.LoadSymbolFinishedCallback;
+import com.mcochin.stockstreaks.events.WidgetRefreshFinishedCallback;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
-import com.mcochin.stockstreaks.pojos.WidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
@@ -141,22 +144,22 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if(mFirstOpen) {
             showProgressWheel();
-            mListFragment.initLoadFromDb();
+            if (!(listEventQueue.peek() instanceof WidgetRefreshEvent)) {
+                listEventQueue.clearQueue();
+            }
+            mListFragment.initFromDb();
         }else{
             listEventQueue.postAllFromQueue();
         }
 
         if(Utility.canUpdateList(getContentResolver())) {
             if (mFirstOpen && listEventQueue.peek() instanceof WidgetRefreshEvent) {
-                mListFragment.initLoadFromEventQueue();
+                mListFragment.initFromWidgetRefresh();
 
             } else if (!ListManagerFragment.isRefreshing()) {
                 // Make sure it is not refreshing so we don't refresh twice
                 refreshShownList(null);
             }
-        }else if(mFirstOpen){
-            // Clear queue because initLoadFromDb will contain  
-            ListEventQueue.getInstance().clearQueue();
         }
 
         mFirstOpen = false;
@@ -166,13 +169,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // Dismiss Snack-bar to prevent undo removal because the old data will not be in sync with
         // new data when list is refreshed.
         showProgressWheel();
-        if(mFirstOpen){
-            ListEventQueue.getInstance().clearQueue();
-        }
+
         if (mSnackbar != null && mSnackbar.isShown()) {
             mSnackbar.dismiss();
         }
-        mListFragment.initLoadAFew(attachSymbol);
+        mListFragment.initRefresh(attachSymbol);
     }
 
     @Override // SwipeRefreshLayout.OnRefreshListener
@@ -185,7 +186,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // ListManipulatorFragment.EventListener
-    public void onLoadAllFromDbFinished() {
+    public void onLoadFromDbFinished() {
         mAdapter.notifyDataSetChanged();
         showEmptyMessageIfPossible();
     }
@@ -221,6 +222,22 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // ListManipulatorFragment.EventListener
     public void onWidgetRefresh() {
         showProgressWheel();
+    }
+
+    public void onEventMainThread(LoadFromDbFinishedCallback callback){
+
+    }
+
+    public void onEventMainThread(LoadSymbolFinishedCallback callback){
+
+    }
+
+    public void onEventMainThread(LoadAFewFinishedCallback callback){
+
+    }
+
+    public void onEventMainThread(WidgetRefreshFinishedCallback callback){
+
     }
 
     @Override // SearchBox.SearchListener

@@ -11,7 +11,7 @@ import android.util.Log;
 
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract;
-import com.mcochin.stockstreaks.pojos.LoadDetailErrorEvent;
+import com.mcochin.stockstreaks.events.LoadDetailErrorEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
