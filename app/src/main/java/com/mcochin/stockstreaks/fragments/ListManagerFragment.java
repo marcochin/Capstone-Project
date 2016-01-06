@@ -13,10 +13,9 @@ import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
+import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
@@ -58,13 +57,12 @@ public class ListManagerFragment extends Fragment{
             new AsyncTask<Context, Void, Void>() {
                 @Override
                 protected Void doInBackground(Context... params) {
-                    synchronized (this) {
-                        ContentResolver cr = params[0].getContentResolver();
-                        mListManipulator.permanentlyDeleteLastRemoveItem(cr);
-                        mListManipulator.saveShownListState(cr);
-                        //Update widget to reflect changes
-                        params[0].sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
-                    }
+                    ContentResolver cr = params[0].getContentResolver();
+                    mListManipulator.permanentlyDeleteLastRemoveItem(cr);
+                    mListManipulator.saveShownListState(cr);
+                    //Update widget to reflect changes
+                    params[0].sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
+
                     return null;
                 }
             }.execute(getActivity().getApplicationContext());
@@ -113,9 +111,14 @@ public class ListManagerFragment extends Fragment{
                         cursor.close();
                     }
                 }
-
-                ListEventQueue.getInstance().post(new LoadFromDbFinishedEvent());
                 return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if (mEventListener != null) {
+                    mEventListener.onLoadFromDbFinished();
+                }
             }
         }.execute(getActivity().getApplicationContext());
     }
@@ -124,19 +127,13 @@ public class ListManagerFragment extends Fragment{
      * Refreshes the list.
      * @param attachSymbol An option to query a symbol once the list has done refreshing.
      */
-    public void initRefresh(final String attachSymbol){
+    public void initFromRefresh(final String attachSymbol){
         mRefreshing = true;
         // Get load list of symbols to query
         new AsyncTask<Context, Void, Void>() {
             @Override
             protected Void doInBackground(Context... params) {
-                    if (mListManipulator.isListUpdated()) {
-                        mListManipulator.saveShownListState(params[0].getContentResolver());
-                    }
-                    // Start service to refresh app
-                    Intent serviceIntent = new Intent(getContext(), MainService.class);
-                    serviceIntent.setAction(MainService.ACTION_APP_REFRESH);
-                    getContext().startService(serviceIntent);
+                    refreshList(params[0]);
 
                     if (attachSymbol != null) {
                         loadSymbol(attachSymbol);
@@ -159,6 +156,20 @@ public class ListManagerFragment extends Fragment{
                 return null;
             }
         }.execute();
+    }
+
+    /**
+     * Refreshes the list. Should be called from a background thread.
+     * @param context
+     */
+    private void refreshList(Context context){
+        if (mListManipulator.isListUpdated()) {
+            mListManipulator.saveShownListState(context.getContentResolver());
+        }
+        // Start service to refresh app
+        Intent serviceIntent = new Intent(getContext(), MainService.class);
+        serviceIntent.setAction(MainService.ACTION_APP_REFRESH);
+        getContext().startService(serviceIntent);
     }
 
     /**
@@ -226,12 +237,6 @@ public class ListManagerFragment extends Fragment{
         return loadList;
     }
 
-    public void onEventMainThread(LoadFromDbFinishedEvent event){
-        if (mEventListener != null) {
-            mEventListener.onLoadFromDbFinished();
-        }
-    }
-
     public void onEventMainThread(final LoadSymbolFinishedEvent event){
         // We use async task for the benefit of them executing sequentially in a single
         // background thread. And in order to prevent using the synchronized keyword in the main
@@ -239,15 +244,13 @@ public class ListManagerFragment extends Fragment{
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
                 if (event.isSuccessful()) {
                     mListManipulator.addItemToTop(event.getStock());
                 }
-
+                return null;
+            }
+            @Override
+            protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
                     mEventListener.onLoadSymbolFinished(event.isSuccessful());
                 }
@@ -288,18 +291,23 @@ public class ListManagerFragment extends Fragment{
         }.execute();
     }
 
-    public void onEventMainThread(WidgetRefreshEvent event){
-        if(event.isRefreshThroughWidget()) {
-            mRefreshing = true;
-            mLoadingAFew = true;
+    public void onEventMainThread(final WidgetRefreshEvent event){
+        new AsyncTask<Context, Void, Void>(){
+            @Override
+            protected Void doInBackground(Context... params) {
+                if(event.isRefreshThroughWidget()) {
+                    mRefreshing = true;
+                    mLoadingAFew = true;
 
-        }else{
-            initRefresh(null);
-        }
-
-        if (mEventListener != null) {
-            mEventListener.onWidgetRefresh();
-        }
+                }else{
+                    refreshList(params[0]);
+                }
+                if (mEventListener != null) {
+                    mEventListener.onWidgetRefresh();
+                }
+                return null;
+            }
+        }.execute(getActivity().getApplicationContext());
     }
 
     public static boolean isRefreshing(){

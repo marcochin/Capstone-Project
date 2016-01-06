@@ -3,7 +3,6 @@ package com.mcochin.stockstreaks.data;
 import android.util.Log;
 
 import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
 
@@ -72,9 +71,6 @@ public class ListEventQueue {
 
         } else if (event instanceof LoadSymbolFinishedEvent) {
             return LoadSymbolFinishedEvent.class;
-
-        } else if (event instanceof LoadFromDbFinishedEvent) {
-            return LoadFromDbFinishedEvent.class;
 
         } else if (event instanceof WidgetRefreshEvent) {
             return WidgetRefreshEvent.class;

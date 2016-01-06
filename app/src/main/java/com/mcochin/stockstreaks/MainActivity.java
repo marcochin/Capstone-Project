@@ -34,14 +34,10 @@ import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.events.LoadAFewFinishedCallback;
-import com.mcochin.stockstreaks.events.LoadFromDbFinishedCallback;
-import com.mcochin.stockstreaks.events.LoadSymbolFinishedCallback;
-import com.mcochin.stockstreaks.events.WidgetRefreshFinishedCallback;
+import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
-import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
@@ -131,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     protected void onStart() {
         super.onStart();
         configureDynamicScrollingListener();
+
         EventBus eventBus = EventBus.getDefault();
         eventBus.registerSticky(mListFragment);
         eventBus.removeAllStickyEvents();
@@ -173,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if (mSnackbar != null && mSnackbar.isShown()) {
             mSnackbar.dismiss();
         }
-        mListFragment.initRefresh(attachSymbol);
+        mListFragment.initFromRefresh(attachSymbol);
     }
 
     @Override // SwipeRefreshLayout.OnRefreshListener
@@ -222,22 +219,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // ListManipulatorFragment.EventListener
     public void onWidgetRefresh() {
         showProgressWheel();
-    }
-
-    public void onEventMainThread(LoadFromDbFinishedCallback callback){
-
-    }
-
-    public void onEventMainThread(LoadSymbolFinishedCallback callback){
-
-    }
-
-    public void onEventMainThread(LoadAFewFinishedCallback callback){
-
-    }
-
-    public void onEventMainThread(WidgetRefreshFinishedCallback callback){
-
     }
 
     @Override // SearchBox.SearchListener
