@@ -23,12 +23,6 @@ import java.util.List;
 public class ListManipulator {
     private static final String TAG = ListManipulator.class.getSimpleName();
 
-//    private static final String[] FRUITS = new String[] { "Apple", "Avocado", "Banana",
-//            "Blueberry", "Coconut", "Durian", "Guava", "Kiwi", "Jackfruit", "Mango",
-//            "Olive", "Pear", "Sugar-apple", "Orange", "Strawberry", "Pineapple",
-//            "Watermelon", "Grape", "PassionFruit", "DragonFruit", "Honey-dew",
-//            "Cantaloupe", "Papaya"};
-
     public static final int A_FEW = 12;
     public static final int STOCK_LIMIT = 200;
     public static final String LOADING_ITEM = "loadingItem";
@@ -65,9 +59,11 @@ public class ListManipulator {
      * @param stock
      */
     public void addItemToTop(Stock stock){
-        stock.setId(generateUniqueId());
-        mShownList.add(0, stock);
-        mListUpdated = true;
+        synchronized (this) {
+            stock.setId(generateUniqueId());
+            mShownList.add(0, stock);
+            mListUpdated = true;
+        }
     }
 
     /**
@@ -75,10 +71,12 @@ public class ListManipulator {
      * @param stock
      */
     public void addItemToBottom(Stock stock){
-        stock.setId(generateUniqueId());
-        mShownList.add(stock);
-        addToLoadListPositionBookmark(1);
-        mListUpdated = true;
+        synchronized (this) {
+            stock.setId(generateUniqueId());
+            mShownList.add(stock);
+            addToLoadListPositionBookmark(1);
+            mListUpdated = true;
+        }
     }
 
     public void addLoadingItem(){
@@ -130,18 +128,20 @@ public class ListManipulator {
     }
 
     public void setShownListCursor(Cursor cursor){
-        mUniqueId = 0;
-        mShownList.clear();
+        synchronized (this) {
+            mUniqueId = 0;
+            mShownList.clear();
 
-        if(cursor != null) {
-            while (cursor.moveToNext()) {
-                Stock stock = Utility.getStockFromCursor(cursor);
-                stock.setId(generateUniqueId());
-                mShownList.add(stock);
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    Stock stock = Utility.getStockFromCursor(cursor);
+                    stock.setId(generateUniqueId());
+                    mShownList.add(stock);
+                }
             }
-        }
 
-        mListUpdated = true;
+            mListUpdated = true;
+        }
     }
 
     public void setLoadList(String[] loadList) {
@@ -150,9 +150,11 @@ public class ListManipulator {
     }
 
     public void moveItem(int fromPosition, int toPosition) {
-        Stock stock = mShownList.remove(fromPosition);
-        mShownList.add(toPosition, stock);
-        mListUpdated = true;
+        synchronized (this) {
+            Stock stock = mShownList.remove(fromPosition);
+            mShownList.add(toPosition, stock);
+            mListUpdated = true;
+        }
     }
 
     public void removeItem(int position) {
@@ -181,15 +183,17 @@ public class ListManipulator {
     }
 
     public void permanentlyDeleteLastRemoveItem(final ContentResolver cr){
-        if(mLastRemovedItem != null) {
-            cr.delete(
-                    StockEntry.buildUri(mLastRemovedItem.getSymbol()),
-                    null,
-                    null
-            );
+        synchronized (this) {
+            if (mLastRemovedItem != null) {
+                cr.delete(
+                        StockEntry.buildUri(mLastRemovedItem.getSymbol()),
+                        null,
+                        null
+                );
 
-            mLastRemovedItem = null;
-            mListUpdated = true;
+                mLastRemovedItem = null;
+                mListUpdated = true;
+            }
         }
     }
 
@@ -227,58 +231,60 @@ public class ListManipulator {
     }
 
     /**
-     * Should be called from a background thread
+     * Saves the list positions of every item. Should be called from a background thread
      * @param cr ContentResolver
      */
-    public void saveShownListState(ContentResolver cr){
-        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+    public void saveShownListState(ContentResolver cr) {
+        synchronized (this) {
+            ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
-        // Determine if the last item is a loading item. If so, skip it. We can't remove it
-        // because during orientation change, we need to persist the loading item.
-        int mShownListSize = getItem(mShownList.size()-1).getSymbol().equals(LOADING_ITEM)
-                ? mShownList.size()-1
-                : mShownList.size();
+            // Determine if the last item is a loading item. If so, skip it. We can't remove it
+            // because during orientation change, we need to persist the loading item.
+            int mShownListSize = getItem(mShownList.size() - 1).getSymbol().equals(LOADING_ITEM)
+                    ? mShownList.size() - 1
+                    : mShownList.size();
 
-        // Save bookmark in db
-        ContentValues bookmarkValues = new ContentValues();
-        bookmarkValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, mShownListSize - 1);
-        ops.add(ContentProviderOperation
-                .newUpdate(SaveStateEntry.CONTENT_URI)
-                .withValues(bookmarkValues)
-                .withYieldAllowed(true)
-                .build());
-
-        // Save shown list positions in db
-        int listPosition = 0;
-        for(int i = 0; i < mShownListSize; i++){
             // Save bookmark in db
-            ContentValues positionValues = new ContentValues();
-            positionValues.put(StockEntry.COLUMN_LIST_POSITION, listPosition++);
+            ContentValues bookmarkValues = new ContentValues();
+            bookmarkValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, mShownListSize - 1);
             ops.add(ContentProviderOperation
-                            .newUpdate(StockEntry.buildUri(mShownList.get(i).getSymbol()))
-                            .withValues(positionValues)
-                            .withYieldAllowed(true)
-                            .build());
-        }
+                    .newUpdate(SaveStateEntry.CONTENT_URI)
+                    .withValues(bookmarkValues)
+                    .withYieldAllowed(true)
+                    .build());
 
-        if(mLoadList != null) {
-            // Save load list positions beneath the shown list positions in db
-            for (int j = mLoadListPositionBookmark; j < mLoadList.length; j++) {
+            // Save shown list positions in db
+            int listPosition = 0;
+            for (int i = 0; i < mShownListSize; i++) {
                 // Save bookmark in db
                 ContentValues positionValues = new ContentValues();
                 positionValues.put(StockEntry.COLUMN_LIST_POSITION, listPosition++);
                 ops.add(ContentProviderOperation
-                        .newUpdate(StockEntry.buildUri(mLoadList[j]))
+                        .newUpdate(StockEntry.buildUri(mShownList.get(i).getSymbol()))
                         .withValues(positionValues)
                         .withYieldAllowed(true)
                         .build());
             }
-        }
-        // Apply operations
-        Bundle extras = new Bundle();
-        extras.putParcelableArrayList(StockProvider.KEY_OPERATIONS, ops);
-        cr.call(StockContract.BASE_CONTENT_URI, StockProvider.METHOD_UPDATE_LIST_POSITION, null, extras);
 
-        mListUpdated = false;
+            if (mLoadList != null) {
+                // Save load list positions beneath the shown list positions in db
+                for (int j = mLoadListPositionBookmark; j < mLoadList.length; j++) {
+                    // Save bookmark in db
+                    ContentValues positionValues = new ContentValues();
+                    positionValues.put(StockEntry.COLUMN_LIST_POSITION, listPosition++);
+                    ops.add(ContentProviderOperation
+                            .newUpdate(StockEntry.buildUri(mLoadList[j]))
+                            .withValues(positionValues)
+                            .withYieldAllowed(true)
+                            .build());
+                }
+            }
+            // Apply operations
+            Bundle extras = new Bundle();
+            extras.putParcelableArrayList(StockProvider.KEY_OPERATIONS, ops);
+            cr.call(StockContract.BASE_CONTENT_URI, StockProvider.METHOD_UPDATE_LIST_POSITION, null, extras);
+
+            mListUpdated = false;
+        }
     }
 }

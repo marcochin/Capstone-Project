@@ -8,13 +8,15 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 
+import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
+import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.OnWidgetRefreshEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
@@ -26,20 +28,11 @@ public class ListManagerFragment extends Fragment{
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
 
-    /**
-     * This is true if the list is updating to the latest values.(Swipe to Refresh/ Refresh Menu Btn)
-     */
-    private static volatile boolean mRefreshing;
-
-    /**
-     * This is true if the list is loading a few. Latest values or not.
-     */
-    private static volatile boolean mLoadingAFew;
-
     public interface EventListener{
         void onLoadFromDbFinished();
         void onLoadAFewFinished(boolean success);
         void onLoadSymbolFinished(boolean success);
+        void onRefreshFinished(boolean success);
         void onWidgetRefresh();
     }
 
@@ -128,7 +121,7 @@ public class ListManagerFragment extends Fragment{
      * @param attachSymbol An option to query a symbol once the list has done refreshing.
      */
     public void initFromRefresh(final String attachSymbol){
-        mRefreshing = true;
+        MyApplication.getInstance().setRefreshing(true);
         // Get load list of symbols to query
         new AsyncTask<Context, Void, Void>() {
             @Override
@@ -179,7 +172,7 @@ public class ListManagerFragment extends Fragment{
         String[] aFewToLoad = mListManipulator.getAFewToLoad();
 
         if (aFewToLoad != null) {
-            mLoadingAFew = true;
+            MyApplication.getInstance().setLoadingAFew(true);
 
             // Start service to load a few
             Intent serviceIntent = new Intent(getContext(), MainService.class);
@@ -188,7 +181,7 @@ public class ListManagerFragment extends Fragment{
             getContext().startService(serviceIntent);
 
         }else{
-            mLoadingAFew = false;
+            MyApplication.getInstance().setLoadingAFew(false);
         }
     }
 
@@ -262,28 +255,18 @@ public class ListManagerFragment extends Fragment{
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
+                // Remove loading item if it exists
+                mListManipulator.removeLoadingItem();
 
-                if (event.isSuccessful()) {
-                    if (mRefreshing) {
-                        mListManipulator.setShownListCursor(null);
-                        // Give list to ListManipulator
-                        mListManipulator.setLoadList(getLoadListFromDb());
-                        mRefreshing = false;
-                    } else {
-                        // Remove loading item if it exists
-                        mListManipulator.removeLoadingItem();
-                    }
-
-                    for (Stock stock : event.getStockList()) {
-                        mListManipulator.addItemToBottom(stock);
-                    }
+                for (Stock stock : event.getStockList()) {
+                    mListManipulator.addItemToBottom(stock);
                 }
-                mLoadingAFew = false;
+
+                MyApplication.getInstance().setLoadingAFew(false);
                 return null;
             }
             @Override
             protected void onPostExecute(Void aVoid) {
-
                 if (mEventListener != null) {
                     mEventListener.onLoadAFewFinished(event.isSuccessful());
                 }
@@ -291,38 +274,53 @@ public class ListManagerFragment extends Fragment{
         }.execute();
     }
 
-    public void onEventMainThread(final WidgetRefreshEvent event){
+    public void onEventMainThread(final AppRefreshFinishedEvent event){
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+
+                if (event.isSuccessful()) {
+                    mListManipulator.setShownListCursor(null);
+                    // Give list to ListManipulator
+                    mListManipulator.setLoadList(getLoadListFromDb());
+                    MyApplication.getInstance().setRefreshing(false);
+                }
+
+                for (Stock stock : event.getStockList()) {
+                    mListManipulator.addItemToBottom(stock);
+                }
+                return null;
+            }
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if (mEventListener != null) {
+                    mEventListener.onRefreshFinished(event.isSuccessful());
+                }
+            }
+        }.execute();
+    }
+
+    public void onEventMainThread(final OnWidgetRefreshEvent event){
         new AsyncTask<Context, Void, Void>(){
             @Override
             protected Void doInBackground(Context... params) {
-                if(event.isRefreshThroughWidget()) {
-                    mRefreshing = true;
-                    mLoadingAFew = true;
+                if(event.isRefreshingThroughWidget()) {
+                    MyApplication.getInstance().setRefreshing(true);
 
                 }else{
                     refreshList(params[0]);
                 }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
                     mEventListener.onWidgetRefresh();
                 }
-                return null;
             }
         }.execute(getActivity().getApplicationContext());
     }
-
-    public static boolean isRefreshing(){
-        return mRefreshing;
-    }
-    public static boolean isLoadingAFew(){
-        return mLoadingAFew;
-    }
-    public static void setRefreshing(boolean refreshing){
-        mRefreshing = refreshing;
-    }
-    public static void setLoadingAfew(boolean loadingAFew){
-        mLoadingAFew = loadingAFew;
-    }
-
 
     public void setEventListener(EventListener eventListener){
         mEventListener = eventListener;

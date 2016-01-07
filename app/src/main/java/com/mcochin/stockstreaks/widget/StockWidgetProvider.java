@@ -14,7 +14,9 @@ import android.widget.RemoteViews;
 import com.mcochin.stockstreaks.DetailActivity;
 import com.mcochin.stockstreaks.MainActivity;
 import com.mcochin.stockstreaks.R;
+import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract;
+import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 
@@ -41,7 +43,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         boolean refreshing = false;
 
-        if(Utility.canUpdateList(context.getContentResolver())) {
+        if(!MyApplication.getInstance().isRefreshing() && Utility.canUpdateList(context.getContentResolver())) {
             context.startService(getServiceRefreshIntent(context));
             refreshing = true;
         }
@@ -122,7 +124,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
 
     private Intent getServiceRefreshIntent(Context context){
         Intent serviceIntent = new Intent(context, MainService.class);
-        serviceIntent.setAction(MainService.ACTION_LOAD_REFRESH);
+        serviceIntent.setAction(MainService.ACTION_WIDGET_REFRESH);
         return serviceIntent;
     }
 

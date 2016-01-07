@@ -13,11 +13,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.util.ArrayList;
@@ -33,8 +35,8 @@ public class StockProvider extends ContentProvider {
     private static final String TAG = StockProvider.class.getSimpleName();
     public static final String KEY_OPERATIONS = "operations";
 
-    public static final String METHOD_INSERT_ITEM = "insertItem";
-    public static final String METHOD_UPDATE_ITEMS = "updateItems";
+    public static final String METHOD_LOAD_SYMBOL = "insertItem";
+    public static final String METHOD_LOAD_A_FEW = "updateItems";
     public static final String METHOD_UPDATE_LIST_POSITION = "updateListPosition";
 
     private static final String UNKNOWN_URI = "Unknown Uri: ";
@@ -245,18 +247,25 @@ public class StockProvider extends ContentProvider {
             if(extras != null) {
                 ArrayList<ContentProviderOperation> operations =
                         extras.getParcelableArrayList(KEY_OPERATIONS);
+                String sessionId = "";
 
+                if(method.equals(METHOD_LOAD_SYMBOL) || method.equals(METHOD_LOAD_A_FEW)){
+                    sessionId = extras.getString(MainService.KEY_SESSION_ID);
+                    if(!MyApplication.validateSessionId(sessionId)){
+                        throw new IllegalStateException();
+                    }
+                }
                 if (operations != null) {
                     try {
                         applyBatch(operations);
 
                         switch (method) {
-                            case METHOD_INSERT_ITEM:
-                                performInsertItem(operations);
+                            case METHOD_LOAD_SYMBOL:
+                                performInsertItem(operations, sessionId);
                                 break;
 
-                            case METHOD_UPDATE_ITEMS:
-                                performUpdateItems(operations);
+                            case METHOD_LOAD_A_FEW:
+                                performUpdateItems(operations, sessionId);
                                 break;
 
                             case METHOD_UPDATE_LIST_POSITION:
@@ -271,15 +280,15 @@ public class StockProvider extends ContentProvider {
         return super.call(method, arg, extras);
     }
 
-    private void performInsertItem(ArrayList<ContentProviderOperation> ops){
+    private void performInsertItem(ArrayList<ContentProviderOperation> ops, String sessionId){
         List<Stock> stockList = loopThroughOperations(ops);
-        LoadSymbolFinishedEvent event = new LoadSymbolFinishedEvent(stockList.get(0), true);
+        LoadSymbolFinishedEvent event = new LoadSymbolFinishedEvent(sessionId, stockList.get(0), true);
         ListEventQueue.getInstance().post(event);
     }
 
-    private void performUpdateItems(ArrayList<ContentProviderOperation> ops){
+    private void performUpdateItems(ArrayList<ContentProviderOperation> ops, String sessionId){
         List<Stock> stockList = loopThroughOperations(ops);
-        LoadAFewFinishedEvent event = new LoadAFewFinishedEvent(stockList, true);
+        LoadAFewFinishedEvent event = new LoadAFewFinishedEvent(sessionId, stockList, true);
         ListEventQueue.getInstance().post(event);
     }
 

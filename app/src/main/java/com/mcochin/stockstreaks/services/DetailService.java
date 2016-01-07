@@ -10,14 +10,17 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.mcochin.stockstreaks.R;
+import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.events.LoadDetailErrorEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Queue;
 
 import de.greenrobot.event.EventBus;
 import yahoofinance.Stock;
@@ -30,28 +33,29 @@ import yahoofinance.histquotes.Interval;
 public class DetailService extends Service {
     private static final String TAG = DetailService.class.getSimpleName();
     public static final String KEY_DETAIL_SYMBOL = "detailSymbol";
+    public static final String KEY_SESSION_ID ="sessionId";
 
     private static final int YEAR = 366;
 
-    PriorityQueue<String> q = new PriorityQueue<>();
+    Queue<Intent> mQueue = new LinkedList<>();
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        q.clear();
+        mQueue.clear();
+        // Every request should have a session id
+        intent.putExtra(KEY_SESSION_ID, MyApplication.getInstance().getSessionId());
+        mQueue.offer(intent);
 
-        String symbol = intent.getStringExtra(KEY_DETAIL_SYMBOL);
-        q.offer(symbol);
-
-        new AsyncTask<String, Void, Void>(){
+        new AsyncTask<Intent, Void, Void>(){
             @Override
-            protected Void doInBackground(String... params) {
+            protected Void doInBackground(Intent... params) {
                 try {
                     // check for internet
                     if(!Utility.isNetworkAvailable(DetailService.this)){
                         throw new IOException(getString(R.string.toast_no_network));
                     }
 
-                    performActionLoadDetails(params[0]);
+                    performActionLoadDetails(params[0].getStringExtra(KEY_DETAIL_SYMBOL));
 
                 } catch (IOException e) {
                     Log.e(TAG, Log.getStackTraceString(e));
@@ -61,20 +65,21 @@ public class DetailService extends Service {
                     }else {
                         Utility.showToast(DetailService.this, getString(R.string.toast_error_retrieving_data));
                     }
-                    EventBus.getDefault().post(new LoadDetailErrorEvent());
+                    EventBus.getDefault().post(new LoadDetailErrorEvent(
+                            params[0].getStringExtra(KEY_SESSION_ID)));
                 }
                 return null;
             }
 
             @Override
             protected void onPostExecute(Void aVoid) {
-                if(!q.isEmpty()){
-                    execute(q.poll());
+                if(!mQueue.isEmpty()){
+                    execute(mQueue.poll());
                 }else{
                     stopSelf();
                 }
             }
-        }.execute(q.poll());
+        }.execute(mQueue.poll());
 
         return super.onStartCommand(intent, flags, startId);
     }

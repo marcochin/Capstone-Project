@@ -2,9 +2,10 @@ package com.mcochin.stockstreaks.data;
 
 import android.util.Log;
 
+import com.mcochin.stockstreaks.events.Event;
 import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.OnWidgetRefreshEvent;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -20,7 +21,7 @@ import de.greenrobot.event.EventBus;
 public class ListEventQueue {
     private static final String TAG = ListEventQueue.class.getSimpleName();
     private static ListEventQueue sListEventQueue;
-    private Queue<Object> mQueue;
+    private Queue<Event> mQueue;
 
     private ListEventQueue(){
         mQueue = new LinkedList<>();
@@ -34,7 +35,7 @@ public class ListEventQueue {
         return sListEventQueue;
     }
 
-    public void post(Object event){
+    public void post(Event event){
         Log.d(TAG, "Interrupted poseted" );
         EventBus eventBus = EventBus.getDefault();
         Class c = getEventType(event);
@@ -65,15 +66,15 @@ public class ListEventQueue {
      * @return Class obj that represents the event class.
      */
 
-    private Class getEventType(Object event) {
+    private Class getEventType(Event event) {
         if (event instanceof LoadAFewFinishedEvent) {
             return LoadAFewFinishedEvent.class;
 
         } else if (event instanceof LoadSymbolFinishedEvent) {
             return LoadSymbolFinishedEvent.class;
 
-        } else if (event instanceof WidgetRefreshEvent) {
-            return WidgetRefreshEvent.class;
+        } else if (event instanceof OnWidgetRefreshEvent) {
+            return OnWidgetRefreshEvent.class;
         }
         return null;
     }
@@ -90,13 +91,5 @@ public class ListEventQueue {
         return mQueue.isEmpty();
     }
 }
-
-//    public boolean fastForwardToWidgetRefreshEvent(){
-//        // Pop all events til you reach a WidgetRefreshEvent
-//        while(!(mQueue.peek() instanceof WidgetRefreshEvent) && !mQueue.isEmpty()){
-//            mQueue.poll();
-//        }
-//        return !mQueue.isEmpty();
-//    }
 
 

@@ -22,6 +22,7 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.SwipeableItemConstant
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultActionRemoveItem;
 import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeableItemViewHolder;
 import com.mcochin.stockstreaks.R;
+import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -192,14 +193,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         // Determine if this is a dummy "loading" item
         if(symbol.equals(ListManipulator.LOADING_ITEM)) {
             holder.mContainer.setVisibility(View.INVISIBLE);
-            if(ListManagerFragment.isLoadingAFew()){
+
+            if(MyApplication.getInstance().isLoadingAFew()){
                 holder.mProgressWheel.setVisibility(View.VISIBLE);
                 holder.mRetryButton.setVisibility(View.INVISIBLE);
+
             }else{
                 holder.mProgressWheel.setVisibility(View.INVISIBLE);
                 holder.mRetryButton.setVisibility(View.VISIBLE);
             }
-
         }else {
             holder.mContainer.setVisibility(View.VISIBLE);
             if(position != 0){
@@ -337,7 +339,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 //        Log.d(TAG, "onGetSwipeReactionType");
 
         // This is what enables swiping
-        if (mListManipulator.getItem(position).getSymbol().equals(ListManipulator.LOADING_ITEM)) {
+        if (mListManipulator.getItem(position).getSymbol().equals(ListManipulator.LOADING_ITEM)
+                || MyApplication.getInstance().isRefreshing()) {
             return SwipeableItemConstants.REACTION_CAN_NOT_SWIPE_ANY;
         }
         return Swipeable.REACTION_CAN_SWIPE_BOTH_H;
@@ -377,9 +380,9 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     @Override // DraggableItemAdapter
     public void onMoveItem(int fromPosition, int toPosition) {
         //Log.d(TAG, "onMoveItem(fromPosition = " + fromPosition + ", toPosition = " + toPosition + ")");
-        if (fromPosition == toPosition) {
-            return;
-        }else if(mListManipulator.getItem(toPosition).getSymbol().equals(ListManipulator.LOADING_ITEM)){
+        if (mListManipulator.getItem(toPosition).getSymbol().equals(ListManipulator.LOADING_ITEM)
+                || fromPosition == toPosition
+                || MyApplication.getInstance().isRefreshing()) {
             return;
         }
         if(mEventListener != null){

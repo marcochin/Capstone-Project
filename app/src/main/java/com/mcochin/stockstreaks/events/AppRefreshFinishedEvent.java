@@ -5,13 +5,13 @@ import com.mcochin.stockstreaks.pojos.Stock;
 import java.util.List;
 
 /**
- * Created by Marco on 12/24/2015.
+ * Created by Marco on 1/6/2016.
  */
-public class LoadAFewFinishedEvent extends Event{
+public class AppRefreshFinishedEvent extends Event {
     private List<Stock> mStockList;
     private boolean mSuccessful;
 
-    public LoadAFewFinishedEvent(String sessionId, List<Stock> stockList, boolean successful){
+    public AppRefreshFinishedEvent(String sessionId, List<Stock> stockList, boolean successful){
         super(sessionId);
         mStockList = stockList;
         mSuccessful = successful;

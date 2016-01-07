@@ -10,6 +10,7 @@ import android.support.v4.util.Pair;
 import android.util.Log;
 
 import com.mcochin.stockstreaks.R;
+import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
@@ -18,7 +19,7 @@ import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.data.ListEventQueue;
-import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.OnWidgetRefreshEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 
@@ -42,6 +43,7 @@ public class MainService extends IntentService {
     private static final String TAG = MainService.class.getSimpleName();
     public static final String KEY_LOAD_SYMBOL_QUERY ="searchQuery";
     public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
+    public static final String KEY_SESSION_ID ="sessionId";
 
     public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
     public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";
@@ -60,10 +62,25 @@ public class MainService extends IntentService {
         super(TAG);
     }
 
+    private String mSessionId;
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        // Every request should have a session id
+        intent.putExtra(KEY_SESSION_ID, MyApplication.getInstance().getSessionId());
+        return super.onStartCommand(intent, flags, startId);
+    }
+
     @Override
     protected void onHandleIntent(Intent intent) {
+        mSessionId = intent.getStringExtra(KEY_SESSION_ID);
         String action = intent.getAction();
         try {
+            // check if the session is still valid
+            if(!MyApplication.validateSessionId(mSessionId)){
+                throw new IllegalStateException();
+            }
+
             // check for internet
             if(!Utility.isNetworkAvailable(this)){
                 throw new IOException(getString(R.string.toast_no_network));
@@ -80,32 +97,39 @@ public class MainService extends IntentService {
                     performActionLoadAFew(symbols);
                     break;
 
+                case ACTION_APP_REFRESH:
+                    performActionAppRefresh();
+
                 case ACTION_WIDGET_REFRESH:
                     performActionWidgetRefresh();
 
-                case ACTION_APP_REFRESH:
-                    performActionAppRefresh();
             }
 
-
-        } catch (IOException | IllegalArgumentException e) {
+        } catch (IOException | IllegalArgumentException| IllegalStateException e) {
             Log.e(TAG, Log.getStackTraceString(e));
 
-                if(e.getMessage().equals(getString(R.string.toast_no_network))
-                        || e instanceof IllegalArgumentException){
+            if(e instanceof IllegalArgumentException){
+                Utility.showToast(this, e.getMessage());
+
+            }else if(e instanceof IOException){
+                if(e.getMessage().equals(getString(R.string.toast_no_network))) {
                     Utility.showToast(this, e.getMessage());
-                }else {
+                }
+                else{
                     Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
                 }
+            }
 
             switch(action) {
                 case ACTION_LOAD_SYMBOL:
-                    ListEventQueue.getInstance().post(new LoadSymbolFinishedEvent(null, false));
+                    ListEventQueue.getInstance().post(new LoadSymbolFinishedEvent(
+                            mSessionId, null, false));
                     break;
 
                 case ACTION_LOAD_A_FEW:
                 case ACTION_APP_REFRESH:
-                    ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(null, false));
+                    ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(
+                            mSessionId, null, false));
                     break;
 
                 case ACTION_WIDGET_REFRESH:
@@ -115,16 +139,17 @@ public class MainService extends IntentService {
         }
     }
 
-    private void performActionLoadSymbol(String symbol)throws IOException, IllegalArgumentException{
+    private void performActionLoadSymbol(String symbol)throws IOException{
         // Check if symbol already exists in database
         if (Utility.isEntryExist(symbol, getContentResolver())) {
             throw new IllegalArgumentException(getString(R.string.toast_placeholder_symbol_exists, symbol));
         }
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+        // Add update time operation to list
+        ops.add(getUpdateTimeOperation());
 
         Stock stock = YahooFinance.get(symbol);
         ContentValues values = getLatestMainValues(stock);
-
-        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
         // Add insert operation to list
         ops.add(ContentProviderOperation
@@ -133,14 +158,13 @@ public class MainService extends IntentService {
                 .withYieldAllowed(true)
                 .build());
 
-        // Add update time operation to list
-        ops.add(getUpdateTimeOperation());
-        applyOperations(ops, StockProvider.METHOD_INSERT_ITEM, null);
+        applyOperations(ops, StockProvider.METHOD_LOAD_SYMBOL, null);
     }
 
-    private void performActionLoadAFew(String[] symbolsToLoad) throws IOException, IllegalArgumentException{
-
+    private void performActionLoadAFew(String[] symbolsToLoad) throws IOException{
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+        // Add update time operation to list
+        ops.add(getUpdateTimeOperation());
 
         Map<String, Stock> stockList = YahooFinance.get(symbolsToLoad);
         if (stockList != null) {
@@ -156,27 +180,24 @@ public class MainService extends IntentService {
                         .build());
             }
         }
-
         // Save the shown list position every time load a few is performed. This is primarily
         // for the widget refreshes, but also for one edge case in which the list updates after
         // onPause() is called and the shown list position will not be reflected on next app
         // open if user exits our app.
         ops.add(getListPositionBookmarkOperation(symbolsToLoad[symbolsToLoad.length - 1]));
-        // Add update time operation to list
-        ops.add(getUpdateTimeOperation());
-        applyOperations(ops, StockProvider.METHOD_UPDATE_ITEMS, null);
+        applyOperations(ops, StockProvider.METHOD_LOAD_A_FEW, null);
     }
 
-    private void performActionAppRefresh()throws IOException, IllegalArgumentException{
+    private void performActionAppRefresh()throws IOException{
         if(!refreshList()){
-            ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(null, false));
+            ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(mSessionId, null, false));
         }
     }
 
-    private void performActionWidgetRefresh()throws IOException, IllegalArgumentException{
-        if(EventBus.getDefault().hasSubscriberForEvent(WidgetRefreshEvent.class)){
+    private void performActionWidgetRefresh()throws IOException{
+        if(EventBus.getDefault().hasSubscriberForEvent(OnWidgetRefreshEvent.class)){
             // Update app to reflect that we ware currently updating
-            ListEventQueue.getInstance().post(new WidgetRefreshEvent(false));
+            ListEventQueue.getInstance().post(new OnWidgetRefreshEvent(mSessionId, false));
 
         }else {
             // Update widget to reflect that we are currently updating
@@ -184,11 +205,9 @@ public class MainService extends IntentService {
             // Clear queue or their might be an infinite build up of events
             ListEventQueue.getInstance().clearQueue();
             // Update app to reflect that we ware currently updating
-            ListEventQueue.getInstance().post(new WidgetRefreshEvent(true));
+            ListEventQueue.getInstance().post(new OnWidgetRefreshEvent(mSessionId, true));
 
             refreshList();
-            // Update widget to reflect changes
-            sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
         }
     }
 
@@ -197,7 +216,7 @@ public class MainService extends IntentService {
      * @throws IOException
      * @throws IllegalArgumentException
      */
-    private boolean refreshList()throws IOException, IllegalArgumentException{
+    private boolean refreshList()throws IOException{
         Cursor cursor = null;
         try {
             final String[] projection = new String[]{StockEntry.COLUMN_SYMBOL};
@@ -221,6 +240,8 @@ public class MainService extends IntentService {
 
                 if (symbolsToLoad.length != 0) {
                     performActionLoadAFew(symbolsToLoad);
+                    // Update widget to reflect changes
+                    sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
                     return true;
                 }
             }
@@ -230,12 +251,20 @@ public class MainService extends IntentService {
             }
         }
 
+        sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
         return false;
     }
 
-    private ContentValues getLatestMainValues(Stock stock) throws IOException, IllegalArgumentException{
+
+
+    private ContentValues getLatestMainValues(Stock stock) throws IOException{
         float recentClose = 0;
         ContentValues values;
+
+        // check if the session is still valid
+        if(!MyApplication.validateSessionId(mSessionId)){
+            throw new IllegalStateException();
+        }
 
         if(stock == null){
             throw new IllegalArgumentException(getString(R.string.toast_error_retrieving_data));
@@ -400,7 +429,11 @@ public class MainService extends IntentService {
     private void applyOperations(ArrayList<ContentProviderOperation> ops, String method, String arg){
         Bundle extras = new Bundle();
         extras.putParcelableArrayList(StockProvider.KEY_OPERATIONS, ops);
+        extras.putString(MainService.KEY_SESSION_ID, mSessionId);
 
-        getContentResolver().call(StockContract.BASE_CONTENT_URI, method, arg, extras);
+        getContentResolver().call(StockContract.BASE_CONTENT_URI,
+                method,
+                arg,
+                extras);
     }
 }

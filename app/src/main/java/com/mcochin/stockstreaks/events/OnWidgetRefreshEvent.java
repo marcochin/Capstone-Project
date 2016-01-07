@@ -3,14 +3,15 @@ package com.mcochin.stockstreaks.events;
 /**
  * Created by Marco on 1/3/2016.
  */
-public class WidgetRefreshEvent {
+public class OnWidgetRefreshEvent extends Event{
     private boolean mRefreshThroughWidget;
 
-    public WidgetRefreshEvent(boolean refreshThroughWidget){
+    public OnWidgetRefreshEvent(String sessionId, boolean refreshThroughWidget){
+        super(sessionId);
         mRefreshThroughWidget = refreshThroughWidget;
     }
 
-    public boolean isRefreshThroughWidget() {
+    public boolean isRefreshingThroughWidget() {
         return mRefreshThroughWidget;
     }
 

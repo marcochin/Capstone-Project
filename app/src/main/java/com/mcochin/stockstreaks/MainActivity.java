@@ -30,11 +30,12 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.RecyclerViewSwipeMana
 import com.h6ah4i.android.widget.advrecyclerview.touchguard.RecyclerViewTouchActionGuardManager;
 import com.h6ah4i.android.widget.advrecyclerview.utils.WrapperAdapterUtils;
 import com.mcochin.stockstreaks.adapters.MainAdapter;
+import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.events.WidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.OnWidgetRefreshEvent;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -101,6 +102,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     .add(mListFragment, ListManagerFragment.TAG).commit();
             getSupportFragmentManager().executePendingTransactions();
 
+            // We have to generate a new session id, so network calls from previous sessions
+            // don't get returned to new sessions
+            MyApplication.generateSessionId();
+
         } else{
             mListFragment = ((ListManagerFragment) getSupportFragmentManager()
                     .findFragmentByTag(ListManagerFragment.TAG));
@@ -141,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if(mFirstOpen) {
             showProgressWheel();
-            if (!(listEventQueue.peek() instanceof WidgetRefreshEvent)) {
+            if (!(listEventQueue.peek() instanceof OnWidgetRefreshEvent)) {
                 listEventQueue.clearQueue();
             }
             mListFragment.initFromDb();
@@ -150,15 +155,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
 
         if(Utility.canUpdateList(getContentResolver())) {
-            if (mFirstOpen && listEventQueue.peek() instanceof WidgetRefreshEvent) {
+            if (mFirstOpen && listEventQueue.peek() instanceof OnWidgetRefreshEvent) {
                 mListFragment.initFromWidgetRefresh();
 
-            } else if (!ListManagerFragment.isRefreshing()) {
+            } else if (!MyApplication.getInstance().isRefreshing()) {
                 // Make sure it is not refreshing so we don't refresh twice
                 refreshShownList(null);
             }
         }
-
         mFirstOpen = false;
     }
 
@@ -180,6 +184,19 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         //if(!mListFragment.isRefreshing() && Utility.canUpdateList(getContentResolver())) {
             refreshShownList(null);
         //}
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onRefreshFinished(boolean success) {
+        if(success) {
+            mAdapter.notifyDataSetChanged();
+        }
+        showEmptyMessageIfPossible();
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onWidgetRefresh() {
+        showProgressWheel();
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -214,11 +231,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
         }
         showEmptyMessageIfPossible();
-    }
-
-    @Override // ListManipulatorFragment.EventListener
-    public void onWidgetRefresh() {
-        showProgressWheel();
     }
 
     @Override // SearchBox.SearchListener
@@ -257,7 +269,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         // Refresh the shownList BEFORE fetching a new stock. This is to prevent
         // fetching the new stock twice when it becomes apart of that list.
-        if(!ListManagerFragment.isRefreshing() && Utility.canUpdateList(getContentResolver())) {
+        if(!MyApplication.getInstance().isRefreshing() && Utility.canUpdateList(getContentResolver())) {
             refreshShownList(query);
         }else{
             mListFragment.loadSymbol(query);
@@ -299,7 +311,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if(Utility.canUpdateList(getContentResolver())){
             Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
 
-        }else if(!ListManagerFragment.isRefreshing()) {
+        }else if(!MyApplication.getInstance().isRefreshing()) {
             mListFragment.loadAFew();
             mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
         }
@@ -358,7 +370,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
                 switch (id) {
                     case R.id.action_refresh:
-                        if (!ListManagerFragment.isRefreshing()
+                        if (!MyApplication.getInstance().isRefreshing()
                                 && Utility.canUpdateList(getContentResolver())) {
                             refreshShownList(null);
                         }
@@ -458,12 +470,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if (mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount() - 1
                 && !listManipulator.isLoadingItemPresent()
-                && !ListManagerFragment.isRefreshing()
+                && !MyApplication.getInstance().isRefreshing()
                 && listManipulator.canLoadAFew()) {
             // Insert dummy item
             listManipulator.addLoadingItem();
-            if(!Utility.canUpdateList(getContentResolver())) {
+
+            if(!MyApplication.getInstance().isLoadingAFew()
+                    && !Utility.canUpdateList(getContentResolver())) {
                 mListFragment.loadAFew();
+
             }else{
                 Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
             }
