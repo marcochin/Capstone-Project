@@ -35,7 +35,6 @@ import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.events.OnWidgetRefreshEvent;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -53,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
     private static final String KEY_LOGO_VISIBLE = "logoVisible";
+    private static final String KEY_PROGRESS_WHEEL_VISIBLE = "progressWheelVisible";
 
     private RecyclerView mRecyclerView;
     private MyLinearLayoutManager mLayoutManager;
@@ -102,9 +102,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     .add(mListFragment, ListManagerFragment.TAG).commit();
             getSupportFragmentManager().executePendingTransactions();
 
-            // We have to generate a new session id, so network calls from previous sessions
-            // don't get returned to new sessions
-            MyApplication.generateSessionId();
+            // We have to generate a new session so network calls from previous sessions
+            // have a chance to cancel themselves
+            MyApplication.startNewSession();
 
         } else{
             mListFragment = ((ListManagerFragment) getSupportFragmentManager()
@@ -117,6 +117,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             } else if(!savedInstanceState.getBoolean(KEY_LOGO_VISIBLE)){
                 mAppBar.toggleSearch();
                 mSearchEditText.clearFocus();
+            }
+            if(savedInstanceState.getBoolean(KEY_PROGRESS_WHEEL_VISIBLE)){
+                mProgressWheel.setVisibility(View.VISIBLE);
             }
         }
 
@@ -146,27 +149,24 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if(mFirstOpen) {
             showProgressWheel();
-            if (!(listEventQueue.peek() instanceof OnWidgetRefreshEvent)) {
-                listEventQueue.clearQueue();
-            }
+            listEventQueue.clearQueue();
             mListFragment.initFromDb();
         }else{
             listEventQueue.postAllFromQueue();
         }
 
         if(Utility.canUpdateList(getContentResolver())) {
-            if (mFirstOpen && listEventQueue.peek() instanceof OnWidgetRefreshEvent) {
-                mListFragment.initFromWidgetRefresh();
-
-            } else if (!MyApplication.getInstance().isRefreshing()) {
+            if (MyApplication.getInstance().isRefreshing()) {
+                showProgressWheel();
+            } else{
                 // Make sure it is not refreshing so we don't refresh twice
-                refreshShownList(null);
+                refreshList(null);
             }
         }
         mFirstOpen = false;
     }
 
-    private void refreshShownList(String attachSymbol){
+    private void refreshList(String attachSymbol){
         // Dismiss Snack-bar to prevent undo removal because the old data will not be in sync with
         // new data when list is refreshed.
         showProgressWheel();
@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mSwipeToRefresh.setRefreshing(false);
         //TODO uncomment bottom line. it is only there for testing
         //if(!mListFragment.isRefreshing() && Utility.canUpdateList(getContentResolver())) {
-            refreshShownList(null);
+            refreshList(null);
         //}
     }
 
@@ -270,7 +270,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // Refresh the shownList BEFORE fetching a new stock. This is to prevent
         // fetching the new stock twice when it becomes apart of that list.
         if(!MyApplication.getInstance().isRefreshing() && Utility.canUpdateList(getContentResolver())) {
-            refreshShownList(query);
+            refreshList(query);
         }else{
             mListFragment.loadSymbol(query);
         }
@@ -372,7 +372,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     case R.id.action_refresh:
                         if (!MyApplication.getInstance().isRefreshing()
                                 && Utility.canUpdateList(getContentResolver())) {
-                            refreshShownList(null);
+                            refreshList(null);
                         }
                         break;
                     case R.id.action_sort:
@@ -404,7 +404,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         final MainAdapter mainAdapter = new MainAdapter(
                 this,
                 mDragDropManager,
-                getListManipulator(),
+                mListFragment,
                 this);
 
         mAdapter = mainAdapter;
@@ -416,18 +416,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // Change animations are enabled by default since support-v7-recyclerview v22. Disable the
         // change animation in order to make turning back animation of swiped item works properly.
         animator.setSupportsChangeAnimations(false);
-
         mLayoutManager = new MyLinearLayoutManager(this);
+
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setAdapter(mWrappedAdapter);
         mRecyclerView.setItemAnimator(animator);
-
-//        // Additional decorations
-//        // Lollipop or later has native drop shadow feature. ItemShadowDecorator is not required.
-//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-//            mRecyclerView.addItemDecoration(new ItemShadowDecorator(
-//                    (NinePatchDrawable) ContextCompat.getDrawable(this, R.drawable.material_shadow_z1)));
-//        }
         mRecyclerView.addItemDecoration(new SimpleListDividerDecorator(
                 ContextCompat.getDrawable(this, R.drawable.list_divider_h), true));
 
@@ -475,8 +468,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             // Insert dummy item
             listManipulator.addLoadingItem();
 
-            if(!MyApplication.getInstance().isLoadingAFew()
-                    && !Utility.canUpdateList(getContentResolver())) {
+            if(!Utility.canUpdateList(getContentResolver())) {
                 mListFragment.loadAFew();
 
             }else{
@@ -519,6 +511,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     protected void onSaveInstanceState(Bundle outState) {
         outState.putBoolean(KEY_SEARCH_FOCUSED, mSearchEditText.isFocused());
         outState.putBoolean(KEY_LOGO_VISIBLE, mLogo.getVisibility() == View.VISIBLE);
+        outState.putBoolean(KEY_PROGRESS_WHEEL_VISIBLE, mProgressWheel.getVisibility() == View.VISIBLE);
         super.onSaveInstanceState(outState);
     }
 

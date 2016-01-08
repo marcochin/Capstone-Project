@@ -79,6 +79,19 @@ public class ListManipulator {
         }
     }
 
+    /**
+     * Add an updated db item to the bottom of the list
+     * @param stock
+     */
+    public void addItemToPosition(int position, Stock stock){
+        synchronized (this) {
+            stock.setId(generateUniqueId());
+            mShownList.add(position, stock);
+            addToLoadListPositionBookmark(1);
+            mListUpdated = true;
+        }
+    }
+
     public void addLoadingItem(){
         Stock stock = new Stock();
         stock.setId(generateUniqueId());

@@ -9,14 +9,13 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 
 import com.mcochin.stockstreaks.custom.MyApplication;
-import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.events.OnWidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
@@ -27,6 +26,11 @@ public class ListManagerFragment extends Fragment{
 
     private ListManipulator mListManipulator;
     private EventListener mEventListener;
+
+    /**
+     * This is true if the list is loading a few on the bottom
+     */
+    private static volatile boolean mLoadingAFew = false;
 
     public interface EventListener{
         void onLoadFromDbFinished();
@@ -137,21 +141,6 @@ public class ListManagerFragment extends Fragment{
     }
 
     /**
-     * We load our stock list from the queue only if the widget has updated the app for us
-     * and it's events are in the queue.
-     */
-    public void initFromWidgetRefresh(){
-        new AsyncTask<Context, Void, Void>(){
-            @Override
-            protected Void doInBackground(Context... params) {
-                mListManipulator.setLoadList(getLoadListFromDb());
-                ListEventQueue.getInstance().postAllFromQueue();
-                return null;
-            }
-        }.execute();
-    }
-
-    /**
      * Refreshes the list. Should be called from a background thread.
      * @param context
      */
@@ -172,7 +161,7 @@ public class ListManagerFragment extends Fragment{
         String[] aFewToLoad = mListManipulator.getAFewToLoad();
 
         if (aFewToLoad != null) {
-            MyApplication.getInstance().setLoadingAFew(true);
+            mLoadingAFew = true;
 
             // Start service to load a few
             Intent serviceIntent = new Intent(getContext(), MainService.class);
@@ -181,7 +170,7 @@ public class ListManagerFragment extends Fragment{
             getContext().startService(serviceIntent);
 
         }else{
-            MyApplication.getInstance().setLoadingAFew(false);
+            mLoadingAFew = false;
         }
     }
 
@@ -242,6 +231,7 @@ public class ListManagerFragment extends Fragment{
                 }
                 return null;
             }
+
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
@@ -252,19 +242,24 @@ public class ListManagerFragment extends Fragment{
     }
 
     public void onEventMainThread(final LoadAFewFinishedEvent event){
+        if(!event.getSessionId().equals(MyApplication.getInstance().getSessionId())){
+            return;
+        }
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                // Remove loading item if it exists
-                mListManipulator.removeLoadingItem();
-
-                for (Stock stock : event.getStockList()) {
-                    mListManipulator.addItemToBottom(stock);
+                if (event.isSuccessful()) {
+                    //Add on bottom but before the loading item
+                    for (Stock stock : event.getStockList()) {
+                        mListManipulator.addItemToPosition(mListManipulator.getCount() - 2, stock);
+                    }
+                    // Remove loading item if it exists
+                    mListManipulator.removeLoadingItem();
                 }
-
-                MyApplication.getInstance().setLoadingAFew(false);
+                mLoadingAFew = false;
                 return null;
             }
+
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
@@ -278,19 +273,18 @@ public class ListManagerFragment extends Fragment{
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-
                 if (event.isSuccessful()) {
                     mListManipulator.setShownListCursor(null);
                     // Give list to ListManipulator
                     mListManipulator.setLoadList(getLoadListFromDb());
-                    MyApplication.getInstance().setRefreshing(false);
-                }
 
-                for (Stock stock : event.getStockList()) {
-                    mListManipulator.addItemToBottom(stock);
+                    for (Stock stock : event.getStockList()) {
+                        mListManipulator.addItemToBottom(stock);
+                    }
                 }
                 return null;
             }
+
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
@@ -300,16 +294,11 @@ public class ListManagerFragment extends Fragment{
         }.execute();
     }
 
-    public void onEventMainThread(final OnWidgetRefreshEvent event){
+    public void onEventMainThread(final WidgetRefreshDelegateEvent event){
         new AsyncTask<Context, Void, Void>(){
             @Override
             protected Void doInBackground(Context... params) {
-                if(event.isRefreshingThroughWidget()) {
-                    MyApplication.getInstance().setRefreshing(true);
-
-                }else{
-                    refreshList(params[0]);
-                }
+                refreshList(params[0]);
                 return null;
             }
 
@@ -328,5 +317,13 @@ public class ListManagerFragment extends Fragment{
 
     public ListManipulator getListManipulator() {
         return mListManipulator;
+    }
+
+    public boolean isLoadingAFew() {
+        return mLoadingAFew;
+    }
+
+    public void setLoadingAFew(boolean loadingAFew) {
+        mLoadingAFew = loadingAFew;
     }
 }

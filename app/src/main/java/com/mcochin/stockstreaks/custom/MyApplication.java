@@ -17,11 +17,6 @@ public class MyApplication extends Application {
      */
     private static volatile boolean mRefreshing = false;
 
-    /**
-     * This is true if the list is loading a few on the bottom
-     */
-    private static volatile boolean mLoadingAFew;
-
     public static MyApplication getInstance(){
         return sMyApplication;
     }
@@ -32,8 +27,7 @@ public class MyApplication extends Application {
         sMyApplication = this;
     }
 
-
-    public static void generateSessionId(){
+    public static void startNewSession(){
         mSessionId = UUID.randomUUID().toString();
     }
 
@@ -55,13 +49,5 @@ public class MyApplication extends Application {
 
     public void setRefreshing(boolean refreshing) {
         mRefreshing = refreshing;
-    }
-
-    public boolean isLoadingAFew() {
-        return mLoadingAFew;
-    }
-
-    public void setLoadingAFew(boolean loadingAFew) {
-        mLoadingAFew = loadingAFew;
     }
 }

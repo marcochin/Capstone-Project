@@ -43,7 +43,8 @@ public class StockWidgetProvider extends AppWidgetProvider{
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         boolean refreshing = false;
 
-        if(!MyApplication.getInstance().isRefreshing() && Utility.canUpdateList(context.getContentResolver())) {
+        if(!MyApplication.getInstance().isRefreshing()
+                && Utility.canUpdateList(context.getContentResolver())) {
             context.startService(getServiceRefreshIntent(context));
             refreshing = true;
         }

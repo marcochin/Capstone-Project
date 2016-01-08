@@ -2,10 +2,11 @@ package com.mcochin.stockstreaks.data;
 
 import android.util.Log;
 
+import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.events.Event;
 import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.events.OnWidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -36,7 +37,6 @@ public class ListEventQueue {
     }
 
     public void post(Event event){
-        Log.d(TAG, "Interrupted poseted" );
         EventBus eventBus = EventBus.getDefault();
         Class c = getEventType(event);
 
@@ -73,8 +73,11 @@ public class ListEventQueue {
         } else if (event instanceof LoadSymbolFinishedEvent) {
             return LoadSymbolFinishedEvent.class;
 
-        } else if (event instanceof OnWidgetRefreshEvent) {
-            return OnWidgetRefreshEvent.class;
+        } else if (event instanceof WidgetRefreshDelegateEvent) {
+            return WidgetRefreshDelegateEvent.class;
+
+        } else if (event instanceof AppRefreshFinishedEvent) {
+            return AppRefreshFinishedEvent.class;
         }
         return null;
     }

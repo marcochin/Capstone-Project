@@ -16,10 +16,11 @@ import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
+import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.data.ListEventQueue;
-import com.mcochin.stockstreaks.events.OnWidgetRefreshEvent;
+import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 
@@ -68,6 +69,7 @@ public class MainService extends IntentService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         // Every request should have a session id
         intent.putExtra(KEY_SESSION_ID, MyApplication.getInstance().getSessionId());
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -99,12 +101,15 @@ public class MainService extends IntentService {
 
                 case ACTION_APP_REFRESH:
                     performActionAppRefresh();
+                    break;
 
                 case ACTION_WIDGET_REFRESH:
+                    // Need to set refreshing here because this is the refresh entry point for the
+                    // widget
+                    MyApplication.getInstance().setRefreshing(true);
                     performActionWidgetRefresh();
-
+                    break;
             }
-
         } catch (IOException | IllegalArgumentException| IllegalStateException e) {
             Log.e(TAG, Log.getStackTraceString(e));
 
@@ -127,13 +132,16 @@ public class MainService extends IntentService {
                     break;
 
                 case ACTION_LOAD_A_FEW:
-                case ACTION_APP_REFRESH:
                     ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(
                             mSessionId, null, false));
                     break;
 
+                case ACTION_APP_REFRESH:
                 case ACTION_WIDGET_REFRESH:
+                    ListEventQueue.getInstance().post(new AppRefreshFinishedEvent(
+                            mSessionId, null, false));
                     sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
+                    MyApplication.getInstance().setRefreshing(false);
                     break;
             }
         }
@@ -149,7 +157,7 @@ public class MainService extends IntentService {
         ops.add(getUpdateTimeOperation());
 
         Stock stock = YahooFinance.get(symbol);
-        ContentValues values = getLatestMainValues(stock);
+        ContentValues values = getMainValues(stock);
 
         // Add insert operation to list
         ops.add(ContentProviderOperation
@@ -162,52 +170,30 @@ public class MainService extends IntentService {
     }
 
     private void performActionLoadAFew(String[] symbolsToLoad) throws IOException{
-        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-        // Add update time operation to list
-        ops.add(getUpdateTimeOperation());
-
-        Map<String, Stock> stockList = YahooFinance.get(symbolsToLoad);
-        if (stockList != null) {
-            for (String symbol : symbolsToLoad) {
-                Stock stock = stockList.get(symbol);
-                ContentValues values = getLatestMainValues(stock);
-
-                // Add update operations to list
-                ops.add(ContentProviderOperation
-                        .newUpdate(StockEntry.buildUri(stock.getSymbol()))
-                        .withValues(values)
-                        .withYieldAllowed(true)
-                        .build());
-            }
-        }
-        // Save the shown list position every time load a few is performed. This is primarily
-        // for the widget refreshes, but also for one edge case in which the list updates after
-        // onPause() is called and the shown list position will not be reflected on next app
-        // open if user exits our app.
-        ops.add(getListPositionBookmarkOperation(symbolsToLoad[symbolsToLoad.length - 1]));
+        ArrayList<ContentProviderOperation> ops = getLoadAFewOperations(symbolsToLoad);
         applyOperations(ops, StockProvider.METHOD_LOAD_A_FEW, null);
     }
 
     private void performActionAppRefresh()throws IOException{
         if(!refreshList()){
-            ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(mSessionId, null, false));
+            ListEventQueue.getInstance().post(new AppRefreshFinishedEvent(mSessionId, null, false));
+            sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
         }
     }
 
     private void performActionWidgetRefresh()throws IOException{
-        if(EventBus.getDefault().hasSubscriberForEvent(OnWidgetRefreshEvent.class)){
-            // Update app to reflect that we ware currently updating
-            ListEventQueue.getInstance().post(new OnWidgetRefreshEvent(mSessionId, false));
+        // Update widget to reflect that we are currently updating
+        sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATING));
+
+        // If we receive a msg that widget is refreshing and the user is currently using the
+        // app, delegate the refresh to the app
+        if(EventBus.getDefault().hasSubscriberForEvent(WidgetRefreshDelegateEvent.class)){
+            ListEventQueue.getInstance().post(new WidgetRefreshDelegateEvent(mSessionId));
 
         }else {
-            // Update widget to reflect that we are currently updating
-            sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATING));
-            // Clear queue or their might be an infinite build up of events
-            ListEventQueue.getInstance().clearQueue();
-            // Update app to reflect that we ware currently updating
-            ListEventQueue.getInstance().post(new OnWidgetRefreshEvent(mSessionId, true));
-
-            refreshList();
+            if(!refreshList()){
+                sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
+            }
         }
     }
 
@@ -233,15 +219,17 @@ public class MainService extends IntentService {
             if (cursor != null) {
                 int cursorCount = cursor.getCount();
                 String[] symbolsToLoad = new String[cursorCount];
+
                 for (int i = 0; i < cursorCount; i++) {
                     cursor.moveToPosition(i);
                     symbolsToLoad[i] = cursor.getString(indexSymbol);
                 }
-
                 if (symbolsToLoad.length != 0) {
-                    performActionLoadAFew(symbolsToLoad);
-                    // Update widget to reflect changes
-                    sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
+                    ContentProviderOperation updateTimeOp = getUpdateTimeOperation();
+                    ArrayList<ContentProviderOperation> ops = getLoadAFewOperations(symbolsToLoad);
+
+                    ops.add(updateTimeOp);
+                    applyOperations(ops, StockProvider.METHOD_REFRESH, null);
                     return true;
                 }
             }
@@ -250,14 +238,11 @@ public class MainService extends IntentService {
                 cursor.close();
             }
         }
-
-        sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
+        MyApplication.getInstance().setRefreshing(false);
         return false;
     }
 
-
-
-    private ContentValues getLatestMainValues(Stock stock) throws IOException{
+    private ContentValues getMainValues(Stock stock) throws IOException{
         float recentClose = 0;
         ContentValues values;
 
@@ -384,6 +369,31 @@ public class MainService extends IntentService {
         values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
 
         return values;
+    }
+
+    private ArrayList<ContentProviderOperation> getLoadAFewOperations(String[] symbolsToLoad) throws IOException{
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+
+        Map<String, Stock> stockList = YahooFinance.get(symbolsToLoad);
+        if (stockList != null) {
+            for (String symbol : symbolsToLoad) {
+                Stock stock = stockList.get(symbol);
+                ContentValues values = getMainValues(stock);
+
+                // Add update operations to list
+                ops.add(ContentProviderOperation
+                        .newUpdate(StockEntry.buildUri(stock.getSymbol()))
+                        .withValues(values)
+                        .withYieldAllowed(true)
+                        .build());
+            }
+        }
+        // Save the shown list position every time load a few is performed. This is primarily
+        // for the widget refreshes, but also for one edge case in which the list updates after
+        // onPause() is called and the shown list position will not be reflected on next app
+        // open if user exits our app.
+        ops.add(getListPositionBookmarkOperation(symbolsToLoad[symbolsToLoad.length - 1]));
+        return ops;
     }
 
     private ContentProviderOperation getUpdateTimeOperation(){
