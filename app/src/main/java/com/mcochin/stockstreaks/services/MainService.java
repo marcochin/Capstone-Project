@@ -104,9 +104,6 @@ public class MainService extends IntentService {
                     break;
 
                 case ACTION_WIDGET_REFRESH:
-                    // Need to set refreshing here because this is the refresh entry point for the
-                    // widget
-                    MyApplication.getInstance().setRefreshing(true);
                     performActionWidgetRefresh();
                     break;
             }
@@ -182,9 +179,6 @@ public class MainService extends IntentService {
     }
 
     private void performActionWidgetRefresh()throws IOException{
-        // Update widget to reflect that we are currently updating
-        sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATING));
-
         // If we receive a msg that widget is refreshing and the user is currently using the
         // app, delegate the refresh to the app
         if(EventBus.getDefault().hasSubscriberForEvent(WidgetRefreshDelegateEvent.class)){
@@ -445,5 +439,11 @@ public class MainService extends IntentService {
                 method,
                 arg,
                 extras);
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        // Send broadcast to hide the progress wheel in case off task removal
+        sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
     }
 }

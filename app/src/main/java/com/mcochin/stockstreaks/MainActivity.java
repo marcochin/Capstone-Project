@@ -192,11 +192,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             mAdapter.notifyDataSetChanged();
         }
         showEmptyMessageIfPossible();
+        EventBus.getDefault().removeAllStickyEvents();
     }
 
     @Override // ListManipulatorFragment.EventListener
     public void onWidgetRefresh() {
         showProgressWheel();
+        EventBus.getDefault().removeAllStickyEvents();
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -213,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             mSearchEditText.setText("");
         }
         showEmptyMessageIfPossible();
+        EventBus.getDefault().removeAllStickyEvents();
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -231,6 +234,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
         }
         showEmptyMessageIfPossible();
+        EventBus.getDefault().removeAllStickyEvents();
     }
 
     @Override // SearchBox.SearchListener

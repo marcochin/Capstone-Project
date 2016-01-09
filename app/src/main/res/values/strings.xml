@@ -33,10 +33,10 @@
     <string name="percent_change">% Change:</string>
     <string name="dollar_change">$ Change:</string>
     <string name="streak">Streak:</string>
-    <string name="last_streak_price">Prev. Streak End Price:</string>
+    <string name="last_streak_price">Prev. Streak \nEnd Price:</string>
     <string name="last_streak">Prev. Streak:</string>
-    <string name="streak_year_high">365 Day\nStreak High:</string>
-    <string name="streak_year_low">365 Day\nStreak Low:</string>
+    <string name="streak_year_high">365 Day \nStreak High:</string>
+    <string name="streak_year_low">365 Day \nStreak Low:</string>
 
     <!-- list_item load a few-->
     <string name="button_retry">RETRY</string>

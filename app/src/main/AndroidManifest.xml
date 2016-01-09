@@ -33,8 +33,7 @@
             android:authorities="com.mcochin.stockstreaks"
             android:exported="false" />
 
-        <service android:name=".services.MainService"
-            android:stopWithTask="true"/>
+        <service android:name=".services.MainService" />
         <service android:name=".services.DetailService"/>
 
         <!-- Widget -->
@@ -45,7 +44,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
-                <action android:name="com.mcochin.stockstreaks.widget.DATA_UPDATING"/>
+                <action android:name="com.mcochin.stockstreaks.widget.DATA_REFRESH"/>
                 <action android:name="com.mcochin.stockstreaks.widget.DATA_UPDATED"/>
                 <action android:name="com.mcochin.stockstreaks.widget.DATA_UPDATE_ERROR"/>
             </intent-filter>

@@ -9,7 +9,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
 import android.widget.Toast;
 
@@ -130,17 +129,18 @@ public class Utility {
         return calendar;
     }
 
-    public static Calendar getCalendarQuickSetup(int hourOfDay, int minute, int milli) {
+    public static Calendar getNewYorkCalendarQuickSetup(int hourOfDay, int minute, int sec, int milli) {
         Calendar calendar = getNewYorkCalendarInstance();
         calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
         calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, sec);
         calendar.set(Calendar.MILLISECOND, milli);
 
         return calendar;
     }
 
-    public static Calendar getCalendarQuickSetup(int hourOfDay, int minute, int milli, int month,
-                                           int dayOfMonth, int year) {
+    public static Calendar getNewYorkCalendarQuickSetup(int hourOfDay, int minute, int milli, int month,
+                                                        int dayOfMonth, int year) {
         // we are changing the month, day, and year so new york instance doesn't matter
         Calendar calendar = getNewYorkCalendarInstance();
         calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
@@ -242,15 +242,17 @@ public class Utility {
      */
     public static boolean isDuringTradingHours(){
         //9:30am
-        Calendar stockMarketOpen = Utility.getCalendarQuickSetup(
+        Calendar stockMarketOpen = Utility.getNewYorkCalendarQuickSetup(
                 Utility.STOCK_MARKET_OPEN_HOUR,
                 Utility.STOCK_MARKET_OPEN_MINUTE,
+                0,
                 0);
 
         //4:30pm
-        Calendar stockMarketClose = Utility.getCalendarQuickSetup(
+        Calendar stockMarketClose = Utility.getNewYorkCalendarQuickSetup(
                 Utility.STOCK_MARKET_UPDATE_HOUR,
                 Utility.STOCK_MARKET_UPDATE_MINUTE,
+                0,
                 0);
 
         Calendar nowTime = getNewYorkCalendarInstance();
@@ -279,9 +281,10 @@ public class Utility {
         }
 
         Calendar nowTime = getNewYorkCalendarInstance();
-        Calendar fourThirtyTime = Utility.getCalendarQuickSetup(
+        Calendar fourThirtyTime = Utility.getNewYorkCalendarQuickSetup(
                 Utility.STOCK_MARKET_UPDATE_HOUR,
                 Utility.STOCK_MARKET_UPDATE_MINUTE,
+                0,
                 0);
 
         int dayOfWeek = nowTime.get(Calendar.DAY_OF_WEEK);

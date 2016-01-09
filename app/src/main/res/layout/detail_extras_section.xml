@@ -17,7 +17,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="@dimen/detail_center_vertical"
-        android:visibility="invisible"
+        android:visibility="visible"
         app:columnCount="2">
 
         <TextView

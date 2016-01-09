@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 7 inch tablet and above-->
 <resources>
+    <!-- 720dp are for devices between 7 and 10 inch-->
     <!-- Values for the cardView detail view in tablets-->
-    <dimen name="card_view_horizontal_margin">64dp</dimen>
-    <dimen name="card_view_vertical_margin">32dp</dimen>
+    <dimen name="card_view_horizontal_margin">32dp</dimen>
+    <dimen name="card_view_height">380dp</dimen>
+    <dimen name="symbol_text_size">30sp</dimen>
+
 
     <!-- list item -->
     <dimen name="list_item_horizontal_padding">120dp</dimen>

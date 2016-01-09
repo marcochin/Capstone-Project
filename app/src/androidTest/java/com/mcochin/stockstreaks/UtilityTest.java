@@ -60,16 +60,18 @@ public class UtilityTest extends ActivityInstrumentationTestCase2<MainActivity> 
 
     private boolean isDuringTradingHours(Calendar testTime){
         //9:30am
-        Calendar stockMarketOpen = Utility.getCalendarQuickSetup(
-                        Utility.STOCK_MARKET_OPEN_HOUR,
-                        Utility.STOCK_MARKET_OPEN_MINUTE,
-                        0);
+        Calendar stockMarketOpen = Utility.getNewYorkCalendarQuickSetup(
+                Utility.STOCK_MARKET_OPEN_HOUR,
+                Utility.STOCK_MARKET_OPEN_MINUTE,
+                0,
+                0);
 
         //4:30pm
-        Calendar stockMarketClose = Utility.getCalendarQuickSetup(
-                        Utility.STOCK_MARKET_UPDATE_HOUR,
-                        Utility.STOCK_MARKET_UPDATE_MINUTE,
-                        0);
+        Calendar stockMarketClose = Utility.getNewYorkCalendarQuickSetup(
+                Utility.STOCK_MARKET_UPDATE_HOUR,
+                Utility.STOCK_MARKET_UPDATE_MINUTE,
+                0,
+                0);
 
         // If nowTime is between 9:30am EST and 4:30 pm EST
         // assume it is trading hours
@@ -82,42 +84,42 @@ public class UtilityTest extends ActivityInstrumentationTestCase2<MainActivity> 
     public void testCanUpdateList(){
         // We updated fri 12/4/2015 @ 4:29pm
         Calendar testUpdateDateTime1 =
-                Utility.getCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 4, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 4, 2015);
         // now sun 12/6/2015 @ 4:20pm
         Calendar testNowTime1 =
-                Utility.getCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 6, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 6, 2015);
         assertEquals(true, canUpdateList(testUpdateDateTime1, testNowTime1));
 
         // We updated fri 12/4/2015 @ 4:30pm
         Calendar testUpdateDateTime2 =
-                Utility.getCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 4, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 4, 2015);
         // now sun 12/6/2015 @ 4:30pm
         Calendar testNowTime2 =
-                Utility. getCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 6, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 6, 2015);
         assertEquals(false, canUpdateList(testUpdateDateTime2, testNowTime2));
 
         // We updated th 12/3/2015 @ 4:30pm
         Calendar testUpdateDateTime3 =
-                Utility.getCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 3, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 3, 2015);
         // now th 12/3/2015 @ 4:30pm
         Calendar testNowTime3 =
-                Utility. getCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 3, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 3, 2015);
         assertEquals(false, canUpdateList(testUpdateDateTime3, testNowTime3));
 
         // We updated wed 12/2/2015 @ 4:29pm
         Calendar testUpdateDateTime4 =
-                Utility.getCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 2, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 2, 2015);
         // now th 12/3/2015 @ 4:29pm
         Calendar testNowTime4 =
-                Utility. getCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 3, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 3, 2015);
         assertEquals(true, canUpdateList(testUpdateDateTime4, testNowTime4));
 
         // We updated wed 12/2/2015 @ 4:30pm
         Calendar testUpdateDateTime5 =
-                Utility.getCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 2, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 30, 0, Calendar.DECEMBER, 2, 2015);
         // now th 12/3/2015 @ 4:29pm
         Calendar testNowTime5 =
-                Utility. getCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 3, 2015);
+                Utility.getNewYorkCalendarQuickSetup(16, 29, 0, Calendar.DECEMBER, 3, 2015);
         assertEquals(false, canUpdateList(testUpdateDateTime5, testNowTime5));
     }
 
