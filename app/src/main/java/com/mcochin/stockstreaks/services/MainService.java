@@ -186,6 +186,7 @@ public class MainService extends IntentService {
 
         }else {
             if(!refreshList()){
+                ListEventQueue.getInstance().post(new AppRefreshFinishedEvent(mSessionId, null, false));
                 sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
             }
         }

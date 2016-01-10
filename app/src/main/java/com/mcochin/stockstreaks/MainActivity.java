@@ -38,6 +38,7 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
@@ -53,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private static final String KEY_SEARCH_FOCUSED = "searchFocused";
     private static final String KEY_LOGO_VISIBLE = "logoVisible";
     private static final String KEY_PROGRESS_WHEEL_VISIBLE = "progressWheelVisible";
+    private static final String KEY_EMPTY_MSG_VISIBLE = "emptyMsgVisible";
+    private static final String KEY_DETAIL_CONTAINER_VISIBLE = "cardViewVisible";
 
     private RecyclerView mRecyclerView;
     private MyLinearLayoutManager mLayoutManager;
@@ -66,14 +69,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private TextView mLogo;
     private SearchBox mAppBar;
     private SwipeRefreshLayout mSwipeToRefresh;
-    private View mRootView;
     private Snackbar mSnackbar;
+    private View mDetailContainer;
+    private View mRootView;
     private View mProgressWheel;
     private View mEmptyMsg;
-
     private ListManagerFragment mListFragment;
 
-    private boolean mTwoPane;
     private boolean mFirstOpen;
 
     @Override
@@ -82,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         setContentView(R.layout.activity_main);
 
         // Find our views from xml layouts
-        mTwoPane = findViewById(R.id.detail_container) != null;
+        mDetailContainer = findViewById(R.id.detail_container);
         mRootView = findViewById(R.id.rootView);
         mProgressWheel = findViewById(R.id.progress_wheel);
         mEmptyMsg = findViewById(R.id.text_empty_list);
@@ -113,13 +115,22 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mAppBar.toggleSearch();
-                // Else if not focused, but logo is invisible, open search w/o the focus
+
             } else if(!savedInstanceState.getBoolean(KEY_LOGO_VISIBLE)){
+                // Else if not focused, but logo is invisible, open search w/o the focus
                 mAppBar.toggleSearch();
                 mSearchEditText.clearFocus();
             }
+
             if(savedInstanceState.getBoolean(KEY_PROGRESS_WHEEL_VISIBLE)){
                 mProgressWheel.setVisibility(View.VISIBLE);
+
+            } else if (savedInstanceState.getBoolean(KEY_EMPTY_MSG_VISIBLE)){
+                mEmptyMsg.setVisibility(View.VISIBLE);
+            }
+
+            if(savedInstanceState.getBoolean(KEY_DETAIL_CONTAINER_VISIBLE)){
+                mDetailContainer.setVisibility(View.VISIBLE);
             }
         }
 
@@ -191,7 +202,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if(success) {
             mAdapter.notifyDataSetChanged();
         }
-        showEmptyMessageIfPossible();
+        showLoadFinishedWidgets();
         EventBus.getDefault().removeAllStickyEvents();
     }
 
@@ -204,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // ListManipulatorFragment.EventListener
     public void onLoadFromDbFinished() {
         mAdapter.notifyDataSetChanged();
-        showEmptyMessageIfPossible();
+        showLoadFinishedWidgets();
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -213,8 +224,17 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             mAdapter.notifyItemInserted(0);
             mRecyclerView.smoothScrollToPosition(0);
             mSearchEditText.setText("");
+
+            //If tablet insert fragment into container
+            if (mDetailContainer != null) {
+                String symbol = getListManipulator().getItem(0).getSymbol();
+                Uri detailUri = StockEntry.buildUri(symbol);
+
+                insertFragmentIntoDetailContainer(detailUri);
+            }
         }
-        showEmptyMessageIfPossible();
+
+        showLoadFinishedWidgets();
         EventBus.getDefault().removeAllStickyEvents();
     }
 
@@ -233,7 +253,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 }
             }
         }
-        showEmptyMessageIfPossible();
+        showLoadFinishedWidgets();
         EventBus.getDefault().removeAllStickyEvents();
     }
 
@@ -287,18 +307,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         int position = holder.getAdapterPosition();
 
         if(position != RecyclerView.NO_POSITION) {
-            Stock stock = getListManipulator().getItem(position);
-            Uri detailUri = StockEntry.buildUri(stock.getSymbol());
-            Bundle args = new Bundle();
-            args.putParcelable(DetailFragment.KEY_DETAIL_URI, detailUri);
+            String symbol = getListManipulator().getItem(position).getSymbol();
+            Uri detailUri = StockEntry.buildUri(symbol);
 
-            if (mTwoPane) {
-                //If tablet insert fragment into container
-                DetailFragment detailFragment = new DetailFragment();
-                detailFragment.setArguments(args);
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.detail_container, detailFragment, DetailFragment.TAG)
-                        .commit();
+            //If tablet insert fragment into container
+            if (mDetailContainer != null) {
+                insertFragmentIntoDetailContainer(detailUri);
 
             } else {
                 mSearchEditText.clearFocus();
@@ -355,7 +369,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                         }
                     });
             mSnackbar.show();
-            showEmptyMessageIfPossible();
+
+            if(getListManipulator().getCount() == 0){
+                showEmptyMessage();
+                if(mDetailContainer != null){
+                    mDetailContainer.setVisibility(View.GONE);
+                }
+            }
         }
     }
 
@@ -440,7 +460,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private void configureDynamicScrollingListener(){
         // When recyclerView is scrolled all the way to the top, appbar elevation will disappear.
         // When you start scrolling down elevation will reappear.
-        if (!mTwoPane) {
+        if (mDetailContainer == null) {
             ViewCompat.setElevation(mAppBar, 0);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
@@ -483,18 +503,34 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
-    private void showEmptyMessageIfPossible(){
-        // because showEmptyMessageIfPossible relies on progress wheel to be invisible, try
+    private void insertFragmentIntoDetailContainer(Uri detailUri){
+        Bundle args = new Bundle();
+        args.putParcelable(DetailFragment.KEY_DETAIL_URI, detailUri);
+
+        DetailFragment detailFragment = new DetailFragment();
+        detailFragment.setArguments(args);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.detail_container, detailFragment, DetailFragment.TAG)
+                .commit();
+    }
+
+    private void showLoadFinishedWidgets(){
+        // because showEmptyMessage relies on progress wheel to be invisible, try
         // to hide the progress wheel before calling this method if it is necessary
-        hideProgressWheelIfPossible();
-        if(getListManipulator().getCount() == 0 && mProgressWheel.getVisibility() == View.INVISIBLE){
-            mEmptyMsg.setVisibility(View.VISIBLE);
+        hideProgressWheel();
+        if(getListManipulator().getCount() == 0 ){
+            if(mProgressWheel.getVisibility() == View.INVISIBLE){
+                mEmptyMsg.setVisibility(View.VISIBLE);
+            }
+            if(mDetailContainer != null){
+                mDetailContainer.setVisibility(View.GONE);
+            }
         }
     }
 
-    private void hideProgressWheelIfPossible(){
-        if(!Utility.isMainServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE))){
-            mProgressWheel.setVisibility(View.INVISIBLE);
+    private void showEmptyMessage(){
+        if(mProgressWheel.getVisibility() == View.INVISIBLE){
+            mEmptyMsg.setVisibility(View.VISIBLE);
         }
     }
 
@@ -502,9 +538,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mEmptyMsg.setVisibility(View.INVISIBLE);
     }
 
-    private void showProgressWheel(){
-        hideEmptyMessage();
+    private void showProgressWheel() {
+        mEmptyMsg.setVisibility(View.INVISIBLE);
         mProgressWheel.setVisibility(View.VISIBLE);
+    }
+
+    private void hideProgressWheel(){
+        if(!Utility.isMainServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE))){
+            mProgressWheel.setVisibility(View.INVISIBLE);
+        }
     }
 
     public ListManipulator getListManipulator() {
@@ -516,6 +558,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         outState.putBoolean(KEY_SEARCH_FOCUSED, mSearchEditText.isFocused());
         outState.putBoolean(KEY_LOGO_VISIBLE, mLogo.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_PROGRESS_WHEEL_VISIBLE, mProgressWheel.getVisibility() == View.VISIBLE);
+        outState.putBoolean(KEY_EMPTY_MSG_VISIBLE, mEmptyMsg.getVisibility() == View.VISIBLE);
+        if(mDetailContainer != null) {
+            outState.putBoolean(KEY_DETAIL_CONTAINER_VISIBLE,
+                    mDetailContainer.getVisibility() == View.VISIBLE);
+        }
         super.onSaveInstanceState(outState);
     }
 
