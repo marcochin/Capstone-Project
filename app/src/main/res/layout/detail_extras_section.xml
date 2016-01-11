@@ -4,20 +4,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_height="match_parent"
     android:layout_width="match_parent"
-    android:paddingTop="@dimen/detail_extras_section_top_padding"
-    android:paddingBottom="@dimen/detail_extras_section_bottom_padding"
-    android:paddingLeft="@dimen/detail_extras_section_horizontal_padding"
-    android:paddingStart="@dimen/detail_extras_section_horizontal_padding"
-    android:paddingRight="@dimen/detail_extras_section_horizontal_padding"
-    android:paddingEnd="@dimen/detail_extras_section_horizontal_padding"
+    android:paddingTop="@dimen/detail_section_vertical_padding"
+    android:paddingBottom="@dimen/detail_section_vertical_padding"
+    android:paddingLeft="@dimen/detail_section_horizontal_padding"
+    android:paddingStart="@dimen/detail_section_horizontal_padding"
+    android:paddingRight="@dimen/detail_section_horizontal_padding"
+    android:paddingEnd="@dimen/detail_section_horizontal_padding"
     android:background="@color/detail_extras_background">
 
     <android.support.v7.widget.GridLayout
         android:id="@+id/detail_extras_section"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="@dimen/detail_center_vertical"
-        android:visibility="visible"
+        android:layout_centerVertical="true"
         app:columnCount="2">
 
         <TextView
@@ -131,9 +130,7 @@
         android:id="@+id/progress_wheel"
         android:layout_width="@dimen/progress_wheel_size"
         android:layout_height="@dimen/progress_wheel_size"
-        android:layout_marginTop="@dimen/detail_extras_section_progress_retry_margin"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="@dimen/detail_center_vertical"
+        android:layout_centerInParent="true"
         android:visibility="visible"/>
 
     <Button
@@ -141,9 +138,7 @@
         android:id="@+id/button_retry"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/detail_extras_section_progress_retry_margin"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="@dimen/detail_center_vertical"
+        android:layout_centerInParent="true"
         android:textColor="@color/white"
         android:text="@string/button_retry"
         android:visibility="invisible"/>

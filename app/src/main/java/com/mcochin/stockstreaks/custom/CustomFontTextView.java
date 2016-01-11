@@ -13,34 +13,34 @@ import com.mcochin.stockstreaks.R;
 /**
  * Custom TextView for the app logo that takes in a custom attribute for font.
  */
-public class LogoTextView extends TextView {
+public class CustomFontTextView extends TextView {
     private static final String FONTS_PATH = "fonts/";
 
-    public LogoTextView(Context context) {
+    public CustomFontTextView(Context context) {
         super(context);
         init(null);
     }
 
-    public LogoTextView(Context context, AttributeSet attrs) {
+    public CustomFontTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(attrs);
     }
 
-    public LogoTextView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public CustomFontTextView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(attrs);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public LogoTextView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public CustomFontTextView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init(attrs);
     }
 
     private void init(AttributeSet attrs) {
         if (attrs!=null) {
-            TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.LogoTextView);
-            String fontName = a.getString(R.styleable.LogoTextView_fontName);
+            TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.CustomFontTextView);
+            String fontName = a.getString(R.styleable.CustomFontTextView_fontName);
             if (fontName!=null) {
                 Typeface myTypeface = Typeface.createFromAsset(getContext().getAssets(), FONTS_PATH + fontName);
                 setTypeface(myTypeface);

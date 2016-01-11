@@ -219,7 +219,7 @@ public class MainService extends IntentService {
                     cursor.moveToPosition(i);
                     symbolsToLoad[i] = cursor.getString(indexSymbol);
                 }
-                if (symbolsToLoad.length != 0) {
+                if (cursorCount != 0) {
                     ContentProviderOperation updateTimeOp = getUpdateTimeOperation();
                     ArrayList<ContentProviderOperation> ops = getLoadAFewOperations(symbolsToLoad);
 
@@ -270,8 +270,8 @@ public class MainService extends IntentService {
             int lastTradeDay = lastTradeTime.get(Calendar.DAY_OF_MONTH);
 
             // Determine if we should use stock price
-            // "nowTimeDay > lastTradeDay" will cover holidays and weekends in which history has
-            // not updated yet!
+            // "nowTimeDay > lastTradeDay" covers time during "non-active" trade hours such as
+            // holidays and weekends in which history has not updated yet!
             if(!lastTradeTime.equals(firstHistoricalDate)
                     && (nowTimeDay > lastTradeDay || !Utility.isDuringTradingHours())){
 
@@ -422,7 +422,7 @@ public class MainService extends IntentService {
         }
 
         ContentValues values = new ContentValues();
-        values.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, listPosition);
+        values.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, listPosition + 1);
 
         return ContentProviderOperation
                 .newUpdate(SaveStateEntry.CONTENT_URI)

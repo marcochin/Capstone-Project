@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item type="layout" name="fragment_detail_ref">@layout/fragment_detail</item>
-    <item type="string" name="detail_update_time_format_ref">@string/update_time_format_wide</item>
 </resources>

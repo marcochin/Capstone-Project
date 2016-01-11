@@ -90,7 +90,7 @@ public class ListManagerFragment extends Fragment{
                     cursor = cr.query(
                             StockEntry.CONTENT_URI,
                             ListManipulator.STOCK_PROJECTION,
-                            StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION_LE,
+                            StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
                             new String[]{Integer.toString(shownPositionBookmark)},
                             StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 

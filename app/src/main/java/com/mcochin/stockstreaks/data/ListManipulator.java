@@ -173,6 +173,7 @@ public class ListManipulator {
     public void removeItem(int position) {
         mLastRemovedItem = mShownList.remove(position);
         mLastRemovedPosition = position;
+        mListUpdated = true;
     }
 
     public int undoLastRemoveItem() {
@@ -247,19 +248,25 @@ public class ListManipulator {
      * Saves the list positions of every item. Should be called from a background thread
      * @param cr ContentResolver
      */
+    // All synchronized blocks in this class are so they don't interfere with this method.
     public void saveShownListState(ContentResolver cr) {
         synchronized (this) {
             ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-
             // Determine if the last item is a loading item. If so, skip it. We can't remove it
             // because during orientation change, we need to persist the loading item.
-            int mShownListSize = getItem(mShownList.size() - 1).getSymbol().equals(LOADING_ITEM)
-                    ? mShownList.size() - 1
-                    : mShownList.size();
+            int mShownListSize;
+
+            if(mShownList.isEmpty()){
+                mShownListSize = 0;
+            }else {
+                mShownListSize = getItem(mShownList.size() - 1).getSymbol().equals(LOADING_ITEM)
+                        ? mShownList.size() - 1
+                        : mShownList.size();
+            }
 
             // Save bookmark in db
             ContentValues bookmarkValues = new ContentValues();
-            bookmarkValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, mShownListSize - 1);
+            bookmarkValues.put(SaveStateEntry.COLUMN_SHOWN_POSITION_BOOKMARK, mShownListSize);
             ops.add(ContentProviderOperation
                     .newUpdate(SaveStateEntry.CONTENT_URI)
                     .withValues(bookmarkValues)

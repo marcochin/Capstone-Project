@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.mcochin.stockstreaks.custom.LogoTextView
+        <com.mcochin.stockstreaks.custom.CustomFontTextView
             android:id="@+id/logo"
             android:layout_width="match_parent"
             android:layout_height="?attr/listPreferredItemHeight"

@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
@@ -38,7 +39,6 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
-import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
@@ -104,9 +104,19 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     .add(mListFragment, ListManagerFragment.TAG).commit();
             getSupportFragmentManager().executePendingTransactions();
 
+            // Checks to see if app is opened from widget
+            Uri detailUri = getIntent().getData();
+            if(detailUri != null){
+                if (mDetailContainer != null) {
+                    insertFragmentIntoDetailContainer(detailUri);
+                } else {
+                    insertFragmentIntoDetailActivity(detailUri);
+                }
+            }
             // We have to generate a new session so network calls from previous sessions
             // have a chance to cancel themselves
             MyApplication.startNewSession();
+
 
         } else{
             mListFragment = ((ListManagerFragment) getSupportFragmentManager()
@@ -140,6 +150,21 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         configureOverflowMenu();
         configureRecyclerView();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        // Checks to see if app is opened from widget
+        Uri detailUri = getIntent().getData();
+        if(detailUri != null){
+            if (mDetailContainer != null) {
+                insertFragmentIntoDetailContainer(detailUri);
+            } else {
+                insertFragmentIntoDetailActivity(detailUri);
+            }
+        }
     }
 
     @Override
@@ -198,15 +223,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // ListManipulatorFragment.EventListener
-    public void onRefreshFinished(boolean success) {
-        if(success) {
-            mAdapter.notifyDataSetChanged();
-        }
-        showLoadFinishedWidgets();
-        EventBus.getDefault().removeAllStickyEvents();
-    }
-
-    @Override // ListManipulatorFragment.EventListener
     public void onWidgetRefresh() {
         showProgressWheel();
         EventBus.getDefault().removeAllStickyEvents();
@@ -214,27 +230,60 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadFromDbFinished() {
+        hideProgressWheel();
         mAdapter.notifyDataSetChanged();
-        showLoadFinishedWidgets();
+
+        if(getListManipulator().getCount() == 0 ){
+            showEmptyWidgets();
+
+        }else if(mDetailContainer != null){
+            // Load the first item into the container, when db finishes loading
+            String symbol = getListManipulator().getItem(0).getSymbol();
+            Uri detailUri = StockEntry.buildUri(symbol);
+            insertFragmentIntoDetailContainer(detailUri);
+        }
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onRefreshFinished(boolean success) {
+        hideProgressWheel();
+        if(success) {
+            mAdapter.notifyDataSetChanged();
+
+            // If tablet, insert fragment into container
+            if (mDetailContainer != null) {
+                String symbol = getListManipulator().getItem(0).getSymbol();
+                Uri detailUri = StockEntry.buildUri(symbol);
+                insertFragmentIntoDetailContainer(detailUri);
+            }
+        } else{
+            if(getListManipulator().getCount() == 0 ){
+                showEmptyWidgets();
+            }
+        }
+        EventBus.getDefault().removeAllStickyEvents();
     }
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadSymbolFinished(boolean success) {
+        hideProgressWheel();
+
         if(success) {
             mAdapter.notifyItemInserted(0);
             mRecyclerView.smoothScrollToPosition(0);
             mSearchEditText.setText("");
 
-            //If tablet insert fragment into container
+            // If tablet, insert fragment into container
             if (mDetailContainer != null) {
                 String symbol = getListManipulator().getItem(0).getSymbol();
                 Uri detailUri = StockEntry.buildUri(symbol);
-
                 insertFragmentIntoDetailContainer(detailUri);
             }
+        } else{
+            if(getListManipulator().getCount() == 0 ){
+                showEmptyWidgets();
+            }
         }
-
-        showLoadFinishedWidgets();
         EventBus.getDefault().removeAllStickyEvents();
     }
 
@@ -253,7 +302,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 }
             }
         }
-        showLoadFinishedWidgets();
         EventBus.getDefault().removeAllStickyEvents();
     }
 
@@ -290,7 +338,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             Toast.makeText(this, R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
             return;
         }
-
         // Refresh the shownList BEFORE fetching a new stock. This is to prevent
         // fetching the new stock twice when it becomes apart of that list.
         if(!MyApplication.getInstance().isRefreshing() && Utility.canUpdateList(getContentResolver())) {
@@ -313,13 +360,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             //If tablet insert fragment into container
             if (mDetailContainer != null) {
                 insertFragmentIntoDetailContainer(detailUri);
-
             } else {
-                mSearchEditText.clearFocus();
-                //If phone open activity
-                Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
-                openDetail.setData(detailUri);
-                startActivity(openDetail);
+                insertFragmentIntoDetailActivity(detailUri);
             }
         }
     }
@@ -371,10 +413,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             mSnackbar.show();
 
             if(getListManipulator().getCount() == 0){
-                showEmptyMessage();
-                if(mDetailContainer != null){
-                    mDetailContainer.setVisibility(View.GONE);
-                }
+                showEmptyWidgets();
             }
         }
     }
@@ -503,9 +542,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
-    private void insertFragmentIntoDetailContainer(Uri detailUri){
+    private void insertFragmentIntoDetailContainer(@NonNull Uri detailUri){
         Bundle args = new Bundle();
         args.putParcelable(DetailFragment.KEY_DETAIL_URI, detailUri);
+
+        mDetailContainer.setVisibility(View.VISIBLE);
 
         DetailFragment detailFragment = new DetailFragment();
         detailFragment.setArguments(args);
@@ -514,17 +555,18 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 .commit();
     }
 
-    private void showLoadFinishedWidgets(){
-        // because showEmptyMessage relies on progress wheel to be invisible, try
-        // to hide the progress wheel before calling this method if it is necessary
-        hideProgressWheel();
-        if(getListManipulator().getCount() == 0 ){
-            if(mProgressWheel.getVisibility() == View.INVISIBLE){
-                mEmptyMsg.setVisibility(View.VISIBLE);
-            }
-            if(mDetailContainer != null){
-                mDetailContainer.setVisibility(View.GONE);
-            }
+    private void insertFragmentIntoDetailActivity(@NonNull Uri detailUri){
+        mSearchEditText.clearFocus();
+        //If phone open activity
+        Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
+        openDetail.setData(detailUri);
+        startActivity(openDetail);
+    }
+
+    private void showEmptyWidgets(){
+        showEmptyMessage();
+        if(mDetailContainer != null){
+            mDetailContainer.setVisibility(View.GONE);
         }
     }
 

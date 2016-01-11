@@ -219,6 +219,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     sdf.format(lastUpdate));
 
             // Main Section
+            // Add check here so when the service returns from calculating the prev streak info
+            // it wont have to load main section again.
             if(!mTextUpdateTime.getText().toString().equals(lastUpdateString)) {
                 mTextUpdateTime.setText(getString(R.string.placeholder_update_time,
                         sdf.format(lastUpdate)));
@@ -276,7 +278,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-
     }
 
     public void onEventMainThread(LoadDetailErrorEvent event){

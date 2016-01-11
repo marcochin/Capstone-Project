@@ -5,10 +5,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingLeft="@dimen/detail_extras_section_horizontal_padding"
-    android:paddingStart="@dimen/detail_extras_section_horizontal_padding"
-    android:paddingRight="@dimen/detail_extras_section_horizontal_padding"
-    android:paddingEnd="@dimen/detail_extras_section_horizontal_padding">
+    android:paddingLeft="@dimen/detail_section_horizontal_padding"
+    android:paddingStart="@dimen/detail_section_horizontal_padding"
+    android:paddingRight="@dimen/detail_section_horizontal_padding"
+    android:paddingEnd="@dimen/detail_section_horizontal_padding"
+    android:paddingTop="@dimen/detail_section_vertical_padding"
+    android:paddingBottom="@dimen/detail_section_vertical_padding">
 
     <android.support.v7.widget.GridLayout
         android:layout_width="match_parent"
@@ -25,7 +27,7 @@
             android:textColor="@color/secondary_text"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
-            tools:text="Updated: Thursday, April 03 \n @ 4:00pm" />
+            tools:text="Updated: Thursday, April 03 @ 4:00pm" />
 
         <TextView android:id="@+id/text_full_name"
             android:layout_width="0dp"

@@ -46,7 +46,7 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
 
         return new RemoteViewsFactory() {
             private Cursor mData = null;
-            private int mShownPositionBookmarkAndOne;
+            private int mShownPositionBookmark;
 
             @Override
             public void onCreate() {
@@ -64,13 +64,13 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
                 // that calls use our process and permission
                 final long identityToken = Binder.clearCallingIdentity();
                 //We add one because we want to know if we should show the load more button or not
-                mShownPositionBookmarkAndOne = Utility.getShownPositionBookmark(
-                        getContentResolver()) + 1;
+                mShownPositionBookmark = Utility.getShownPositionBookmark(
+                        getContentResolver());
 
                 mData = getContentResolver().query(StockEntry.CONTENT_URI,
                         STOCK_PROJECTION,
                         StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION_LE,
-                        new String[]{Integer.toString(mShownPositionBookmarkAndOne)},
+                        new String[]{Integer.toString(mShownPositionBookmark)},
                         StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
                 Binder.restoreCallingIdentity(identityToken);
             }
@@ -83,7 +83,7 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
                 }
                 RemoteViews views;
 
-                if(mData.getInt(INDEX_LIST_POSITION) == mShownPositionBookmarkAndOne){
+                if(mData.getInt(INDEX_LIST_POSITION) == mShownPositionBookmark){
                     // Set the load more button item
                     views = new RemoteViews(getPackageName(), R.layout.widget_list_item_load_more);
                     // Fill in intent
