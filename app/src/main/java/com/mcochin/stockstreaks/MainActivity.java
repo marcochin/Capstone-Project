@@ -16,6 +16,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -35,7 +36,9 @@ import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.custom.MyLinearLayoutManager;
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
+import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.fragments.DetailEmptyFragment;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -77,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private ListManagerFragment mListFragment;
 
     private boolean mFirstOpen;
+    private boolean mStartedFromWidget;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,27 +100,36 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if (savedInstanceState == null) {
             mFirstOpen = true;
-
             // Initialize the fragment that stores the list
             mListFragment = new ListManagerFragment();
-
             getSupportFragmentManager().beginTransaction()
                     .add(mListFragment, ListManagerFragment.TAG).commit();
+
+            // Execute pending transaction to immediately add the ListManagerFragment because
+            // the RecyclerView Adapter is dependent on it.
             getSupportFragmentManager().executePendingTransactions();
 
             // Checks to see if app is opened from widget
             Uri detailUri = getIntent().getData();
             if(detailUri != null){
+                mStartedFromWidget = true;
+                String symbol = StockContract.getSymbolFromUri(detailUri);
+
                 if (mDetailContainer != null) {
-                    insertFragmentIntoDetailContainer(detailUri);
+                    insertFragmentIntoDetailContainer(symbol);
                 } else {
-                    insertFragmentIntoDetailActivity(detailUri);
+                    insertFragmentIntoDetailActivity(symbol);
                 }
             }
+
+            //TODO yelllow
+//            // Initialize Activity with empty views
+            // This will overrider the start from widget card view sooooo
+//            showEmptyWidgets();
+
             // We have to generate a new session so network calls from previous sessions
             // have a chance to cancel themselves
             MyApplication.startNewSession();
-
 
         } else{
             mListFragment = ((ListManagerFragment) getSupportFragmentManager()
@@ -157,12 +170,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         super.onNewIntent(intent);
 
         // Checks to see if app is opened from widget
-        Uri detailUri = getIntent().getData();
+        Uri detailUri = intent.getData();
         if(detailUri != null){
+            String symbol = StockContract.getSymbolFromUri(detailUri);
+
             if (mDetailContainer != null) {
-                insertFragmentIntoDetailContainer(detailUri);
+                insertFragmentIntoDetailContainer(symbol);
             } else {
-                insertFragmentIntoDetailActivity(detailUri);
+                insertFragmentIntoDetailActivity(symbol);
             }
         }
     }
@@ -235,12 +250,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if(getListManipulator().getCount() == 0 ){
             showEmptyWidgets();
-
-        }else if(mDetailContainer != null){
+        }else if(mDetailContainer != null && !mStartedFromWidget){
             // Load the first item into the container, when db finishes loading
-            String symbol = getListManipulator().getItem(0).getSymbol();
-            Uri detailUri = StockEntry.buildUri(symbol);
-            insertFragmentIntoDetailContainer(detailUri);
+            insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
         }
     }
 
@@ -252,9 +264,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
             // If tablet, insert fragment into container
             if (mDetailContainer != null) {
-                String symbol = getListManipulator().getItem(0).getSymbol();
-                Uri detailUri = StockEntry.buildUri(symbol);
-                insertFragmentIntoDetailContainer(detailUri);
+                insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
             }
         } else{
             if(getListManipulator().getCount() == 0 ){
@@ -275,9 +285,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
             // If tablet, insert fragment into container
             if (mDetailContainer != null) {
-                String symbol = getListManipulator().getItem(0).getSymbol();
-                Uri detailUri = StockEntry.buildUri(symbol);
-                insertFragmentIntoDetailContainer(detailUri);
+                insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
             }
         } else{
             if(getListManipulator().getCount() == 0 ){
@@ -355,13 +363,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if(position != RecyclerView.NO_POSITION) {
             String symbol = getListManipulator().getItem(position).getSymbol();
-            Uri detailUri = StockEntry.buildUri(symbol);
 
             //If tablet insert fragment into container
             if (mDetailContainer != null) {
-                insertFragmentIntoDetailContainer(detailUri);
+                insertFragmentIntoDetailContainer(symbol);
             } else {
-                insertFragmentIntoDetailActivity(detailUri);
+                insertFragmentIntoDetailActivity(symbol);
             }
         }
     }
@@ -382,7 +389,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         int position = holder.getAdapterPosition();
 
         if(position != RecyclerView.NO_POSITION) {
-            getListManipulator().removeItem(position);
+            final ListManipulator listManipulator = getListManipulator();
+            listManipulator.removeItem(position);
             mAdapter.notifyItemRemoved(position);
 
             mSnackbar = Snackbar.make(
@@ -391,9 +399,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     .setAction(R.string.snackbar_action_text, new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            int position = getListManipulator().undoLastRemoveItem();
+                            hideEmptyMessage();
+                            int position = listManipulator.undoLastRemoveItem();
                             mAdapter.notifyItemInserted(position);
                             mRecyclerView.smoothScrollToPosition(position);
+
+                            if(mDetailContainer != null) {;
+                                insertFragmentIntoDetailContainer(
+                                        listManipulator.getItem(position).getSymbol());
+                            }
                         }
                     })
                     .setCallback(new Snackbar.Callback() {
@@ -403,7 +417,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                             new AsyncTask<Void, Void, Void>(){
                                 @Override
                                 protected Void doInBackground(Void... params) {
-                                    getListManipulator().permanentlyDeleteLastRemoveItem(
+                                    listManipulator.permanentlyDeleteLastRemoveItem(
                                             getContentResolver());
                                     return null;
                                 }
@@ -412,8 +426,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     });
             mSnackbar.show();
 
-            if(getListManipulator().getCount() == 0){
+            if(listManipulator.getCount() == 0){
                 showEmptyWidgets();
+            }else if(mDetailContainer != null){
+                insertFragmentIntoDetailContainer(listManipulator.getItem(0).getSymbol());
             }
         }
     }
@@ -499,26 +515,25 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private void configureDynamicScrollingListener(){
         // When recyclerView is scrolled all the way to the top, appbar elevation will disappear.
         // When you start scrolling down elevation will reappear.
-        if (mDetailContainer == null) {
-            ViewCompat.setElevation(mAppBar, 0);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
-                // This gets called on instantiation, on item add, and on scroll
-                mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-                    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-                    @Override
-                    public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                        if (recyclerView.computeVerticalScrollOffset() <= 2) { //0 or 1 not reliable
-                            mAppBar.setElevation(0);
-                        } else {
-                            mAppBar.setElevation(
-                                    getResources().getDimension(R.dimen.appbar_elevation));
-                        }
-                        dynamicLoadAFew();
+        //TODO yelllow
+//        ViewCompat.setElevation(mAppBar, 0); not sure if we need this comment out for now
+
+        // This gets called on instantiation, on item add, and on scroll
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && mDetailContainer == null) {
+                    if (recyclerView.computeVerticalScrollOffset() <= 2) { //0 or 1 not reliable
+                        mAppBar.setElevation(0);
+                    } else {
+                        mAppBar.setElevation(
+                                getResources().getDimension(R.dimen.appbar_elevation));
                     }
-                });
+                }
+                dynamicLoadAFew();
             }
-        }
+        });
     }
 
     private void dynamicLoadAFew(){
@@ -533,7 +548,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
             if(!Utility.canUpdateList(getContentResolver())) {
                 mListFragment.loadAFew();
-
             }else{
                 Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
             }
@@ -542,11 +556,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
-    private void insertFragmentIntoDetailContainer(@NonNull Uri detailUri){
+    private void insertFragmentIntoDetailContainer(@NonNull String symbol){
+        Uri detailUri = StockEntry.buildUri(symbol);
         Bundle args = new Bundle();
         args.putParcelable(DetailFragment.KEY_DETAIL_URI, detailUri);
-
-        mDetailContainer.setVisibility(View.VISIBLE);
 
         DetailFragment detailFragment = new DetailFragment();
         detailFragment.setArguments(args);
@@ -555,8 +568,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 .commit();
     }
 
-    private void insertFragmentIntoDetailActivity(@NonNull Uri detailUri){
+    private void insertFragmentIntoDetailActivity(@NonNull String symbol){
         mSearchEditText.clearFocus();
+        Uri detailUri = StockEntry.buildUri(symbol);
         //If phone open activity
         Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
         openDetail.setData(detailUri);
@@ -566,7 +580,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private void showEmptyWidgets(){
         showEmptyMessage();
         if(mDetailContainer != null){
-            mDetailContainer.setVisibility(View.GONE);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.detail_container, new DetailEmptyFragment(), DetailFragment.TAG)
+                    .commit();
         }
     }
 
@@ -592,7 +608,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     public ListManipulator getListManipulator() {
-        return mListFragment.getListManipulator();
+        if(mListFragment != null) {
+            return mListFragment.getListManipulator();
+        }
+
+        return null;
     }
 
     @Override

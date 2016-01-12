@@ -27,7 +27,7 @@
             android:textColor="@color/secondary_text"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
-            tools:text="Updated: Thursday, April 03 @ 4:00pm" />
+            tools:text="@string/update_time_format_wide" />
 
         <TextView android:id="@+id/text_full_name"
             android:layout_width="0dp"

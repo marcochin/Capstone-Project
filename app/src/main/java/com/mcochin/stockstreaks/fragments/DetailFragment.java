@@ -103,6 +103,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         Bundle args = getArguments();
         mDetailUri = args.getParcelable(KEY_DETAIL_URI);
 
+
+
         if(savedInstanceState != null){
             mReplyButtonVisible = savedInstanceState.getBoolean(KEY_REPLY_BUTTON_VISIBLE);
         }
@@ -214,7 +216,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             Date lastUpdate = Utility.getLastUpdateTime(
                     getContext().getContentResolver()).getTime();
             SimpleDateFormat sdf = new SimpleDateFormat(
-                    getString(R.string.detail_update_time_format_ref), Locale.US);
+                    getString(R.string.update_time_format_wide), Locale.US);
             String lastUpdateString = getString(R.string.placeholder_update_time,
                     sdf.format(lastUpdate));
 

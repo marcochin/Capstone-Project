@@ -11,11 +11,11 @@
             android:id="@+id/logo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
             android:src="@drawable/logo"
-            android:layout_centerHorizontal="true"
-            android:paddingBottom="8dp"
             android:paddingTop="8dp"
-            android:contentDescription="@string/app_name"/>
+            android:paddingBottom="8dp"
+            android:contentDescription="@string/app_name" />
 
         <FrameLayout
             android:layout_width="wrap_content"
