@@ -203,7 +203,6 @@ public class DetailService extends Service {
                 values.put(StockContract.StockEntry.COLUMN_PREV_STREAK, prevStreak);
                 values.put(StockContract.StockEntry.COLUMN_STREAK_YEAR_HIGH, yearStreakHigh);
                 values.put(StockContract.StockEntry.COLUMN_STREAK_YEAR_LOW, yearStreakLow);
-                Log.d(TAG, prevStreak + " " + yearStreakHigh + " " + yearStreakLow);
             }
 
         }finally {

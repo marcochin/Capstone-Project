@@ -4,7 +4,6 @@ import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -23,7 +22,7 @@ import java.util.List;
 public class ListManipulator {
     private static final String TAG = ListManipulator.class.getSimpleName();
 
-    public static final int A_FEW = 12;
+    public static final int MORE = 2;
     public static final int STOCK_LIMIT = 200;
     public static final String LOADING_ITEM = "loadingItem";
 
@@ -60,9 +59,10 @@ public class ListManipulator {
      */
     public void addItemToTop(Stock stock){
         synchronized (this) {
-            stock.setId(generateUniqueId());
+            stock.setId(mUniqueId++);
             mShownList.add(0, stock);
             mListUpdated = true;
+            printList();
         }
     }
 
@@ -72,10 +72,11 @@ public class ListManipulator {
      */
     public void addItemToBottom(Stock stock){
         synchronized (this) {
-            stock.setId(generateUniqueId());
+            stock.setId(mUniqueId++);
             mShownList.add(stock);
             addToLoadListPositionBookmark(1);
             mListUpdated = true;
+            printList();
         }
     }
 
@@ -85,24 +86,27 @@ public class ListManipulator {
      */
     public void addItemToPosition(int position, Stock stock){
         synchronized (this) {
-            stock.setId(generateUniqueId());
+            stock.setId(mUniqueId++);
             mShownList.add(position, stock);
             addToLoadListPositionBookmark(1);
             mListUpdated = true;
+            printList();
         }
     }
 
     public void addLoadingItem(){
         Stock stock = new Stock();
-        stock.setId(generateUniqueId());
+        stock.setId(mUniqueId++);
         stock.setSymbol(LOADING_ITEM);
         mShownList.add(stock);
+        printList();
     }
 
     public void removeLoadingItem(){
         if(isLoadingItemPresent()){
             mShownList.remove(getCount() - 1);
         }
+        printList();
     }
 
     public boolean isLoadingItemPresent(){
@@ -132,10 +136,6 @@ public class ListManipulator {
         return mShownList.get(index);
     }
 
-    public int generateUniqueId(){
-        return mUniqueId++;
-    }
-
     public boolean isListUpdated(){
         return mListUpdated;
     }
@@ -148,11 +148,10 @@ public class ListManipulator {
             if (cursor != null) {
                 while (cursor.moveToNext()) {
                     Stock stock = Utility.getStockFromCursor(cursor);
-                    stock.setId(generateUniqueId());
+                    stock.setId(mUniqueId++);
                     mShownList.add(stock);
                 }
             }
-
             mListUpdated = true;
         }
     }
@@ -211,24 +210,24 @@ public class ListManipulator {
         }
     }
 
-    public String[] getAFewToLoad(){
+    public String[] getMoreToLoad(){
         String [] nextFewToLoad = null;
 
-        if(canLoadAFew()) {
-            boolean loadAFew;
+        if(canLoadMore()) {
+            boolean loadMore;
 
             int whatsLeftToLoad = mLoadList.length - mLoadListPositionBookmark;
-            if (whatsLeftToLoad >= A_FEW) {
-                nextFewToLoad = new String[A_FEW];
-                loadAFew = true;
+            if (whatsLeftToLoad >= MORE) {
+                nextFewToLoad = new String[MORE];
+                loadMore = true;
             } else {
                 nextFewToLoad = new String[whatsLeftToLoad];
-                loadAFew = false;
+                loadMore = false;
             }
 
             // We can't update the REAL bookmark until we get a msg that update has succeeded.
             int bookmarkHelper = mLoadListPositionBookmark;
-            for (int i = 0; i < (loadAFew ? A_FEW : whatsLeftToLoad); i++) {
+            for (int i = 0; i < (loadMore ? MORE : whatsLeftToLoad); i++) {
                 nextFewToLoad[i] = mLoadList[bookmarkHelper++];
             }
         }
@@ -236,7 +235,7 @@ public class ListManipulator {
         return nextFewToLoad;
     }
 
-    public boolean canLoadAFew(){
+    public boolean canLoadMore(){
         if(mLoadList != null) {
             return mLoadListPositionBookmark < mLoadList.length;
         }
@@ -306,5 +305,15 @@ public class ListManipulator {
 
             mListUpdated = false;
         }
+    }
+
+    private void printList(){
+        String printList = "";
+        StringBuilder stringBuilder = new StringBuilder(printList);
+        for(int i = 0; i < mShownList.size(); i++){
+            stringBuilder.append(mShownList.get(i).getSymbol());
+            stringBuilder.append(", ");
+        }
+        Log.d(TAG, stringBuilder.toString());
     }
 }

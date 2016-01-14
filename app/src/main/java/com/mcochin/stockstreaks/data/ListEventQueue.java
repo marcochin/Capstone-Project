@@ -1,10 +1,8 @@
 package com.mcochin.stockstreaks.data;
 
-import android.util.Log;
-
 import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.events.Event;
-import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
 
@@ -67,8 +65,8 @@ public class ListEventQueue {
      */
 
     private Class getEventType(Event event) {
-        if (event instanceof LoadAFewFinishedEvent) {
-            return LoadAFewFinishedEvent.class;
+        if (event instanceof LoadMoreFinishedEvent) {
+            return LoadMoreFinishedEvent.class;
 
         } else if (event instanceof LoadSymbolFinishedEvent) {
             return LoadSymbolFinishedEvent.class;

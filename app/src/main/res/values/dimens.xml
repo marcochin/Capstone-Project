@@ -51,5 +51,4 @@
     <dimen name="widget_min_resize_height">@dimen/widget_min_height</dimen>
     <dimen name="widget_list_item_padding">10dp</dimen>
     <dimen name="widget_list_item_estimated_height">60dp</dimen>
-
 </resources>

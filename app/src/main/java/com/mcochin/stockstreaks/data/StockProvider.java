@@ -18,7 +18,7 @@ import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
@@ -289,7 +289,7 @@ public class StockProvider extends ContentProvider {
 
     private void performLoadAFew(ArrayList<ContentProviderOperation> ops, String sessionId){
         List<Stock> stockList = loopThroughOperations(ops);
-        LoadAFewFinishedEvent event = new LoadAFewFinishedEvent(sessionId, stockList, true);
+        LoadMoreFinishedEvent event = new LoadMoreFinishedEvent(sessionId, stockList, true);
         ListEventQueue.getInstance().post(event);
     }
 

@@ -17,7 +17,7 @@ import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
@@ -43,10 +43,10 @@ import yahoofinance.quotes.stock.StockQuote;
 public class MainService extends IntentService {
     private static final String TAG = MainService.class.getSimpleName();
     public static final String KEY_LOAD_SYMBOL_QUERY ="searchQuery";
-    public static final String KEY_LOAD_A_FEW_QUERY ="loadAFewQuery";
+    public static final String KEY_LOAD_MORE_QUERY ="loadMoreQuery";
     public static final String KEY_SESSION_ID ="sessionId";
 
-    public static final String ACTION_LOAD_A_FEW = "actionLoadAFew";
+    public static final String ACTION_LOAD_MORE = "actionLoadMore";
     public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";
     public static final String ACTION_APP_REFRESH ="actionAppRefresh";
     public static final String ACTION_WIDGET_REFRESH ="actionWidgetRefresh";
@@ -94,8 +94,8 @@ public class MainService extends IntentService {
                     performActionLoadSymbol(symbol);
                     break;
 
-                case ACTION_LOAD_A_FEW:
-                    String[] symbols = intent.getStringArrayExtra(KEY_LOAD_A_FEW_QUERY);
+                case ACTION_LOAD_MORE:
+                    String[] symbols = intent.getStringArrayExtra(KEY_LOAD_MORE_QUERY);
                     performActionLoadAFew(symbols);
                     break;
 
@@ -128,8 +128,8 @@ public class MainService extends IntentService {
                             mSessionId, null, false));
                     break;
 
-                case ACTION_LOAD_A_FEW:
-                    ListEventQueue.getInstance().post(new LoadAFewFinishedEvent(
+                case ACTION_LOAD_MORE:
+                    ListEventQueue.getInstance().post(new LoadMoreFinishedEvent(
                             mSessionId, null, false));
                     break;
 
@@ -208,7 +208,7 @@ public class MainService extends IntentService {
                     StockEntry.CONTENT_URI,
                     projection,
                     StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
-                    new String[]{Integer.toString(ListManipulator.A_FEW)},
+                    new String[]{Integer.toString(ListManipulator.MORE)},
                     StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 
             if (cursor != null) {
@@ -404,7 +404,7 @@ public class MainService extends IntentService {
 
     private ContentProviderOperation getListPositionBookmarkOperation(String symbol){
         Cursor cursor = null;
-        int listPosition = ListManipulator.A_FEW; //Default to a few in case something goes wrong
+        int listPosition = ListManipulator.MORE; //Default to a few in case something goes wrong
         try{
             final String [] projection = new String[]{StockEntry.COLUMN_LIST_POSITION};
             final int indexListPosition = 0;

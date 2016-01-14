@@ -13,7 +13,7 @@ import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadAFewFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -30,11 +30,12 @@ public class ListManagerFragment extends Fragment{
     /**
      * This is true if the list is loading a few on the bottom
      */
-    private static volatile boolean mLoadingAFew = false;
+    private static volatile boolean mLoadingMore = false;
+    private int testSymbol = 0;
 
     public interface EventListener{
         void onLoadFromDbFinished();
-        void onLoadAFewFinished(boolean success);
+        void onLoadMoreFinished(boolean success);
         void onLoadSymbolFinished(boolean success);
         void onRefreshFinished(boolean success);
         void onWidgetRefresh();
@@ -154,32 +155,136 @@ public class ListManagerFragment extends Fragment{
         getContext().startService(serviceIntent);
     }
 
-    /**
-     * Loads the next few symbols in the user's list.
-     */
-    public void loadAFew() {
-        String[] aFewToLoad = mListManipulator.getAFewToLoad();
-
-        if (aFewToLoad != null) {
-            mLoadingAFew = true;
-
-            // Start service to load a few
-            Intent serviceIntent = new Intent(getContext(), MainService.class);
-            serviceIntent.setAction(MainService.ACTION_LOAD_A_FEW);
-            serviceIntent.putExtra(MainService.KEY_LOAD_A_FEW_QUERY, aFewToLoad);
-            getContext().startService(serviceIntent);
-
-        }else{
-            mLoadingAFew = false;
-        }
-    }
-
     public void loadSymbol(String symbol){
         // Start service to retrieve stock info
         Intent serviceIntent = new Intent(getContext(), MainService.class);
         serviceIntent.putExtra(MainService.KEY_LOAD_SYMBOL_QUERY, symbol);
         serviceIntent.setAction(MainService.ACTION_LOAD_SYMBOL);
         getContext().startService(serviceIntent);
+    }
+
+    /**
+     * Loads the next few symbols in the user's list.
+     */
+    public void loadMore() {
+        String[] moreSymbols = mListManipulator.getMoreToLoad();
+
+        if (moreSymbols != null) {
+            mLoadingMore = true;
+
+            // Start service to load a few
+            Intent serviceIntent = new Intent(getContext(), MainService.class);
+            serviceIntent.setAction(MainService.ACTION_LOAD_MORE);
+            serviceIntent.putExtra(MainService.KEY_LOAD_MORE_QUERY, moreSymbols);
+            getContext().startService(serviceIntent);
+
+        }else{
+            mLoadingMore = false;
+        }
+    }
+    public void testLoadSymbol(){
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                Stock stock = new Stock();
+                stock.setSymbol("Add");
+                stock.setChangeDollar(3.33f);
+                stock.setChangePercent(3.33f);
+                stock.setFullName("test inc");
+                stock.setRecentClose(3.33f);
+                stock.setStreak(-33);
+                mListManipulator.addItemToTop(stock);
+
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if (mEventListener != null) {
+                    mEventListener.onLoadSymbolFinished(true);
+                }
+            }
+        }.execute();
+    }
+
+    public void testRefresh() {
+        MyApplication.getInstance().setRefreshing(true);
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                mListManipulator.setShownListCursor(null);
+                testSymbol = 0;
+                for (int i = 0; i < ListManipulator.MORE; i++){
+                    Stock stock = new Stock();
+                    stock.setSymbol(Integer.toString(testSymbol++));
+                    stock.setChangeDollar(3.33f);
+                    stock.setChangePercent(3.33f);
+                    stock.setFullName("test inc");
+                    stock.setRecentClose(3.33f);
+                    stock.setStreak(-33);
+
+                    mListManipulator.addItemToBottom(stock);
+                }
+                MyApplication.getInstance().setRefreshing(false);
+
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if (mEventListener != null) {
+                    mEventListener.onRefreshFinished(true);
+                }
+            }
+        }.execute();
+    }
+
+    public void testLoadMore() {
+        mLoadingMore = true;
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                for (int i = 0; i < ListManipulator.MORE; i++){
+                    Stock stock = new Stock();
+                    stock.setSymbol(Integer.toString(testSymbol++));
+                    stock.setChangeDollar(3.33f);
+                    stock.setChangePercent(3.33f);
+                    stock.setFullName("test inc");
+                    stock.setRecentClose(3.33f);
+                    stock.setStreak(-33);
+
+                    mListManipulator.addItemToPosition(mListManipulator.getCount() - 1, stock);
+
+                }
+                // Remove loading item if it exists
+                mListManipulator.removeLoadingItem();
+                mLoadingMore = false;
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if (mEventListener != null) {
+                    mEventListener.onLoadMoreFinished(true);
+                }
+            }
+        }.execute();
+    }
+
+    public boolean testCanLoadMore(){
+        return testSymbol < 10;
     }
 
     /**
@@ -241,7 +346,7 @@ public class ListManagerFragment extends Fragment{
         }.execute();
     }
 
-    public void onEventMainThread(final LoadAFewFinishedEvent event){
+    public void onEventMainThread(final LoadMoreFinishedEvent event){
         if(!event.getSessionId().equals(MyApplication.getInstance().getSessionId())){
             return;
         }
@@ -251,19 +356,19 @@ public class ListManagerFragment extends Fragment{
                 if (event.isSuccessful()) {
                     //Add on bottom but before the loading item
                     for (Stock stock : event.getStockList()) {
-                        mListManipulator.addItemToPosition(mListManipulator.getCount() - 2, stock);
+                        mListManipulator.addItemToPosition(mListManipulator.getCount() - 1, stock);
                     }
                     // Remove loading item if it exists
                     mListManipulator.removeLoadingItem();
                 }
-                mLoadingAFew = false;
+                mLoadingMore = false;
                 return null;
             }
 
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
-                    mEventListener.onLoadAFewFinished(event.isSuccessful());
+                    mEventListener.onLoadMoreFinished(event.isSuccessful());
                 }
             }
         }.execute();
@@ -319,11 +424,11 @@ public class ListManagerFragment extends Fragment{
         return mListManipulator;
     }
 
-    public boolean isLoadingAFew() {
-        return mLoadingAFew;
+    public boolean isLoadingMore() {
+        return mLoadingMore;
     }
 
-    public void setLoadingAFew(boolean loadingAFew) {
-        mLoadingAFew = loadingAFew;
+    public void setLoadingMore(boolean loadingAFew) {
+        mLoadingMore = loadingAFew;
     }
 }

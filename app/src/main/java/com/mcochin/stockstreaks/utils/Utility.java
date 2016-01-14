@@ -10,6 +10,7 @@ import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.util.Pair;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.mcochin.stockstreaks.R;
@@ -71,9 +72,10 @@ public class Utility {
      * @param manager ActivityManager
      * @return returns true if running, false otherwise
      */
-    public static boolean isMainServiceRunning(ActivityManager manager) {
+    public static boolean isServiceRunning(ActivityManager manager, String serviceName) {
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (MainService.class.getName().equals(service.service.getClassName())) {
+            Log.d("Utility", serviceName + " " + service.service.getClassName());
+            if (serviceName.equals(service.service.getClassName())) {
                 return true;
             }
         }

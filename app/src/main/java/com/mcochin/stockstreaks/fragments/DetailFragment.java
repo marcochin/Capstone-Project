@@ -103,8 +103,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         Bundle args = getArguments();
         mDetailUri = args.getParcelable(KEY_DETAIL_URI);
 
-
-
         if(savedInstanceState != null){
             mReplyButtonVisible = savedInstanceState.getBoolean(KEY_REPLY_BUTTON_VISIBLE);
         }
@@ -302,5 +300,9 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mProgressWheel.setVisibility(View.INVISIBLE);
         mRetryButton.setVisibility(View.INVISIBLE);
         mExtrasSection.setVisibility(View.VISIBLE);
+    }
+
+    public String getSymbol(){
+        return StockContract.getSymbolFromUri(mDetailUri);
     }
 }

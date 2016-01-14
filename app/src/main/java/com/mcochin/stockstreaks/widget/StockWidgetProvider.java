@@ -37,6 +37,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
 
     @Override
     public void onEnabled(Context context) {
+        Log.d(TAG, "onEnabled");
         // Start alarmManager
         Calendar stockMarketClose = Utility.getNewYorkCalendarQuickSetup(
                 Utility.STOCK_MARKET_UPDATE_HOUR,
@@ -58,6 +59,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        Log.d(TAG, "onUpdate");
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int appWidgetId : appWidgetIds) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget);
@@ -99,7 +101,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
-
+        Log.d(TAG, "onReceive");
         String action = intent.getAction();
         if(action.equals(ACTION_DATA_UPDATED) || action.equals(ACTION_DATA_UPDATE_ERROR)
                 || action.equals(ACTION_DATA_REFRESH)) {

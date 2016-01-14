@@ -196,7 +196,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         if(symbol.equals(ListManipulator.LOADING_ITEM)) {
             holder.mContainer.setVisibility(View.INVISIBLE);
 
-            if(mListFragment.isLoadingAFew()){
+            if(mListFragment.isLoadingMore()){
                 holder.mProgressWheel.setVisibility(View.VISIBLE);
                 holder.mRetryButton.setVisibility(View.INVISIBLE);
 
@@ -264,6 +264,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
                 holder.mChangeAmt.setTextColor(color);
                 holder.mStreak.setText(mContext.getString(R.string.placeholder_d, streak));
             }
+
+
 
             // Set background resource (target view ID: container)
             final int dragState = holder.getDragStateFlags();

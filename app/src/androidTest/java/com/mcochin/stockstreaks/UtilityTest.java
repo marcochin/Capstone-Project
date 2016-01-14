@@ -198,4 +198,18 @@ public class UtilityTest extends ActivityInstrumentationTestCase2<MainActivity> 
 //        Log.d("Time", "TimeInMilli: myTime " + myTime.getTimeInMillis()+ " " + myTime.get(Calendar.HOUR_OF_DAY));
 
     }
+
+//    public void testIsServiceRunning(){
+//        getActivity().startService(new Intent(getActivity(), TestService.class));
+//
+//        assertTrue(Utility.isServiceRunning(
+//                (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE),
+//                TestService.class.getName()));
+//
+//        getActivity().stopService(new Intent(getActivity(), TestService.class));
+//
+//        assertFalse(Utility.isServiceRunning(
+//                (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE),
+//                TestService.class.getName()));
+//    }
 }

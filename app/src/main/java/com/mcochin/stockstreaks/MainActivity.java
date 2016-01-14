@@ -1,6 +1,5 @@
 package com.mcochin.stockstreaks;
 
-import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Intent;
 import android.graphics.drawable.NinePatchDrawable;
@@ -11,11 +10,9 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -42,11 +39,10 @@ import com.mcochin.stockstreaks.fragments.DetailEmptyFragment;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
+import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
-
-import java.util.Locale;
 
 import de.greenrobot.event.EventBus;
 
@@ -81,6 +77,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     private boolean mFirstOpen;
     private boolean mStartedFromWidget;
+    private boolean mDynamicScrollLoadEnabled;
+    private boolean mDynamicScrollLoadAnother;
+
+    private int mNumberOfLaunchItems;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,8 +98,25 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mSwipeToRefresh = (SwipeRefreshLayout)findViewById(R.id.swipe_to_refresh);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
 
+        //init savedInstanceState first as many components rely on it
+        initSavedInstanceState(savedInstanceState);
+        initOverflowMenu();
+        initRecyclerView();
+
+        mListFragment.setEventListener(this);
+        mSwipeToRefresh.setOnRefreshListener(this);
+        mAppBar.setSearchListener(this);
+
+        mNumberOfLaunchItems = getResources().getInteger(R.integer.numberOfLaunchItems);
+    }
+
+    private void initSavedInstanceState(Bundle savedInstanceState) {
         if (savedInstanceState == null) {
             mFirstOpen = true;
+            // We have to generate a new session so network calls from previous sessions
+            // have a chance to cancel themselves
+            MyApplication.startNewSession();
+
             // Initialize the fragment that stores the list
             mListFragment = new ListManagerFragment();
             getSupportFragmentManager().beginTransaction()
@@ -117,19 +134,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
                 if (mDetailContainer != null) {
                     insertFragmentIntoDetailContainer(symbol);
-                } else {
-                    insertFragmentIntoDetailActivity(symbol);
                 }
             }
-
-            //TODO yelllow
-//            // Initialize Activity with empty views
-            // This will overrider the start from widget card view sooooo
-//            showEmptyWidgets();
-
-            // We have to generate a new session so network calls from previous sessions
-            // have a chance to cancel themselves
-            MyApplication.startNewSession();
+            if(!mStartedFromWidget){
+                showDetailEmptyFragment();
+            }
 
         } else{
             mListFragment = ((ListManagerFragment) getSupportFragmentManager()
@@ -156,13 +165,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 mDetailContainer.setVisibility(View.VISIBLE);
             }
         }
-
-        mListFragment.setEventListener(this);
-        mSwipeToRefresh.setOnRefreshListener(this);
-        mAppBar.setSearchListener(this);
-
-        configureOverflowMenu();
-        configureRecyclerView();
     }
 
     @Override
@@ -176,8 +178,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
             if (mDetailContainer != null) {
                 insertFragmentIntoDetailContainer(symbol);
-            } else {
-                insertFragmentIntoDetailActivity(symbol);
             }
         }
     }
@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override
     protected void onStart() {
         super.onStart();
-        configureDynamicScrollingListener();
+        initDynamicScrollingListener();
 
         EventBus eventBus = EventBus.getDefault();
         eventBus.registerSticky(mListFragment);
@@ -199,33 +199,38 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         ListEventQueue listEventQueue = ListEventQueue.getInstance();
 
         if(mFirstOpen) {
+            mDynamicScrollLoadEnabled = false;
+            mDynamicScrollLoadAnother = false;
             showProgressWheel();
             listEventQueue.clearQueue();
             mListFragment.initFromDb();
-        }else{
+        }else {
             listEventQueue.postAllFromQueue();
-        }
 
-        if(Utility.canUpdateList(getContentResolver())) {
-            if (MyApplication.getInstance().isRefreshing()) {
-                showProgressWheel();
-            } else{
-                // Make sure it is not refreshing so we don't refresh twice
-                refreshList(null);
+            if(Utility.canUpdateList(getContentResolver())) {
+                if (MyApplication.getInstance().isRefreshing()) {
+                    showProgressWheel();
+                } else{
+                    // Make sure it is not refreshing so we don't refresh twice
+                    refreshList(null);
+                }
             }
         }
         mFirstOpen = false;
     }
 
     private void refreshList(String attachSymbol){
-        // Dismiss Snack-bar to prevent undo removal because the old data will not be in sync with
-        // new data when list is refreshed.
+        mDynamicScrollLoadEnabled = false;
+        mDynamicScrollLoadAnother = false;
         showProgressWheel();
 
+        // Dismiss Snack-bar to prevent undo removal because the old data will not be in sync with
+        // new data when list is refreshed.
         if (mSnackbar != null && mSnackbar.isShown()) {
             mSnackbar.dismiss();
         }
-        mListFragment.initFromRefresh(attachSymbol);
+//        mListFragment.initFromRefresh(attachSymbol);
+        mListFragment.testRefresh();
     }
 
     @Override // SwipeRefreshLayout.OnRefreshListener
@@ -238,40 +243,28 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // ListManipulatorFragment.EventListener
-    public void onWidgetRefresh() {
-        showProgressWheel();
-        EventBus.getDefault().removeAllStickyEvents();
-    }
-
-    @Override // ListManipulatorFragment.EventListener
     public void onLoadFromDbFinished() {
         hideProgressWheel();
         mAdapter.notifyDataSetChanged();
 
         if(getListManipulator().getCount() == 0 ){
-            showEmptyWidgets();
+            showEmptyMessage();
+
         }else if(mDetailContainer != null && !mStartedFromWidget){
             // Load the first item into the container, when db finishes loading
             insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
         }
-    }
 
-    @Override // ListManipulatorFragment.EventListener
-    public void onRefreshFinished(boolean success) {
-        hideProgressWheel();
-        if(success) {
-            mAdapter.notifyDataSetChanged();
-
-            // If tablet, insert fragment into container
-            if (mDetailContainer != null) {
-                insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
+        if(Utility.canUpdateList(getContentResolver())) {
+            if (MyApplication.getInstance().isRefreshing()) {
+                showProgressWheel();
+            } else{
+                // Make sure it is not refreshing so we don't refresh twice
+                refreshList(null);
             }
-        } else{
-            if(getListManipulator().getCount() == 0 ){
-                showEmptyWidgets();
-            }
+        }else if(getListManipulator().getCount() < mNumberOfLaunchItems){
+            dynamicLoadMore();
         }
-        EventBus.getDefault().removeAllStickyEvents();
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -296,11 +289,20 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // ListManipulatorFragment.EventListener
-    public void onLoadAFewFinished(boolean success) {
+    public void onLoadMoreFinished(boolean success) {
         if(success) {
+            Log.d(TAG, "onLoadMoreFinished success");
             mAdapter.notifyDataSetChanged();
 
+            if(getListManipulator().getCount() < mNumberOfLaunchItems || mDynamicScrollLoadAnother){
+                dynamicLoadMore();
+                mDynamicScrollLoadAnother = false;
+            }else{
+                mDynamicScrollLoadEnabled = true;
+            }
+
         }else{
+            Log.d(TAG, "onLoadMoreFinished unsuccess");
             //Show retry button if there is loading item
             int lastPosition = getListManipulator().getCount() - 1;
             if(lastPosition > -1) {
@@ -310,6 +312,33 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 }
             }
         }
+        EventBus.getDefault().removeAllStickyEvents();
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onRefreshFinished(boolean success) {
+        Log.d(TAG, "onRefreshFinished success");
+        hideProgressWheel();
+        if(success) {
+            mAdapter.notifyDataSetChanged();
+            dynamicLoadMore();
+
+            // If tablet, insert fragment into container
+            if (mDetailContainer != null) {
+                insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
+            }
+
+        } else{
+            if(getListManipulator().getCount() == 0 ){
+                showEmptyWidgets();
+            }
+        }
+        EventBus.getDefault().removeAllStickyEvents();
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onWidgetRefresh() {
+        showProgressWheel();
         EventBus.getDefault().removeAllStickyEvents();
     }
 
@@ -340,19 +369,20 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // SearchBox.SearchListener
     public void onSearch(String query) {
-        query = query.toUpperCase(Locale.US);
-
-        if (TextUtils.isEmpty(query)) {
-            Toast.makeText(this, R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        // Refresh the shownList BEFORE fetching a new stock. This is to prevent
-        // fetching the new stock twice when it becomes apart of that list.
-        if(!MyApplication.getInstance().isRefreshing() && Utility.canUpdateList(getContentResolver())) {
-            refreshList(query);
-        }else{
-            mListFragment.loadSymbol(query);
-        }
+//        query = query.toUpperCase(Locale.US);
+//
+//        if (TextUtils.isEmpty(query)) {
+//            Toast.makeText(this, R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//        // Refresh the shownList BEFORE fetching a new stock. This is to prevent
+//        // fetching the new stock twice when it becomes apart of that list.
+//        if(!MyApplication.getInstance().isRefreshing() && Utility.canUpdateList(getContentResolver())) {
+//            refreshList(query);
+//        }else{
+//            mListFragment.loadSymbol(query);
+//        }
+        mListFragment.testLoadSymbol();
 
         showProgressWheel();
     }
@@ -370,6 +400,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             } else {
                 insertFragmentIntoDetailActivity(symbol);
             }
+
+            Log.d(TAG, holder.itemView.getHeight() + "");
         }
     }
 
@@ -379,7 +411,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
 
         }else if(!MyApplication.getInstance().isRefreshing()) {
-            mListFragment.loadAFew();
+            mListFragment.loadMore();
             mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
         }
     }
@@ -390,8 +422,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if(position != RecyclerView.NO_POSITION) {
             final ListManipulator listManipulator = getListManipulator();
-            listManipulator.removeItem(position);
-            mAdapter.notifyItemRemoved(position);
 
             mSnackbar = Snackbar.make(
                     mRootView,
@@ -400,11 +430,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                         @Override
                         public void onClick(View v) {
                             hideEmptyMessage();
+
                             int position = listManipulator.undoLastRemoveItem();
                             mAdapter.notifyItemInserted(position);
                             mRecyclerView.smoothScrollToPosition(position);
 
-                            if(mDetailContainer != null) {;
+                            if(mDetailContainer != null) {
                                 insertFragmentIntoDetailContainer(
                                         listManipulator.getItem(position).getSymbol());
                             }
@@ -426,10 +457,21 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     });
             mSnackbar.show();
 
+            String removeSymbol = listManipulator.getItem(position).getSymbol();
+            listManipulator.removeItem(position);
+            mAdapter.notifyItemRemoved(position);
+
             if(listManipulator.getCount() == 0){
                 showEmptyWidgets();
+
             }else if(mDetailContainer != null){
-                insertFragmentIntoDetailContainer(listManipulator.getItem(0).getSymbol());
+                // Show the first item in the detail container if the one being removed is
+                // currently in the detail container.
+                String detailSymbol = ((DetailFragment)getSupportFragmentManager()
+                        .findFragmentByTag(DetailFragment.TAG)).getSymbol();
+                if(detailSymbol.equals(removeSymbol)){
+                    insertFragmentIntoDetailContainer(listManipulator.getItem(0).getSymbol());
+                }
             }
         }
     }
@@ -440,7 +482,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mAdapter.notifyItemMoved(fromPosition, toPosition);
     }
 
-    public void configureOverflowMenu(){
+    public void initOverflowMenu(){
         mAppBar.setOverflowMenu(R.menu.menu_main);
         mAppBar.setOverflowMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
@@ -462,7 +504,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         });
     }
 
-    private void configureRecyclerView(){
+    private void initRecyclerView(){
         // Touch guard manager  (this class is required to suppress scrolling while swipe-dismiss animation is running)
         mTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
         mTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
@@ -512,7 +554,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mDragDropManager.attachRecyclerView(mRecyclerView);
     }
 
-    private void configureDynamicScrollingListener(){
+    private void initDynamicScrollingListener(){
         // When recyclerView is scrolled all the way to the top, appbar elevation will disappear.
         // When you start scrolling down elevation will reappear.
 
@@ -531,28 +573,38 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                                 getResources().getDimension(R.dimen.appbar_elevation));
                     }
                 }
-                dynamicLoadAFew();
+
+                if(mDynamicScrollLoadEnabled
+                        && mLayoutManager.findLastVisibleItemPosition() == getListManipulator().getCount() - 1){
+                    dynamicLoadMore();
+                }
             }
         });
     }
 
-    private void dynamicLoadAFew(){
+    private void dynamicLoadMore(){
         ListManipulator listManipulator = getListManipulator();
 
-        if (mLayoutManager.findLastVisibleItemPosition() == listManipulator.getCount() - 1
-                && !listManipulator.isLoadingItemPresent()
+        if (!listManipulator.isLoadingItemPresent()
                 && !MyApplication.getInstance().isRefreshing()
-                && listManipulator.canLoadAFew()) {
+                && mListFragment.testCanLoadMore()) {
+            //&& listManipulator.canLoadMore()) {
+            Log.d(TAG, "dynamicLoadMore");
             // Insert dummy item
             listManipulator.addLoadingItem();
-
-            if(!Utility.canUpdateList(getContentResolver())) {
-                mListFragment.loadAFew();
-            }else{
-                Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
-            }
-            // Must notifyItemInserted AFTER loadAFew for mIsLoadingAFew to be updated
+            mListFragment.testLoadMore();
+//            if(!Utility.canUpdateList(getContentResolver())) {
+//                mListFragment.testLoadMore();
+//                mListFragment.loadMore();
+//            }else {
+//                Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
+//            }
+            // Must notifyItemInserted AFTER loadMore for mIsLoadingAFew to be updated
             mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
+
+            if(mDynamicScrollLoadEnabled){
+                mDynamicScrollLoadAnother = true;
+            }
         }
     }
 
@@ -580,10 +632,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private void showEmptyWidgets(){
         showEmptyMessage();
         if(mDetailContainer != null){
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.detail_container, new DetailEmptyFragment(), DetailFragment.TAG)
-                    .commit();
+            showDetailEmptyFragment();
         }
+    }
+
+    private void showDetailEmptyFragment() {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.detail_container, new DetailEmptyFragment(), DetailFragment.TAG)
+                .commit();
     }
 
     private void showEmptyMessage(){
@@ -602,7 +658,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     private void hideProgressWheel(){
-        if(!Utility.isMainServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE))){
+        if(!Utility.isServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE),
+                MainService.class.getName())){
             mProgressWheel.setVisibility(View.INVISIBLE);
         }
     }
@@ -631,7 +688,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override
     public void onPause() {
         mDragDropManager.cancelDrag();
-
         if (mSnackbar != null && mSnackbar.isShown()) {
             mSnackbar.dismiss();
         }
