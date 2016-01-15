@@ -284,7 +284,7 @@ public class ListManagerFragment extends Fragment{
     }
 
     public boolean testCanLoadMore(){
-        return testSymbol < 10;
+        return testSymbol < 50;
     }
 
     /**
@@ -387,6 +387,7 @@ public class ListManagerFragment extends Fragment{
                         mListManipulator.addItemToBottom(stock);
                     }
                 }
+                MyApplication.getInstance().setRefreshing(false);
                 return null;
             }
 

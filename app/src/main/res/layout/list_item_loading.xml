@@ -8,10 +8,6 @@
         android:layout_width="@dimen/progress_wheel_size"
         android:layout_height="@dimen/progress_wheel_size"
         android:layout_gravity="center"
-        android:paddingTop="@dimen/list_item_vertical_padding"
-        android:paddingBottom="@dimen/list_item_vertical_padding"
-        android:paddingLeft="@dimen/list_item_horizontal_padding"
-        android:paddingRight="@dimen/list_item_horizontal_padding"
         android:indeterminate="true"
         android:visibility="invisible" />
 

@@ -35,7 +35,6 @@
 
         <service android:name=".services.MainService" />
         <service android:name=".services.DetailService"/>
-        <service android:name=".services.TestService"/>
 
         <!-- Widget -->
         <receiver

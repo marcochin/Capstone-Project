@@ -51,7 +51,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
             stockMarketClose.add(Calendar.DAY_OF_MONTH, 1);
         }
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-        alarmManager.setRepeating(AlarmManager.RTC,
+        alarmManager.setInexactRepeating(AlarmManager.RTC,
                 stockMarketClose.getTimeInMillis(),
                 AlarmManager.INTERVAL_DAY,
                 getRefreshPendingIntent(context));

@@ -23,7 +23,7 @@ public class ListManipulator {
     private static final String TAG = ListManipulator.class.getSimpleName();
 
     public static final int MORE = 2;
-    public static final int STOCK_LIMIT = 200;
+    public static final int LIST_LIMIT = 200;
     public static final String LOADING_ITEM = "loadingItem";
 
     public static final String[] STOCK_PROJECTION = new String[]{
@@ -111,8 +111,7 @@ public class ListManipulator {
 
     public boolean isLoadingItemPresent(){
         if(getCount() > 0) {
-            Stock stock = mShownList.get(getCount() - 1);
-            return stock.getSymbol().equals(LOADING_ITEM);
+            return mShownList.get(getCount() - 1).getSymbol().equals(LOADING_ITEM);
         }
         return false;
     }
@@ -183,7 +182,6 @@ public class ListManipulator {
             } else {
                 insertedPosition = mShownList.size();
             }
-
             mShownList.add(insertedPosition, mLastRemovedItem);
 
             mLastRemovedItem = null;
@@ -236,11 +234,7 @@ public class ListManipulator {
     }
 
     public boolean canLoadMore(){
-        if(mLoadList != null) {
-            return mLoadListPositionBookmark < mLoadList.length;
-        }
-
-        return false;
+        return mLoadList != null && mLoadListPositionBookmark < mLoadList.length;
     }
 
     /**
@@ -258,9 +252,7 @@ public class ListManipulator {
             if(mShownList.isEmpty()){
                 mShownListSize = 0;
             }else {
-                mShownListSize = getItem(mShownList.size() - 1).getSymbol().equals(LOADING_ITEM)
-                        ? mShownList.size() - 1
-                        : mShownList.size();
+                mShownListSize = isLoadingItemPresent() ? mShownList.size() - 1 : mShownList.size();
             }
 
             // Save bookmark in db

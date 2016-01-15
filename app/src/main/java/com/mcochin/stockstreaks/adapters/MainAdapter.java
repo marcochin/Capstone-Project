@@ -6,6 +6,7 @@ import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,6 +25,7 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeabl
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.ListManipulator;
+import com.mcochin.stockstreaks.events.LoadDetailErrorEvent;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.utils.Utility;
@@ -35,13 +37,14 @@ import java.util.Locale;
 /**
  * This is the adapter for <code>MainFragment</code>
  */
-public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder>
-        implements DraggableItemAdapter<MainAdapter.MainViewHolder>,
-        SwipeableItemAdapter<MainAdapter.MainViewHolder> {
+public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
+        implements DraggableItemAdapter<RecyclerView.ViewHolder>,
+        SwipeableItemAdapter<RecyclerView.ViewHolder> {
 
     public static final String TAG = MainAdapter.class.getSimpleName();
     public static final int LIST_ITEM_NORMAL = 0;
     public static final int LIST_ITEM_FIRST = 1;
+    public static final int LIST_ITEM_LOAD = 2;
 
     private ListManagerFragment mListFragment;
     private ListManipulator mListManipulator;
@@ -65,91 +68,13 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
         void onItemClick(MainViewHolder holder);
         void onItemRemoved(MainViewHolder holder);
         void onItemMoved(int fromPosition, int toPosition);
-        void onItemRetryClick(MainViewHolder holder);
+        void onItemRetryClick(LoadViewHolder holder);
     }
 
     // NOTE: Make accessible with shorter name
     private interface Draggable extends DraggableItemConstants {
     }
     private interface Swipeable extends SwipeableItemConstants {
-    }
-
-    // Our ViewHolder class
-    public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
-            implements View.OnClickListener, View.OnTouchListener {
-        ViewGroup mContainer;
-        TextView mUpdateTime;
-        TextView mSymbol;
-        TextView mFullName;
-        TextView mRecentClose;
-        TextView mChangeDollar;
-        TextView mChangePercent;
-        TextView mChangeAmt;
-        TextView mStreak;
-        ImageView mStreakArrow;
-        View mProgressWheel;
-        View mRetryButton;
-
-
-        public MainViewHolder(View itemView) {
-            super(itemView);
-            mContainer = (ViewGroup) itemView.findViewById(R.id.swipe_container);
-            mUpdateTime = (TextView)itemView.findViewById(R.id.text_update_time);
-            mSymbol = (TextView) itemView.findViewById(R.id.text_symbol);
-            mFullName = (TextView) itemView.findViewById(R.id.text_full_name);
-            mRecentClose = (TextView) itemView.findViewById(R.id.text_recent_close);
-            mChangeDollar = (TextView) itemView.findViewById(R.id.text_change_dollar);
-            mChangePercent = (TextView) itemView.findViewById(R.id.text_change_percent);
-            mChangeAmt = (TextView) itemView.findViewById(R.id.text_change_amt);
-            mStreak = (TextView) itemView.findViewById(R.id.text_streak);
-            mStreakArrow = (ImageView)itemView.findViewById(R.id.image_streak_arrow);
-            mProgressWheel = itemView.findViewById(R.id.progress_wheel_load_a_few);
-            mRetryButton = itemView.findViewById(R.id.button_retry);
-
-            mContainer.setOnClickListener(this);
-            mContainer.setOnTouchListener(this);
-            if(mRetryButton != null) {
-                //first_item will not have a retry button/progress wheel
-                mRetryButton.setOnClickListener(this);
-            }
-        }
-
-        @Override
-        public void onClick(View v) {
-            if (mEventListener != null) {
-                int id = v.getId();
-
-                switch (id) {
-                    case R.id.swipe_container:
-                        mEventListener.onItemClick(this);
-                        break;
-
-                    case R.id.button_retry:
-                        mEventListener.onItemRetryClick(this);
-                        break;
-                }
-            }
-        }
-
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            if(event.getAction() == MotionEvent.ACTION_CANCEL){
-                if(mDragDropManager != null && !mDragDropManager.isDragging()) {
-                    //Log.d(TAG, "cancelDrag");
-                    mDragDropManager.cancelDrag();
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public View getSwipeableContainerView() {
-            return mContainer;
-        }
-
-        public CharSequence getSymbol(){
-            return mSymbol.getText();
-        }
     }
 
     // Constructor
@@ -176,132 +101,161 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     }
 
     @Override
-    public MainViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        int layoutId;
 
-        int layoutId = viewType == LIST_ITEM_FIRST && mIsPhone
-                ? R.layout.list_item_first : R.layout.list_item;
-
+        switch(viewType){
+            case LIST_ITEM_LOAD:
+                layoutId = R.layout.list_item_loading;
+                break;
+            case LIST_ITEM_FIRST:
+                layoutId = R.layout.list_item_first;
+                break;
+            default:
+                layoutId = R.layout.list_item;
+                break;
+        }
         View v = inflater.inflate(layoutId, parent, false);
-        return new MainViewHolder(v);
+
+        if(viewType == LIST_ITEM_LOAD){
+            return new LoadViewHolder(v);
+        }else{
+            return new MainViewHolder(v);
+        }
     }
 
     @Override
-    public void onBindViewHolder(final MainViewHolder holder, int position) {
+    public void onBindViewHolder(final RecyclerView.ViewHolder holder, int position) {
 //        Log.d(TAG, "onBind");
-        Stock stock = mListManipulator.getItem(position);
-        String symbol = stock.getSymbol();
+        if(holder instanceof LoadViewHolder){
+            LoadViewHolder myHolder = (LoadViewHolder) holder;
 
-        // Determine if this is a dummy "loading" item
-        if(symbol.equals(ListManipulator.LOADING_ITEM)) {
-            holder.mContainer.setVisibility(View.INVISIBLE);
+            if (mListFragment.isLoadingMore()) {
+                myHolder.mProgressWheel.setVisibility(View.VISIBLE);
+                myHolder.mRetryButton.setVisibility(View.INVISIBLE);
 
-            if(mListFragment.isLoadingMore()){
-                holder.mProgressWheel.setVisibility(View.VISIBLE);
-                holder.mRetryButton.setVisibility(View.INVISIBLE);
-
-            }else{
-                holder.mProgressWheel.setVisibility(View.INVISIBLE);
-                holder.mRetryButton.setVisibility(View.VISIBLE);
-            }
-        }else {
-            holder.mContainer.setVisibility(View.VISIBLE);
-            if(position != 0){
-                holder.mProgressWheel.setVisibility(View.INVISIBLE);
-                holder.mRetryButton.setVisibility(View.INVISIBLE);
+            } else {
+                myHolder.mProgressWheel.setVisibility(View.INVISIBLE);
+                myHolder.mRetryButton.setVisibility(View.VISIBLE);
             }
 
-            Resources resources = mContext.getResources();
+        } else if(holder instanceof MainViewHolder) {
+            MainViewHolder myHolder = (MainViewHolder) holder;
+            Stock stock = mListManipulator.getItem(position);
+            String symbol = stock.getSymbol();
 
-            String fullName = stock.getFullName();
-            String recentClose = resources.getString(
-                    R.string.placeholder_dollar,
-                    Utility.roundTo2StringDecimals(stock.getRecentClose()));
-            float changeDollar = stock.getChangeDollar();
-            float changePercent = stock.getChangePercent();
-            int streak = stock.getStreak();
+//            // Determine if this is a dummy "loading" item
+//            if (symbol.equals(ListManipulator.LOADING_ITEM)) {
+//                myHolder.mContainer.setVisibility(View.INVISIBLE);
+//
+//                if (mListFragment.isLoadingMore()) {
+//                    myHolder.mProgressWheel.setVisibility(View.VISIBLE);
+//                    myHolder.mRetryButton.setVisibility(View.INVISIBLE);
+//
+//                } else {
+//                    myHolder.mProgressWheel.setVisibility(View.INVISIBLE);
+//                    myHolder.mRetryButton.setVisibility(View.VISIBLE);
+//                }
+//            } else {
+//                myHolder.mContainer.setVisibility(View.VISIBLE);
+//                if (position != 0) {
+//                    myHolder.mProgressWheel.setVisibility(View.INVISIBLE);
+//                    myHolder.mRetryButton.setVisibility(View.INVISIBLE);
+//                }
 
-            // Set symbol, full name, and recentClose
-            holder.mSymbol.setText(symbol);
-            holder.mFullName.setText(fullName);
-            holder.mRecentClose.setText(recentClose);
+                Resources resources = mContext.getResources();
 
-            // Determine the color and the arrow image of the changes
-            Pair<Integer, Integer> changeColorAndDrawableIds =
-                    Utility.getChangeColorAndArrowDrawableIds(changeDollar);
-            int color = ContextCompat.getColor(mContext, changeColorAndDrawableIds.first);
-            holder.mStreakArrow.setBackgroundResource(changeColorAndDrawableIds.second);
+                String fullName = stock.getFullName();
+                String recentClose = resources.getString(
+                        R.string.placeholder_dollar,
+                        Utility.roundTo2StringDecimals(stock.getRecentClose()));
+                float changeDollar = stock.getChangeDollar();
+                float changePercent = stock.getChangePercent();
+                int streak = stock.getStreak();
 
-            // Format dollar/percent change float values to 2 decimals
-            String changeDollarFormat = resources.getString(
-                    R.string.placeholder_dollar,
-                    Utility.roundTo2StringDecimals(changeDollar));
+                // Set symbol, full name, and recentClose
+                myHolder.mSymbol.setText(symbol);
+                myHolder.mFullName.setText(fullName);
+                myHolder.mRecentClose.setText(recentClose);
 
-            String changePercentFormat = resources.getString(
-                    R.string.placeholder_percent,
-                    Utility.roundTo2StringDecimals(changePercent));
+                // Determine the color and the arrow image of the changes
+                Pair<Integer, Integer> changeColorAndDrawableIds =
+                        Utility.getChangeColorAndArrowDrawableIds(changeDollar);
+                int color = ContextCompat.getColor(mContext, changeColorAndDrawableIds.first);
+                myHolder.mStreakArrow.setBackgroundResource(changeColorAndDrawableIds.second);
 
-            // Set our updateTime, dollar/percent change, change color, and streak
-            if (position == 0 && resources.getBoolean(R.bool.is_phone)) { //list_first_item
-                Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
-                SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
-                        R.string.update_time_format_wide), Locale.US);
-                holder.mUpdateTime.setText(resources.getString(R.string.placeholder_update_time,
-                        sdf.format(updateTime)));
+                // Format dollar/percent change float values to 2 decimals
+                String changeDollarFormat = resources.getString(
+                        R.string.placeholder_dollar,
+                        Utility.roundTo2StringDecimals(changeDollar));
 
-                holder.mChangeDollar.setText(changeDollarFormat);
-                holder.mChangeDollar.setTextColor(color);
+                String changePercentFormat = resources.getString(
+                        R.string.placeholder_percent,
+                        Utility.roundTo2StringDecimals(changePercent));
 
-                holder.mChangePercent.setText(changePercentFormat);
-                holder.mChangePercent.setTextColor(color);
+                // Set our updateTime, dollar/percent change, change color, and streak
+                if (position == 0 && resources.getBoolean(R.bool.is_phone)) { //list_first_item
+                    Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
+                    SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
+                            R.string.update_time_format_wide), Locale.US);
+                    myHolder.mUpdateTime.setText(resources.getString(R.string.placeholder_update_time,
+                            sdf.format(updateTime)));
 
-                holder.mStreak.setText(mContext.getString(Math.abs(streak) == 1 ?
-                                R.string.placeholder_day : R.string.placeholder_days, streak));
+                    myHolder.mChangeDollar.setText(changeDollarFormat);
+                    myHolder.mChangeDollar.setTextColor(color);
 
-            } else { //list_item
-                holder.mChangeAmt.setText(resources.getString(
-                        R.string.placeholder_change_amt, changeDollarFormat, changePercentFormat));
-                holder.mChangeAmt.setTextColor(color);
-                holder.mStreak.setText(mContext.getString(R.string.placeholder_d, streak));
-            }
+                    myHolder.mChangePercent.setText(changePercentFormat);
+                    myHolder.mChangePercent.setTextColor(color);
 
+                    myHolder.mStreak.setText(mContext.getString(Math.abs(streak) == 1 ?
+                            R.string.placeholder_day : R.string.placeholder_days, streak));
 
-
-            // Set background resource (target view ID: container)
-            final int dragState = holder.getDragStateFlags();
-            if (((dragState & Draggable.STATE_FLAG_IS_UPDATED) != 0)) {
-                int bgResId;
-
-                // We can't default bgResId to 0 because of this super rare case that removes the
-                // background if it is left at 0.
-                if (position == 0 && mIsPhone) {
-                    bgResId = R.drawable.list_item_first_selector;
-
-                } else {
-                    bgResId = R.drawable.list_item_selector;
-                }
-                // ACTIVE flags is the one being acted upon
-                if ((dragState & Draggable.STATE_FLAG_IS_ACTIVE) != 0) {
-                    bgResId = R.drawable.bg_item_dragging_active_state;
+                } else { //list_item
+                    myHolder.mChangeAmt.setText(resources.getString(
+                            R.string.placeholder_change_amt, changeDollarFormat, changePercentFormat));
+                    myHolder.mChangeAmt.setTextColor(color);
+                    myHolder.mStreak.setText(mContext.getString(R.string.placeholder_d, streak));
                 }
 
-                holder.mContainer.setBackgroundResource(bgResId);
-            }
+                // Set background resource (target view ID: container)
+                final int dragState = myHolder.getDragStateFlags();
+                if (((dragState & Draggable.STATE_FLAG_IS_UPDATED) != 0)) {
+                    int bgResId;
 
-            // Restore back padding for pre-kitkat list_items
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                if (position == 0 && mIsPhone) {
-                    holder.mContainer.setPadding(mListItemFirstPadding, mListItemFirstPadding,
-                            mListItemFirstPadding, mListItemFirstPadding);
-                } else {
-                    holder.mContainer.setPadding(mListItemHorizontalPadding, mListItemVerticalPadding,
-                            mListItemHorizontalPadding, mListItemVerticalPadding);
+                    // ACTIVE flags is the one being acted upon
+                    if ((dragState & Draggable.STATE_FLAG_IS_ACTIVE) != 0) {
+                        bgResId = R.drawable.bg_item_dragging_active_state;
+
+                    }else if (position == 0 && mIsPhone) {
+                        bgResId = R.drawable.list_item_first_selector;
+
+                    } else {
+                        bgResId = R.drawable.list_item_selector;
+                    }
+
+                    myHolder.mContainer.setBackgroundResource(bgResId);
                 }
-            }
 
-            // Set swiping properties. This sets the horizontal offset of the items
-            holder.setSwipeItemHorizontalSlideAmount(0);
-        }
+                // Restore back padding for pre-kitkat list_items
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                    if (position == 0 && mIsPhone) {
+                        myHolder.mContainer.setPadding(mListItemFirstPadding,
+                                mListItemFirstPadding,
+                                mListItemFirstPadding,
+                                mListItemFirstPadding);
+                    } else {
+                        myHolder.mContainer.setPadding(mListItemHorizontalPadding,
+                                mListItemVerticalPadding,
+                                mListItemHorizontalPadding,
+                                mListItemVerticalPadding);
+                    }
+                }
+
+                // Set swiping properties. This sets the horizontal offset of the items
+                myHolder.setSwipeItemHorizontalSlideAmount(0);
+            }
+//        }
     }
 
     @Override
@@ -311,7 +265,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
 
     @Override
     public int getItemViewType(int position) {
-        return position == 0 ? LIST_ITEM_FIRST : LIST_ITEM_NORMAL;
+        if (mListManipulator.getItem(position).getSymbol().equals(ListManipulator.LOADING_ITEM)){
+            return LIST_ITEM_LOAD;
+
+        }else if(position == 0 && mIsPhone){
+            return LIST_ITEM_FIRST;
+
+        }else{
+            return LIST_ITEM_NORMAL;
+        }
     }
 
     @Override
@@ -320,7 +282,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     }
 
     @Override // SwipeableItemAdapter
-    public SwipeResultAction onSwipeItem(MainViewHolder holder, int position, int result) {
+    public SwipeResultAction onSwipeItem(RecyclerView.ViewHolder holder, int position, int result) {
 //        Log.d(TAG, "onSwipeItem(position = " + position + ", result = " + result + ")");
 
         switch (result) {
@@ -330,7 +292,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             // swipe left
             case Swipeable.RESULT_SWIPED_LEFT:
                 //Log.d(TAG, "Swiped left");
-                return new SwipeResultAction(this, holder);
+                return new SwipeResultAction(this, (MainViewHolder)holder);
             case Swipeable.RESULT_CANCELED:
                 // other --- do nothing
             default:
@@ -339,19 +301,17 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     }
 
     @Override // SwipeableItemAdapter
-    public int onGetSwipeReactionType(MainViewHolder holder, int position, int x, int y) {
+    public int onGetSwipeReactionType(RecyclerView.ViewHolder holder, int position, int x, int y) {
 //        Log.d(TAG, "onGetSwipeReactionType");
 
         // This is what enables swiping
-        if (mListManipulator.getItem(position).getSymbol().equals(ListManipulator.LOADING_ITEM)
-                || MyApplication.getInstance().isRefreshing()) {
-            return SwipeableItemConstants.REACTION_CAN_NOT_SWIPE_ANY;
-        }
-        return Swipeable.REACTION_CAN_SWIPE_BOTH_H;
+        return MyApplication.getInstance().isRefreshing()
+                ? Swipeable.REACTION_CAN_NOT_SWIPE_BOTH_H_WITH_RUBBER_BAND_EFFECT
+                : Swipeable.REACTION_CAN_SWIPE_BOTH_H;
     }
 
     @Override // SwipeableItemAdapter
-    public void onSetSwipeBackground(MainViewHolder holder, int position, int type) {
+    public void onSetSwipeBackground(RecyclerView.ViewHolder holder, int position, int type) {
         //Log.d(TAG, "onSetSwipeBackground");
 
         int bgRes = 0;
@@ -368,15 +328,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
     }
 
     @Override // DraggableItemAdapter
-    public boolean onCheckCanStartDrag(MainViewHolder holder, int position, int x, int y) {
+    public boolean onCheckCanStartDrag(RecyclerView.ViewHolder holder, int position, int x, int y) {
         //Log.d(TAG, "onCheckCanStartDrag");
 
         // This is what enables dragging
-        return !mListManipulator.getItem(position).getSymbol().equals(ListManipulator.LOADING_ITEM);
+        return !MyApplication.getInstance().isRefreshing();
     }
 
     @Override // DraggableItemAdapter
-    public ItemDraggableRange onGetItemDraggableRange(MainViewHolder holder, int position) {
+    public ItemDraggableRange onGetItemDraggableRange(RecyclerView.ViewHolder holder, int position) {
         //Log.d(TAG, "onGetItemDraggableRange");
         return null;
     }
@@ -432,6 +392,103 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.MainViewHolder
             // clear the references
             mHolder = null;
             mAdapter = null;
+        }
+    }
+
+    // Our ViewHolder class
+    public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
+            implements View.OnClickListener, View.OnTouchListener {
+        ViewGroup mContainer;
+        TextView mUpdateTime;
+        TextView mSymbol;
+        TextView mFullName;
+        TextView mRecentClose;
+        TextView mChangeDollar;
+        TextView mChangePercent;
+        TextView mChangeAmt;
+        TextView mStreak;
+        ImageView mStreakArrow;
+//        View mProgressWheel;
+//        View mRetryButton;
+
+
+        public MainViewHolder(View itemView) {
+            super(itemView);
+            mContainer = (ViewGroup) itemView.findViewById(R.id.swipe_container);
+            mUpdateTime = (TextView)itemView.findViewById(R.id.text_update_time);
+            mSymbol = (TextView) itemView.findViewById(R.id.text_symbol);
+            mFullName = (TextView) itemView.findViewById(R.id.text_full_name);
+            mRecentClose = (TextView) itemView.findViewById(R.id.text_recent_close);
+            mChangeDollar = (TextView) itemView.findViewById(R.id.text_change_dollar);
+            mChangePercent = (TextView) itemView.findViewById(R.id.text_change_percent);
+            mChangeAmt = (TextView) itemView.findViewById(R.id.text_change_amt);
+            mStreak = (TextView) itemView.findViewById(R.id.text_streak);
+            mStreakArrow = (ImageView)itemView.findViewById(R.id.image_streak_arrow);
+//            mProgressWheel = itemView.findViewById(R.id.progress_wheel_load_a_few);
+//            mRetryButton = itemView.findViewById(R.id.button_retry);
+
+            mContainer.setOnClickListener(this);
+            mContainer.setOnTouchListener(this);
+//            if(mRetryButton != null) {
+//                //first_item will not have a retry button/progress wheel
+//                mRetryButton.setOnClickListener(this);
+//            }
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (mEventListener != null) {
+                int id = v.getId();
+
+                switch (id) {
+                    case R.id.swipe_container:
+                        mEventListener.onItemClick(this);
+                        break;
+
+//                    case R.id.button_retry:
+//                        mEventListener.onItemRetryClick(this);
+//                        break;
+                }
+            }
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if(event.getAction() == MotionEvent.ACTION_CANCEL){
+                if(mDragDropManager != null && !mDragDropManager.isDragging()) {
+//                    Log.d(TAG, "cancelDrag");
+                    mDragDropManager.cancelDrag();
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public View getSwipeableContainerView() {
+            return mContainer;
+        }
+
+        public CharSequence getSymbol(){
+            return mSymbol.getText();
+        }
+    }
+
+    public class LoadViewHolder extends RecyclerView.ViewHolder
+            implements View.OnClickListener {
+        View mProgressWheel;
+        View mRetryButton;
+
+        public LoadViewHolder(View itemView) {
+            super(itemView);
+            mProgressWheel = itemView.findViewById(R.id.progress_wheel_load_a_few);
+            mRetryButton = itemView.findViewById(R.id.button_retry);
+
+            mRetryButton.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            mEventListener.onItemRetryClick(this);
         }
     }
 }

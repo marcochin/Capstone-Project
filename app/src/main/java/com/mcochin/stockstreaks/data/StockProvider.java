@@ -28,6 +28,8 @@ import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.greenrobot.event.EventBus;
+
 /**
  * Content Provider that gives us an interface to interact with the SQLite db.
  */
@@ -301,7 +303,9 @@ public class StockProvider extends ContentProvider {
         if(getContext() != null) {
             getContext().sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
         }
-        MyApplication.getInstance().setRefreshing(false);
+        if(!EventBus.getDefault().hasSubscriberForEvent(AppRefreshFinishedEvent.class)) {
+            MyApplication.getInstance().setRefreshing(false);
+        }
     }
 
     private List<Stock> loopThroughOperations(ArrayList<ContentProviderOperation> ops){

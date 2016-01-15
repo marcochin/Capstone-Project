@@ -136,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     insertFragmentIntoDetailContainer(symbol);
                 }
             }
-            if(!mStartedFromWidget){
+            if(!mStartedFromWidget && mDetailContainer != null){
                 showDetailEmptyFragment();
             }
 
@@ -291,8 +291,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // ListManipulatorFragment.EventListener
     public void onLoadMoreFinished(boolean success) {
         if(success) {
-            Log.d(TAG, "onLoadMoreFinished success");
-            mAdapter.notifyDataSetChanged();
+//            mAdapter.notifyDataSetChanged();
+            mAdapter.notifyItemRangeChanged(getListManipulator().getCount() - ListManipulator.MORE,
+                    ListManipulator.MORE + 1);
 
             if(getListManipulator().getCount() < mNumberOfLaunchItems || mDynamicScrollLoadAnother){
                 dynamicLoadMore();
@@ -302,7 +303,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
 
         }else{
-            Log.d(TAG, "onLoadMoreFinished unsuccess");
             //Show retry button if there is loading item
             int lastPosition = getListManipulator().getCount() - 1;
             if(lastPosition > -1) {
@@ -317,7 +317,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // ListManipulatorFragment.EventListener
     public void onRefreshFinished(boolean success) {
-        Log.d(TAG, "onRefreshFinished success");
         hideProgressWheel();
         if(success) {
             mAdapter.notifyDataSetChanged();
@@ -406,7 +405,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // MainAdapter.EventListener
-    public void onItemRetryClick(MainAdapter.MainViewHolder holder) {
+    public void onItemRetryClick(MainAdapter.LoadViewHolder holder) {
         if(Utility.canUpdateList(getContentResolver())){
             Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
 
@@ -423,40 +422,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if(position != RecyclerView.NO_POSITION) {
             final ListManipulator listManipulator = getListManipulator();
 
-            mSnackbar = Snackbar.make(
-                    mRootView,
-                    getString(R.string.placeholder_snackbar_main_text, holder.getSymbol()), Snackbar.LENGTH_LONG)
-                    .setAction(R.string.snackbar_action_text, new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            hideEmptyMessage();
-
-                            int position = listManipulator.undoLastRemoveItem();
-                            mAdapter.notifyItemInserted(position);
-                            mRecyclerView.smoothScrollToPosition(position);
-
-                            if(mDetailContainer != null) {
-                                insertFragmentIntoDetailContainer(
-                                        listManipulator.getItem(position).getSymbol());
-                            }
-                        }
-                    })
-                    .setCallback(new Snackbar.Callback() {
-                        @Override
-                        public void onDismissed(Snackbar snackbar, int event) {
-                            super.onDismissed(snackbar, event);
-                            new AsyncTask<Void, Void, Void>(){
-                                @Override
-                                protected Void doInBackground(Void... params) {
-                                    listManipulator.permanentlyDeleteLastRemoveItem(
-                                            getContentResolver());
-                                    return null;
-                                }
-                            }.execute();
-                        }
-                    });
-            mSnackbar.show();
-
             String removeSymbol = listManipulator.getItem(position).getSymbol();
             listManipulator.removeItem(position);
             mAdapter.notifyItemRemoved(position);
@@ -469,10 +434,46 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 // currently in the detail container.
                 String detailSymbol = ((DetailFragment)getSupportFragmentManager()
                         .findFragmentByTag(DetailFragment.TAG)).getSymbol();
+
                 if(detailSymbol.equals(removeSymbol)){
                     insertFragmentIntoDetailContainer(listManipulator.getItem(0).getSymbol());
                 }
             }
+
+            mSnackbar = Snackbar.make(
+                    mRootView,
+                    getString(R.string.placeholder_snackbar_main_text, holder.getSymbol()), Snackbar.LENGTH_LONG)
+                    .setAction(R.string.snackbar_action_text, new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            hideEmptyMessage();
+
+                            int undoPosition = listManipulator.undoLastRemoveItem();
+                            mAdapter.notifyItemInserted(undoPosition);
+                            mRecyclerView.smoothScrollToPosition(undoPosition);
+
+                            if(mDetailContainer != null) {
+                                insertFragmentIntoDetailContainer(
+                                        listManipulator.getItem(undoPosition).getSymbol());
+                            }
+                        }
+                    })
+                    .setCallback(new Snackbar.Callback() {
+                        @Override
+                        public void onDismissed(Snackbar snackbar, int event) {
+                            if(event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                                new AsyncTask<Void, Void, Void>() {
+                                    @Override
+                                    protected Void doInBackground(Void... params) {
+                                        listManipulator.permanentlyDeleteLastRemoveItem(
+                                                getContentResolver());
+                                        return null;
+                                    }
+                                }.execute();
+                            }
+                        }
+                    });
+            mSnackbar.show();
         }
     }
 
@@ -517,9 +518,36 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // Start dragging after long press
         mDragDropManager.setInitiateOnLongPress(true);
         mDragDropManager.setInitiateOnMove(false);
+        mDragDropManager.setOnItemDragEventListener(new RecyclerViewDragDropManager.OnItemDragEventListener() {
+            @Override
+            public void onItemDragStarted(int position) {
+
+            }
+
+            @Override
+            public void onItemDragPositionChanged(int fromPosition, int toPosition) {
+
+            }
+
+            @Override
+            public void onItemDragFinished(int fromPosition, int toPosition, boolean result) {
+                Log.d(TAG, "onItemDragFinished");
+            }
+        });
 
         // Swipe manager
         mSwipeManager = new RecyclerViewSwipeManager();
+        mSwipeManager.setOnItemSwipeEventListener(new RecyclerViewSwipeManager.OnItemSwipeEventListener() {
+            @Override
+            public void onItemSwipeStarted(int position) {
+
+            }
+
+            @Override
+            public void onItemSwipeFinished(int position, int result, int afterSwipeReaction) {
+
+            }
+        });
 
         //Create adapter
         final MainAdapter mainAdapter = new MainAdapter(
@@ -558,9 +586,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // When recyclerView is scrolled all the way to the top, appbar elevation will disappear.
         // When you start scrolling down elevation will reappear.
 
-        //TODO yelllow
-//        ViewCompat.setElevation(mAppBar, 0); not sure if we need this comment out for now
-
         // This gets called on instantiation, on item add, and on scroll
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -573,7 +598,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                                 getResources().getDimension(R.dimen.appbar_elevation));
                     }
                 }
-
                 if(mDynamicScrollLoadEnabled
                         && mLayoutManager.findLastVisibleItemPosition() == getListManipulator().getCount() - 1){
                     dynamicLoadMore();
