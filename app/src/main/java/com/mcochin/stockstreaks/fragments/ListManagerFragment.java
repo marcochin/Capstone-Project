@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.ListManipulator;
@@ -35,10 +36,10 @@ public class ListManagerFragment extends Fragment{
 
     public interface EventListener{
         void onLoadFromDbFinished();
-        void onLoadMoreFinished(boolean success);
-        void onLoadSymbolFinished(boolean success);
-        void onRefreshFinished(boolean success);
-        void onWidgetRefresh();
+        void onLoadMoreFinished(LoadMoreFinishedEvent event);
+        void onLoadSymbolFinished(LoadSymbolFinishedEvent event);
+        void onRefreshFinished(AppRefreshFinishedEvent event);
+        void onWidgetRefreshDelegate(WidgetRefreshDelegateEvent event);
     }
 
     @Override
@@ -51,6 +52,7 @@ public class ListManagerFragment extends Fragment{
 
     @Override
     public void onPause() {
+        Log.d(TAG, "pause");
         if (mListManipulator.isListUpdated()) {
             new AsyncTask<Context, Void, Void>() {
                 @Override
@@ -201,7 +203,10 @@ public class ListManagerFragment extends Fragment{
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
-                    mEventListener.onLoadSymbolFinished(true);
+                    mEventListener.onLoadSymbolFinished(new LoadSymbolFinishedEvent(
+                            MyApplication.getInstance().getSessionId(),
+                            null,
+                            true));
                 }
             }
         }.execute();
@@ -239,7 +244,10 @@ public class ListManagerFragment extends Fragment{
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
-                    mEventListener.onRefreshFinished(true);
+                    mEventListener.onRefreshFinished(new AppRefreshFinishedEvent(
+                            MyApplication.getInstance().getSessionId(),
+                            null,
+                            true));
                 }
             }
         }.execute();
@@ -277,7 +285,10 @@ public class ListManagerFragment extends Fragment{
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
-                    mEventListener.onLoadMoreFinished(true);
+                    mEventListener.onLoadMoreFinished(new LoadMoreFinishedEvent(
+                            MyApplication.getInstance().getSessionId(),
+                            null,
+                            true));
                 }
             }
         }.execute();
@@ -340,7 +351,7 @@ public class ListManagerFragment extends Fragment{
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
-                    mEventListener.onLoadSymbolFinished(event.isSuccessful());
+                    mEventListener.onLoadSymbolFinished(event);
                 }
             }
         }.execute();
@@ -368,7 +379,7 @@ public class ListManagerFragment extends Fragment{
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
-                    mEventListener.onLoadMoreFinished(event.isSuccessful());
+                    mEventListener.onLoadMoreFinished(event);
                 }
             }
         }.execute();
@@ -394,7 +405,7 @@ public class ListManagerFragment extends Fragment{
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
-                    mEventListener.onRefreshFinished(event.isSuccessful());
+                    mEventListener.onRefreshFinished(event);
                 }
             }
         }.execute();
@@ -411,7 +422,7 @@ public class ListManagerFragment extends Fragment{
             @Override
             protected void onPostExecute(Void aVoid) {
                 if (mEventListener != null) {
-                    mEventListener.onWidgetRefresh();
+                    mEventListener.onWidgetRefreshDelegate(event);
                 }
             }
         }.execute(getActivity().getApplicationContext());

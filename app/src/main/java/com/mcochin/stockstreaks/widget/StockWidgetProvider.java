@@ -51,6 +51,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
             stockMarketClose.add(Calendar.DAY_OF_MONTH, 1);
         }
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+        alarmManager.cancel(getRefreshPendingIntent(context)); //cancel previous alarms
         alarmManager.setInexactRepeating(AlarmManager.RTC,
                 stockMarketClose.getTimeInMillis(),
                 AlarmManager.INTERVAL_DAY,
@@ -116,6 +117,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
                     case ACTION_DATA_REFRESH:
                         if (!MyApplication.getInstance().isRefreshing()
                                 && Utility.canUpdateList(context.getContentResolver())) {
+                            Log.d(TAG, "ACTION_DATA_REFRESH");
 
                             MyApplication.getInstance().setRefreshing(true);
                             views.setViewVisibility(R.id.progress_wheel, View.VISIBLE);
@@ -127,11 +129,13 @@ public class StockWidgetProvider extends AppWidgetProvider{
                         break;
 
                     case ACTION_DATA_UPDATED:
+                        Log.d(TAG, "ACTION_DATA_UPDATED");
                         views.setViewVisibility(R.id.progress_wheel, View.INVISIBLE);
                         appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_list);
                         break;
 
                     case ACTION_DATA_UPDATE_ERROR:
+                        Log.d(TAG, "ACTION_DATA_UPDATE_ERROR");
                         views.setViewVisibility(R.id.progress_wheel, View.INVISIBLE);
                         break;
                 }

@@ -15,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.PopupMenu;
@@ -35,10 +36,13 @@ import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
+import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
 import com.mcochin.stockstreaks.fragments.DetailEmptyFragment;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
-import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
@@ -79,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private boolean mStartedFromWidget;
     private boolean mDynamicScrollLoadEnabled;
     private boolean mDynamicScrollLoadAnother;
+    private boolean mDragClickPreventionEnabled;
 
     private int mNumberOfLaunchItems;
 
@@ -242,105 +247,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         //}
     }
 
-    @Override // ListManipulatorFragment.EventListener
-    public void onLoadFromDbFinished() {
-        hideProgressWheel();
-        mAdapter.notifyDataSetChanged();
-
-        if(getListManipulator().getCount() == 0 ){
-            showEmptyMessage();
-
-        }else if(mDetailContainer != null && !mStartedFromWidget){
-            // Load the first item into the container, when db finishes loading
-            insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
-        }
-
-        if(Utility.canUpdateList(getContentResolver())) {
-            if (MyApplication.getInstance().isRefreshing()) {
-                showProgressWheel();
-            } else{
-                // Make sure it is not refreshing so we don't refresh twice
-                refreshList(null);
-            }
-        }else if(getListManipulator().getCount() < mNumberOfLaunchItems){
-            dynamicLoadMore();
-        }
-    }
-
-    @Override // ListManipulatorFragment.EventListener
-    public void onLoadSymbolFinished(boolean success) {
-        hideProgressWheel();
-
-        if(success) {
-            mAdapter.notifyItemInserted(0);
-            mRecyclerView.smoothScrollToPosition(0);
-            mSearchEditText.setText("");
-
-            // If tablet, insert fragment into container
-            if (mDetailContainer != null) {
-                insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
-            }
-        } else{
-            if(getListManipulator().getCount() == 0 ){
-                showEmptyWidgets();
-            }
-        }
-        EventBus.getDefault().removeAllStickyEvents();
-    }
-
-    @Override // ListManipulatorFragment.EventListener
-    public void onLoadMoreFinished(boolean success) {
-        if(success) {
-//            mAdapter.notifyDataSetChanged();
-            mAdapter.notifyItemRangeChanged(getListManipulator().getCount() - ListManipulator.MORE,
-                    ListManipulator.MORE + 1);
-
-            if(getListManipulator().getCount() < mNumberOfLaunchItems || mDynamicScrollLoadAnother){
-                dynamicLoadMore();
-                mDynamicScrollLoadAnother = false;
-            }else{
-                mDynamicScrollLoadEnabled = true;
-            }
-
-        }else{
-            //Show retry button if there is loading item
-            int lastPosition = getListManipulator().getCount() - 1;
-            if(lastPosition > -1) {
-                Stock lastStock = getListManipulator().getItem(lastPosition);
-                if (lastStock.getSymbol().equals(ListManipulator.LOADING_ITEM)) {
-                    mAdapter.notifyItemChanged(lastPosition);
-                }
-            }
-        }
-        EventBus.getDefault().removeAllStickyEvents();
-    }
-
-    @Override // ListManipulatorFragment.EventListener
-    public void onRefreshFinished(boolean success) {
-        hideProgressWheel();
-        if(success) {
-            mAdapter.notifyDataSetChanged();
-            dynamicLoadMore();
-
-            // If tablet, insert fragment into container
-            if (mDetailContainer != null) {
-                insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
-            }
-
-        } else{
-            if(getListManipulator().getCount() == 0 ){
-                showEmptyWidgets();
-            }
-        }
-        EventBus.getDefault().removeAllStickyEvents();
-    }
-
-    @Override // ListManipulatorFragment.EventListener
-    public void onWidgetRefresh() {
-        showProgressWheel();
-        EventBus.getDefault().removeAllStickyEvents();
-    }
-
     @Override // SearchBox.SearchListener
     public void onSearchOpened() {
 
@@ -368,6 +274,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // SearchBox.SearchListener
     public void onSearch(String query) {
+//        if(getListManipulator().getCount() >= ListManipulator.LIST_LIMIT){
+//            Toast.makeText(this, getString(R.string.toast_placeholder_error_stock_limit,
+//                            ListManipulator.LIST_LIMIT), Toast.LENGTH_SHORT).show();
+//            return;
+//        }
 //        query = query.toUpperCase(Locale.US);
 //
 //        if (TextUtils.isEmpty(query)) {
@@ -386,32 +297,117 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         showProgressWheel();
     }
 
-    @Override // MainAdapter.EventListener
-    public void onItemClick(MainAdapter.MainViewHolder holder) {
-        int position = holder.getAdapterPosition();
+    @Override // ListManipulatorFragment.EventListener
+    public void onLoadFromDbFinished() {
+        hideProgressWheel();
+        mAdapter.notifyDataSetChanged();
 
-        if(position != RecyclerView.NO_POSITION) {
-            String symbol = getListManipulator().getItem(position).getSymbol();
+        if(getListManipulator().getCount() == 0 ){
+            showEmptyMessage();
 
-            //If tablet insert fragment into container
-            if (mDetailContainer != null) {
-                insertFragmentIntoDetailContainer(symbol);
-            } else {
-                insertFragmentIntoDetailActivity(symbol);
+        }else if(mDetailContainer != null && !mStartedFromWidget){
+            // Load the first item into the container, when db finishes loading
+            insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
+        }
+
+        if(Utility.canUpdateList(getContentResolver())) {
+            if (MyApplication.getInstance().isRefreshing()) {
+                showProgressWheel();
+            } else{
+                // Make sure it is not refreshing so we don't refresh twice
+                refreshList(null);
             }
-
-            Log.d(TAG, holder.itemView.getHeight() + "");
+        }else if(getListManipulator().getCount() < mNumberOfLaunchItems){
+            dynamicLoadMore();
         }
     }
 
-    @Override // MainAdapter.EventListener
-    public void onItemRetryClick(MainAdapter.LoadViewHolder holder) {
-        if(Utility.canUpdateList(getContentResolver())){
-            Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
+    @Override // ListManipulatorFragment.EventListener
+    public void onLoadSymbolFinished(LoadSymbolFinishedEvent event) {
+        hideProgressWheel();
 
-        }else if(!MyApplication.getInstance().isRefreshing()) {
-            mListFragment.loadMore();
-            mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
+        if(event.isSuccessful()) {
+            if(!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
+                mAdapter.notifyItemInserted(0);
+                mRecyclerView.smoothScrollToPosition(0);
+            }
+            mSearchEditText.setText("");
+
+            // If tablet, insert fragment into container
+            if (mDetailContainer != null) {
+                insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
+            }
+        } else{
+            if(getListManipulator().getCount() == 0 ){
+                showEmptyWidgets();
+            }
+        }
+        EventBus.getDefault().removeAllStickyEvents();
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onLoadMoreFinished(LoadMoreFinishedEvent event) {
+        if(event.isSuccessful()) {
+            if(!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
+                mAdapter.notifyDataSetChanged();
+            }
+            if(getListManipulator().getCount() < mNumberOfLaunchItems || mDynamicScrollLoadAnother){
+                dynamicLoadMore();
+                mDynamicScrollLoadAnother = false;
+            }else{
+                mDynamicScrollLoadEnabled = true;
+            }
+
+        }else{
+            //Show retry button
+            if(!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
+                mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
+            }
+        }
+        EventBus.getDefault().removeAllStickyEvents();
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onRefreshFinished(AppRefreshFinishedEvent event) {
+        hideProgressWheel();
+        if(event.isSuccessful()) {
+            mAdapter.notifyDataSetChanged();
+            dynamicLoadMore();
+
+            // If tablet, insert fragment into container
+            if (mDetailContainer != null) {
+                insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
+            }
+
+        } else{
+            if(getListManipulator().getCount() == 0 ){
+                showEmptyWidgets();
+            }
+        }
+        EventBus.getDefault().removeAllStickyEvents();
+    }
+
+    @Override // ListManipulatorFragment.EventListener
+    public void onWidgetRefreshDelegate(WidgetRefreshDelegateEvent event) {
+        showProgressWheel();
+        EventBus.getDefault().removeAllStickyEvents();
+    }
+
+    @Override // MainAdapter.EventListener
+    public void onItemClick(MainAdapter.MainViewHolder holder) {
+        if(!mDragClickPreventionEnabled) {
+            int position = holder.getAdapterPosition();
+
+            if (position != RecyclerView.NO_POSITION) {
+                String symbol = getListManipulator().getItem(position).getSymbol();
+
+                //If tablet insert fragment into container
+                if (mDetailContainer != null) {
+                    insertFragmentIntoDetailContainer(symbol);
+                } else {
+                    insertFragmentIntoDetailActivity(symbol);
+                }
+            }
         }
     }
 
@@ -421,10 +417,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if(position != RecyclerView.NO_POSITION) {
             final ListManipulator listManipulator = getListManipulator();
-
             String removeSymbol = listManipulator.getItem(position).getSymbol();
             listManipulator.removeItem(position);
-            mAdapter.notifyItemRemoved(position);
 
             if(listManipulator.getCount() == 0){
                 showEmptyWidgets();
@@ -442,7 +436,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
             mSnackbar = Snackbar.make(
                     mRootView,
-                    getString(R.string.placeholder_snackbar_main_text, holder.getSymbol()), Snackbar.LENGTH_LONG)
+                    getString(R.string.placeholder_snackbar_main_text, removeSymbol), Snackbar.LENGTH_LONG)
                     .setAction(R.string.snackbar_action_text, new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -480,7 +474,32 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // MainAdapter.EventListener
     public void onItemMoved(int fromPosition, int toPosition) {
         getListManipulator().moveItem(fromPosition, toPosition);
-        mAdapter.notifyItemMoved(fromPosition, toPosition);
+    }
+
+    @Override // MainAdapter.EventListener
+    public void onItemRetryClick(MainAdapter.LoadViewHolder holder) {
+        if(Utility.canUpdateList(getContentResolver())){
+            Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
+
+        }else if(!MyApplication.getInstance().isRefreshing()) {
+            mListFragment.loadMore();
+            mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
+        }
+    }
+
+    @Override // MainAdapter.EventListener
+    public void onItemTouch(View v, MotionEvent event) {
+        switch (event.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                mDragClickPreventionEnabled = false;
+                break;
+
+            case MotionEvent.ACTION_CANCEL:
+                if(mDragDropManager != null && !mDragDropManager.isDragging()) {
+                    mDragDropManager.cancelDrag();
+                }
+                break;
+        }
     }
 
     public void initOverflowMenu(){
@@ -521,17 +540,16 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mDragDropManager.setOnItemDragEventListener(new RecyclerViewDragDropManager.OnItemDragEventListener() {
             @Override
             public void onItemDragStarted(int position) {
-
+                mDragClickPreventionEnabled = true;
             }
 
             @Override
             public void onItemDragPositionChanged(int fromPosition, int toPosition) {
-
             }
 
             @Override
             public void onItemDragFinished(int fromPosition, int toPosition, boolean result) {
-                Log.d(TAG, "onItemDragFinished");
+                mAdapter.notifyDataSetChanged();
             }
         });
 
@@ -540,21 +558,16 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mSwipeManager.setOnItemSwipeEventListener(new RecyclerViewSwipeManager.OnItemSwipeEventListener() {
             @Override
             public void onItemSwipeStarted(int position) {
-
             }
 
             @Override
             public void onItemSwipeFinished(int position, int result, int afterSwipeReaction) {
-
+                mAdapter.notifyDataSetChanged();
             }
         });
 
         //Create adapter
-        final MainAdapter mainAdapter = new MainAdapter(
-                this,
-                mDragDropManager,
-                mListFragment,
-                this);
+        final MainAdapter mainAdapter = new MainAdapter(this, this, mListFragment);
 
         mAdapter = mainAdapter;
         mWrappedAdapter = mDragDropManager.createWrappedAdapter(mainAdapter);  // Wrap for dragging
@@ -624,7 +637,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 //                Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
 //            }
             // Must notifyItemInserted AFTER loadMore for mIsLoadingAFew to be updated
-            mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
+            if(!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
+                mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
+            }
 
             if(mDynamicScrollLoadEnabled){
                 mDynamicScrollLoadAnother = true;

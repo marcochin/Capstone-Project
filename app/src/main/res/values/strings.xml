@@ -20,7 +20,7 @@
     <string name="toast_error_updating_list">Error updating list</string>
     <string name="toast_error_refresh_list">List out of sync. Please refresh list</string>
     <string name="toast_placeholder_symbol_exists">%1$s already exists</string>
-    <string name="toast_placeholder_error_stock_limit">Sorry, unable not exceed limit of $1%d stocks</string>
+    <string name="toast_placeholder_error_stock_limit">Unable to exceed maximum limit of $1%d stocks</string>
 
     <!--RecyclerView-->
     <string name="empty_list_msg">Use the search box above\nto add an item.</string>
