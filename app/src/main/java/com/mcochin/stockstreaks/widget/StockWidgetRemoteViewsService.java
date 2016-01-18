@@ -69,7 +69,7 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
 
                 mData = getContentResolver().query(StockEntry.CONTENT_URI,
                         STOCK_PROJECTION,
-                        StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION_LE,
+                        StockProvider.LIST_POSITION_SELECTION_LE,
                         new String[]{Integer.toString(mShownPositionBookmark)},
                         StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
                 Binder.restoreCallingIdentity(identityToken);

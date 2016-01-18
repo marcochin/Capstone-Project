@@ -13,7 +13,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
+import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -22,6 +22,9 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.InterstitialAd;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
@@ -48,6 +51,8 @@ import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
+import java.util.Locale;
+
 import de.greenrobot.event.EventBus;
 
 public class MainActivity extends AppCompatActivity implements SearchBox.SearchListener,
@@ -58,7 +63,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private static final String KEY_LOGO_VISIBLE = "logoVisible";
     private static final String KEY_PROGRESS_WHEEL_VISIBLE = "progressWheelVisible";
     private static final String KEY_EMPTY_MSG_VISIBLE = "emptyMsgVisible";
-    private static final String KEY_DETAIL_CONTAINER_VISIBLE = "cardViewVisible";
+    private static final String KEY_DYNAMIC_SCROLL_ENABLED = "dynamicScrollEnabled";
+    private static final String KEY_ITEM_CLICKS_FOR_INTERSTITIAL = "ItemClicksForInterstitial";
+
+    private static final int CLICKS_UNTIL_INTERSTITIAL = 10;
 
     private RecyclerView mRecyclerView;
     private MyLinearLayoutManager mLayoutManager;
@@ -84,8 +92,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private boolean mDynamicScrollLoadEnabled;
     private boolean mDynamicScrollLoadAnother;
     private boolean mDragClickPreventionEnabled;
-
     private int mNumberOfLaunchItems;
+
+    private InterstitialAd mInterstitialAd;
+    private int mItemClicksForInterstitial;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         initSavedInstanceState(savedInstanceState);
         initOverflowMenu();
         initRecyclerView();
+        initInterstitialAd();
 
         mListFragment.setEventListener(this);
         mSwipeToRefresh.setOnRefreshListener(this);
@@ -166,9 +177,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 mEmptyMsg.setVisibility(View.VISIBLE);
             }
 
-            if(savedInstanceState.getBoolean(KEY_DETAIL_CONTAINER_VISIBLE)){
-                mDetailContainer.setVisibility(View.VISIBLE);
-            }
+            mDynamicScrollLoadEnabled = savedInstanceState.getBoolean(KEY_DYNAMIC_SCROLL_ENABLED);
+            mItemClicksForInterstitial = savedInstanceState.getInt(KEY_ITEM_CLICKS_FOR_INTERSTITIAL);
         }
     }
 
@@ -204,7 +214,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         ListEventQueue listEventQueue = ListEventQueue.getInstance();
 
         if(mFirstOpen) {
-            mDynamicScrollLoadEnabled = false;
             mDynamicScrollLoadAnother = false;
             showProgressWheel();
             listEventQueue.clearQueue();
@@ -234,8 +243,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if (mSnackbar != null && mSnackbar.isShown()) {
             mSnackbar.dismiss();
         }
-//        mListFragment.initFromRefresh(attachSymbol);
-        mListFragment.testRefresh();
+        mListFragment.initFromRefresh(attachSymbol);
+        //TODO yellow
+//        mListFragment.testRefresh();
     }
 
     @Override // SwipeRefreshLayout.OnRefreshListener
@@ -274,27 +284,24 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // SearchBox.SearchListener
     public void onSearch(String query) {
-//        if(getListManipulator().getCount() >= ListManipulator.LIST_LIMIT){
-//            Toast.makeText(this, getString(R.string.toast_placeholder_error_stock_limit,
-//                            ListManipulator.LIST_LIMIT), Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//        query = query.toUpperCase(Locale.US);
-//
-//        if (TextUtils.isEmpty(query)) {
-//            Toast.makeText(this, R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//        // Refresh the shownList BEFORE fetching a new stock. This is to prevent
-//        // fetching the new stock twice when it becomes apart of that list.
-//        if(!MyApplication.getInstance().isRefreshing() && Utility.canUpdateList(getContentResolver())) {
-//            refreshList(query);
-//        }else{
-//            mListFragment.loadSymbol(query);
-//        }
-        mListFragment.testLoadSymbol();
+        if(!isListLimitReached()){
+            query = query.toUpperCase(Locale.US);
 
-        showProgressWheel();
+            if (TextUtils.isEmpty(query)) {
+                Toast.makeText(this, R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
+
+            } else {
+                if(!MyApplication.getInstance().isRefreshing()
+                        && Utility.canUpdateList(getContentResolver())) {
+                    // Refresh the shownList BEFORE fetching a new stock. This is to prevent
+                    // fetching the new stock twice when it becomes apart of that list.
+                    refreshList(query);
+                } else{
+                    mListFragment.loadSymbol(query);
+                }
+                showProgressWheel();
+            }
+        }
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -310,7 +317,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
         }
 
-        if(Utility.canUpdateList(getContentResolver())) {
+        if (Utility.canUpdateList(getContentResolver())) {
             if (MyApplication.getInstance().isRefreshing()) {
                 showProgressWheel();
             } else{
@@ -407,6 +414,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 } else {
                     insertFragmentIntoDetailActivity(symbol);
                 }
+
+                if(mItemClicksForInterstitial >= CLICKS_UNTIL_INTERSTITIAL
+                        && mInterstitialAd.isLoaded()){
+                    mInterstitialAd.show();
+                }
+                mItemClicksForInterstitial++;
             }
         }
     }
@@ -440,15 +453,17 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     .setAction(R.string.snackbar_action_text, new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            hideEmptyMessage();
+                            if(!isListLimitReached()){
+                                hideEmptyMessage();
 
-                            int undoPosition = listManipulator.undoLastRemoveItem();
-                            mAdapter.notifyItemInserted(undoPosition);
-                            mRecyclerView.smoothScrollToPosition(undoPosition);
+                                int undoPosition = listManipulator.undoLastRemoveItem();
+                                mAdapter.notifyItemInserted(undoPosition);
+                                mRecyclerView.smoothScrollToPosition(undoPosition);
 
-                            if(mDetailContainer != null) {
-                                insertFragmentIntoDetailContainer(
-                                        listManipulator.getItem(undoPosition).getSymbol());
+                                if(mDetailContainer != null) {
+                                    insertFragmentIntoDetailContainer(
+                                            listManipulator.getItem(undoPosition).getSymbol());
+                                }
                             }
                         }
                     })
@@ -624,18 +639,20 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if (!listManipulator.isLoadingItemPresent()
                 && !MyApplication.getInstance().isRefreshing()
-                && mListFragment.testCanLoadMore()) {
-            //&& listManipulator.canLoadMore()) {
-            Log.d(TAG, "dynamicLoadMore");
+            && listManipulator.canLoadMore()) {
+            //TODO yellow
+//            && mListFragment.testCanLoadMore()) {
             // Insert dummy item
             listManipulator.addLoadingItem();
-            mListFragment.testLoadMore();
-//            if(!Utility.canUpdateList(getContentResolver())) {
-//                mListFragment.testLoadMore();
-//                mListFragment.loadMore();
-//            }else {
-//                Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
-//            }
+
+            if(!Utility.canUpdateList(getContentResolver())) {
+                mListFragment.loadMore();
+            }else {
+                Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
+            }
+
+            //TODO yellow
+//            mListFragment.testLoadMore();
             // Must notifyItemInserted AFTER loadMore for mIsLoadingAFew to be updated
             if(!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
                 mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
@@ -643,8 +660,18 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
             if(mDynamicScrollLoadEnabled){
                 mDynamicScrollLoadAnother = true;
+                mDynamicScrollLoadEnabled = false;
             }
         }
+    }
+
+    private boolean isListLimitReached(){
+        if(getListManipulator().getCount() >= ListManipulator.LIST_LIMIT){
+            Toast.makeText(this, getString(R.string.toast_placeholder_error_stock_limit,
+                    ListManipulator.LIST_LIMIT), Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return false;
     }
 
     private void insertFragmentIntoDetailContainer(@NonNull String symbol){
@@ -717,10 +744,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         outState.putBoolean(KEY_LOGO_VISIBLE, mLogo.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_PROGRESS_WHEEL_VISIBLE, mProgressWheel.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_EMPTY_MSG_VISIBLE, mEmptyMsg.getVisibility() == View.VISIBLE);
-        if(mDetailContainer != null) {
-            outState.putBoolean(KEY_DETAIL_CONTAINER_VISIBLE,
-                    mDetailContainer.getVisibility() == View.VISIBLE);
-        }
+        outState.putBoolean(KEY_DYNAMIC_SCROLL_ENABLED, mDynamicScrollLoadEnabled);
+        outState.putInt(KEY_ITEM_CLICKS_FOR_INTERSTITIAL, mItemClicksForInterstitial);
         super.onSaveInstanceState(outState);
     }
 
@@ -776,5 +801,24 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mListFragment = null;
 
         super.onDestroy();
+    }
+
+    private void initInterstitialAd(){
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
+
+        mInterstitialAd.setAdListener(new AdListener() {
+            @Override
+            public void onAdClosed() {
+                mItemClicksForInterstitial = 0;
+                requestNewInterstitialAd();
+            }
+        });
+
+        requestNewInterstitialAd();
+    }
+
+    private void requestNewInterstitialAd(){
+        mInterstitialAd.loadAd(new AdRequest.Builder().build());
     }
 }

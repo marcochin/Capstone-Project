@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 
+import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
@@ -45,15 +46,15 @@ public class ListManagerFragment extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setRetainInstance(true);  // keep the fragment instance
+
         mListManipulator = new ListManipulator();
     }
 
     @Override
     public void onPause() {
-        Log.d(TAG, "pause");
         if (mListManipulator.isListUpdated()) {
+            Log.d(TAG, "savestate");
             new AsyncTask<Context, Void, Void>() {
                 @Override
                 protected Void doInBackground(Context... params) {
@@ -93,7 +94,7 @@ public class ListManagerFragment extends Fragment{
                     cursor = cr.query(
                             StockEntry.CONTENT_URI,
                             ListManipulator.STOCK_PROJECTION,
-                            StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
+                            StockProvider.LIST_POSITION_SELECTION,
                             new String[]{Integer.toString(shownPositionBookmark)},
                             StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 
@@ -259,7 +260,7 @@ public class ListManagerFragment extends Fragment{
             @Override
             protected Void doInBackground(Void... params) {
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

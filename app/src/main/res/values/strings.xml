@@ -2,6 +2,9 @@
     <string name="app_name">Stock Streaks</string>
     <string name="app_name_initials">&#160;SS&#160;</string>
 
+    <!--Admob-->
+    <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
+
     <!-- Toolbar menu -->
     <string name="action_refresh">Refresh</string>
     <string name="action_sort">Sort</string>
@@ -20,7 +23,7 @@
     <string name="toast_error_updating_list">Error updating list</string>
     <string name="toast_error_refresh_list">List out of sync. Please refresh list</string>
     <string name="toast_placeholder_symbol_exists">%1$s already exists</string>
-    <string name="toast_placeholder_error_stock_limit">Unable to exceed maximum limit of $1%d stocks</string>
+    <string name="toast_placeholder_error_stock_limit">Unable to exceed max limit of %1$d stocks</string>
 
     <!--RecyclerView-->
     <string name="empty_list_msg">Use the search box above\nto add an item.</string>

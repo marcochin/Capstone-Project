@@ -207,7 +207,7 @@ public class MainService extends IntentService {
             cursor = getContentResolver().query(
                     StockEntry.CONTENT_URI,
                     projection,
-                    StockProvider.SHOWN_POSITION_BOOKMARK_SELECTION,
+                    StockProvider.LIST_POSITION_SELECTION,
                     new String[]{Integer.toString(ListManipulator.MORE)},
                     StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 
@@ -404,7 +404,7 @@ public class MainService extends IntentService {
 
     private ContentProviderOperation getListPositionBookmarkOperation(String symbol){
         Cursor cursor = null;
-        int listPosition = ListManipulator.MORE; //Default to a few in case something goes wrong
+        int listPosition = ListManipulator.MORE; //Default to "more" in case something goes wrong
         try{
             final String [] projection = new String[]{StockEntry.COLUMN_LIST_POSITION};
             final int indexListPosition = 0;

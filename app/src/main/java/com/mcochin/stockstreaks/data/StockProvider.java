@@ -57,11 +57,11 @@ public class StockProvider extends ContentProvider {
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_SYMBOL + " = ?";
 
     // stocks.list_position < ?
-    public static final String SHOWN_POSITION_BOOKMARK_SELECTION =
+    public static final String LIST_POSITION_SELECTION =
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_LIST_POSITION + " < ?";
 
     // stocks.list_position <= ?
-    public static final String SHOWN_POSITION_BOOKMARK_SELECTION_LE =
+    public static final String LIST_POSITION_SELECTION_LE =
             StockEntry.TABLE_NAME + "." + StockEntry.COLUMN_LIST_POSITION + " <= ?";
 
     // list_position ASC
