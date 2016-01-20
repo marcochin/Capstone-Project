@@ -1,0 +1,9 @@
+<resources>
+    <string name="ga_trackingId">ADD_TRACKING_ID_HERE</string>
+    <string name="ga_logLevel">verbose</string>
+
+    <!--  Problem with auto-tracking is that it tracks all activities and if it is popular,
+    it may reach its quota limit so set it to false-->
+    <bool name="ga_autoActivityTracking">false</bool>
+    <bool name="ga_reportUncaughtExceptions">true</bool>
+</resources>

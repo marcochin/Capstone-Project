@@ -26,6 +26,7 @@
 
         <activity
             android:name="com.mcochin.stockstreaks.DetailActivity"
+            android:theme="@style/AppTheme.Detail"
             android:parentActivityName="com.mcochin.stockstreaks.MainActivity">
         </activity>
 
@@ -56,15 +57,6 @@
             android:name=".widget.StockWidgetRemoteViewsService"
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
-
-        <!-- Admob -->
-        <!--This meta-data tag is required to use Google Play Services.-->
-        <meta-data android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version" />
-
-        <activity android:name="com.google.android.gms.ads.AdActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
-            android:theme="@android:style/Theme.Translucent" />
 
     </application>
 </manifest>

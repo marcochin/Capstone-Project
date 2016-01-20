@@ -2,6 +2,10 @@ package com.mcochin.stockstreaks.custom;
 
 import android.app.Application;
 
+import com.google.android.gms.analytics.GoogleAnalytics;
+import com.google.android.gms.analytics.Tracker;
+import com.mcochin.stockstreaks.R;
+
 import java.util.UUID;
 
 /**
@@ -9,6 +13,8 @@ import java.util.UUID;
  */
 public class MyApplication extends Application {
     private static MyApplication sMyApplication;
+    private Tracker mTracker;
+
     private static String mSessionId = "";
 
     /**
@@ -25,6 +31,19 @@ public class MyApplication extends Application {
     public void onCreate() {
         super.onCreate();
         sMyApplication = this;
+    }
+
+    /**
+     * Gets the default {@link Tracker} for this {@link Application}.
+     * @return tracker
+     */
+    public synchronized Tracker getDefaultTracker() {
+        if (mTracker == null) {
+            GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
+            // To enable debug logging use: adb shell setprop log.tag.GAv4 DEBUG
+            mTracker = analytics.newTracker(R.xml.analytics_tracker);
+        }
+        return mTracker;
     }
 
     public static void startNewSession(){

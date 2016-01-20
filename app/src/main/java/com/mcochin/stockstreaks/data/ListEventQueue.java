@@ -1,10 +1,10 @@
 package com.mcochin.stockstreaks.data;
 
-import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
-import com.mcochin.stockstreaks.events.Event;
-import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
+import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.Event;
+import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
 
 import java.util.LinkedList;
 import java.util.Queue;

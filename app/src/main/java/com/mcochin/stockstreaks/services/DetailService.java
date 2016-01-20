@@ -12,14 +12,13 @@ import android.util.Log;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract;
-import com.mcochin.stockstreaks.events.LoadDetailErrorEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadDetailErrorEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Queue;
 
 import de.greenrobot.event.EventBus;

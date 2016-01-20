@@ -17,9 +17,9 @@ import android.util.Log;
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
@@ -50,7 +50,7 @@ public class StockProvider extends ContentProvider {
 
     private static final int SAVE_STATE = 100;
     private static final int STOCKS = 200;
-    private static final int STOCKS_WITH_SYMBOL = 201;
+    private static final int STOCK_SYMBOL = 201;
 
     // stocks.symbol = ?
     private static final String STOCK_SYMBOL_SELECTION =
@@ -78,7 +78,7 @@ public class StockProvider extends ContentProvider {
         // For each type of URI you want to add, create a corresponding code.
         matcher.addURI(authority, StockContract.PATH_SAVE_STATE, SAVE_STATE);
         matcher.addURI(authority, StockContract.PATH_STOCKS, STOCKS);
-        matcher.addURI(authority, StockContract.PATH_STOCKS + "/*", STOCKS_WITH_SYMBOL);
+        matcher.addURI(authority, StockContract.PATH_STOCKS + "/*", STOCK_SYMBOL);
 
         return matcher;
     }
@@ -100,7 +100,7 @@ public class StockProvider extends ContentProvider {
             case STOCKS:
                 return StockEntry.CONTENT_DIR_TYPE;
 
-            case STOCKS_WITH_SYMBOL:
+            case STOCK_SYMBOL:
                 return StockEntry.CONTENT_ITEM_TYPE;
 
             default:
@@ -137,7 +137,7 @@ public class StockProvider extends ContentProvider {
                         sortOrder);
                 break;
 
-            case STOCKS_WITH_SYMBOL:
+            case STOCK_SYMBOL:
                 String symbol = StockContract.getSymbolFromUri(uri);
 
                 retCursor = mStockDbHelper.getWritableDatabase().query(
@@ -173,9 +173,10 @@ public class StockProvider extends ContentProvider {
                         .insert(SaveStateEntry.TABLE_NAME, null, values);
                 break;
 
-            case STOCKS_WITH_SYMBOL:
+            case STOCK_SYMBOL:
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(StockEntry.TABLE_NAME, null, values);
+
                 break;
 
             default:
@@ -197,7 +198,7 @@ public class StockProvider extends ContentProvider {
         int rowsDeleted;
 
         switch (match){
-            case STOCKS_WITH_SYMBOL:
+            case STOCK_SYMBOL:
                 String symbol = StockContract.getSymbolFromUri(uri);
 
                 rowsDeleted = mStockDbHelper.getWritableDatabase().delete(
@@ -227,7 +228,7 @@ public class StockProvider extends ContentProvider {
                         null);
                 break;
 
-            case STOCKS_WITH_SYMBOL:
+            case STOCK_SYMBOL:
                 String symbol = StockContract.getSymbolFromUri(uri);
 
                 rowsAffected = mStockDbHelper.getWritableDatabase().update(

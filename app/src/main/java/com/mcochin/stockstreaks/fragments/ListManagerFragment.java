@@ -7,17 +7,15 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 
-import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
-import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
+import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
@@ -54,19 +52,17 @@ public class ListManagerFragment extends Fragment{
     @Override
     public void onPause() {
         if (mListManipulator.isListUpdated()) {
-            Log.d(TAG, "savestate");
             new AsyncTask<Context, Void, Void>() {
                 @Override
                 protected Void doInBackground(Context... params) {
-                    ContentResolver cr = params[0].getContentResolver();
-                    mListManipulator.permanentlyDeleteLastRemoveItem(cr);
-                    mListManipulator.saveShownListState(cr);
+                    mListManipulator.permanentlyDeleteLastRemoveItem(params[0]);
+                    mListManipulator.saveShownListState(params[0]);
                     //Update widget to reflect changes
                     params[0].sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
 
                     return null;
                 }
-            }.execute(getActivity().getApplicationContext());
+            }.execute(getActivity());
         }
 
         super.onPause();
@@ -121,7 +117,7 @@ public class ListManagerFragment extends Fragment{
                     mEventListener.onLoadFromDbFinished();
                 }
             }
-        }.execute(getActivity().getApplicationContext());
+        }.execute(getActivity());
     }
 
     /**
@@ -141,7 +137,7 @@ public class ListManagerFragment extends Fragment{
                     }
                     return null;
                 }
-        }.execute(getActivity().getApplicationContext());
+        }.execute(getActivity());
     }
 
     /**
@@ -150,7 +146,7 @@ public class ListManagerFragment extends Fragment{
      */
     private void refreshList(Context context){
         if (mListManipulator.isListUpdated()) {
-            mListManipulator.saveShownListState(context.getContentResolver());
+            mListManipulator.saveShownListState(context);
         }
         // Start service to refresh app
         Intent serviceIntent = new Intent(getContext(), MainService.class);
@@ -426,7 +422,7 @@ public class ListManagerFragment extends Fragment{
                     mEventListener.onWidgetRefreshDelegate(event);
                 }
             }
-        }.execute(getActivity().getApplicationContext());
+        }.execute(getActivity());
     }
 
     public void setEventListener(EventListener eventListener){

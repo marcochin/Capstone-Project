@@ -16,11 +16,11 @@ import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
-import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.data.ListEventQueue;
-import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
+import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 

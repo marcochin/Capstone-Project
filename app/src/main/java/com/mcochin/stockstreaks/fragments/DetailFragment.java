@@ -23,7 +23,7 @@ import android.widget.TextView;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.events.LoadDetailErrorEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadDetailErrorEvent;
 import com.mcochin.stockstreaks.services.DetailService;
 import com.mcochin.stockstreaks.utils.Utility;
 
@@ -71,7 +71,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     private View mProgressWheel;
     private View mRetryButton;
-    private View mExtrasSection;
+    private View mExtrasInfo;
 
     private TextView mTextUpdateTime;
     private TextView mTextSymbol;
@@ -133,7 +133,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mImageStreakArrow = (ImageView)view.findViewById(R.id.image_streak_arrow);
         mImagePrevStreakArrow = (ImageView)view.findViewById(R.id.image_prev_streak_arrow);
 
-        mExtrasSection = view.findViewById(R.id.detail_extras_section);
+        mExtrasInfo = view.findViewById(R.id.detail_extras_info);
         mProgressWheel = view.findViewById(R.id.progress_wheel);
         mRetryButton = view.findViewById(R.id.button_retry);
         mRetryButton.setOnClickListener(this);
@@ -265,7 +265,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 } else if (prevStreak < 0) {
                     mImagePrevStreakArrow.setBackgroundResource(R.drawable.ic_streak_down);
                 }
-                showExtrasSection();
+                showExtrasInfo();
 
             }else if(mReplyButtonVisible){
                 showRetryButton();
@@ -287,19 +287,19 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private void showProgressWheel(){
         mProgressWheel.setVisibility(View.VISIBLE);
         mRetryButton.setVisibility(View.INVISIBLE);
-        mExtrasSection.setVisibility(View.INVISIBLE);
+        mExtrasInfo.setVisibility(View.INVISIBLE);
     }
 
     private void showRetryButton(){
         mProgressWheel.setVisibility(View.INVISIBLE);
         mRetryButton.setVisibility(View.VISIBLE);
-        mExtrasSection.setVisibility(View.INVISIBLE);
+        mExtrasInfo.setVisibility(View.INVISIBLE);
     }
 
-    private void showExtrasSection(){
+    private void showExtrasInfo(){
         mProgressWheel.setVisibility(View.INVISIBLE);
         mRetryButton.setVisibility(View.INVISIBLE);
-        mExtrasSection.setVisibility(View.VISIBLE);
+        mExtrasInfo.setVisibility(View.VISIBLE);
     }
 
     public String getSymbol(){

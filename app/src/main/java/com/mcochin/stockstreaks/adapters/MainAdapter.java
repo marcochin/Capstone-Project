@@ -6,7 +6,6 @@ import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.util.Pair;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -17,7 +16,6 @@ import android.widget.TextView;
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter;
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemConstants;
 import com.h6ah4i.android.widget.advrecyclerview.draggable.ItemDraggableRange;
-import com.h6ah4i.android.widget.advrecyclerview.draggable.RecyclerViewDragDropManager;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.SwipeableItemAdapter;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.SwipeableItemConstants;
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultActionRemoveItem;
@@ -25,7 +23,6 @@ import com.h6ah4i.android.widget.advrecyclerview.utils.AbstractDraggableSwipeabl
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.ListManipulator;
-import com.mcochin.stockstreaks.events.LoadDetailErrorEvent;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.utils.Utility;
@@ -372,9 +369,9 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     // Our MainViewHolder class
     public class MainViewHolder extends AbstractDraggableSwipeableItemViewHolder
             implements View.OnClickListener, View.OnTouchListener {
+        public TextView mSymbol;
         ViewGroup mContainer;
         TextView mUpdateTime;
-        TextView mSymbol;
         TextView mFullName;
         TextView mRecentClose;
         TextView mChangeDollar;

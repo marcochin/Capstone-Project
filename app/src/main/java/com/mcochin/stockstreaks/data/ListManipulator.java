@@ -3,10 +3,14 @@ package com.mcochin.stockstreaks.data;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.mcochin.stockstreaks.R;
+import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -193,10 +197,10 @@ public class ListManipulator {
         }
     }
 
-    public void permanentlyDeleteLastRemoveItem(final ContentResolver cr){
+    public void permanentlyDeleteLastRemoveItem(Context context){
         synchronized (this) {
             if (mLastRemovedItem != null) {
-                cr.delete(
+                context.getContentResolver().delete(
                         StockEntry.buildUri(mLastRemovedItem.getSymbol()),
                         null,
                         null
@@ -239,10 +243,10 @@ public class ListManipulator {
 
     /**
      * Saves the list positions of every item. Should be called from a background thread
-     * @param cr ContentResolver
+     * @param context Context
      */
     // All synchronized blocks in this class are so they don't interfere with this method.
-    public void saveShownListState(ContentResolver cr) {
+    public void saveShownListState(Context context) {
         synchronized (this) {
             ArrayList<ContentProviderOperation> ops = new ArrayList<>();
             // Determine if the last item is a loading item. If so, skip it. We can't remove it
@@ -293,7 +297,11 @@ public class ListManipulator {
             // Apply operations
             Bundle extras = new Bundle();
             extras.putParcelableArrayList(StockProvider.KEY_OPERATIONS, ops);
-            cr.call(StockContract.BASE_CONTENT_URI, StockProvider.METHOD_UPDATE_LIST_POSITION, null, extras);
+
+            context.getContentResolver().call(StockContract.BASE_CONTENT_URI,
+                    StockProvider.METHOD_UPDATE_LIST_POSITION,
+                    null,
+                    extras);
 
             mListUpdated = false;
         }

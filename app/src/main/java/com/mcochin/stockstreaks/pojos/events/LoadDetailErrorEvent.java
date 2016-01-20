@@ -1,9 +1,9 @@
-package com.mcochin.stockstreaks.events;
+package com.mcochin.stockstreaks.pojos.events;
 
 /**
  * Created by Marco on 12/24/2015.
  */
-public class LoadDetailErrorEvent extends Event{
+public class LoadDetailErrorEvent extends Event {
     public LoadDetailErrorEvent(String sessionId){
         super(sessionId);
     }

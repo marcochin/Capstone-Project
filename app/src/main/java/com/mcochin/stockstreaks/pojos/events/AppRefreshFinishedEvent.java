@@ -1,4 +1,4 @@
-package com.mcochin.stockstreaks.events;
+package com.mcochin.stockstreaks.pojos.events;
 
 import com.mcochin.stockstreaks.pojos.Stock;
 

@@ -1,4 +1,4 @@
-package com.mcochin.stockstreaks.events;
+package com.mcochin.stockstreaks.pojos.events;
 
 /**
  * Created by Marco on 1/6/2016.

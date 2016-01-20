@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -25,6 +26,7 @@ import android.widget.Toast;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.analytics.HitBuilders;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
@@ -39,10 +41,10 @@ import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.events.AppRefreshFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadMoreFinishedEvent;
-import com.mcochin.stockstreaks.events.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.events.WidgetRefreshDelegateEvent;
+import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
 import com.mcochin.stockstreaks.fragments.DetailEmptyFragment;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
@@ -344,6 +346,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             if (mDetailContainer != null) {
                 insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
             }
+
+            // Send to analytics what symbols were added.
+            MyApplication.getInstance().getDefaultTracker().send(new HitBuilders.EventBuilder()
+                    .setCategory(getString(R.string.analytics_category))
+                    .setAction(getString(R.string.analytics_action_add))
+                    .setLabel(getString(R.string.analytics_label_add_placeholder,
+                            event.getStock().getSymbol()))
+                    .build());
         } else{
             if(getListManipulator().getCount() == 0 ){
                 showEmptyWidgets();
@@ -415,6 +425,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     insertFragmentIntoDetailActivity(symbol);
                 }
 
+                // Check if it is time to show interstitial ad
                 if(mItemClicksForInterstitial >= CLICKS_UNTIL_INTERSTITIAL
                         && mInterstitialAd.isLoaded()){
                     mInterstitialAd.show();
@@ -475,7 +486,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                                     @Override
                                     protected Void doInBackground(Void... params) {
                                         listManipulator.permanentlyDeleteLastRemoveItem(
-                                                getContentResolver());
+                                                MainActivity.this);
                                         return null;
                                     }
                                 }.execute();
@@ -692,7 +703,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         //If phone open activity
         Intent openDetail = new Intent(MainActivity.this, DetailActivity.class);
         openDetail.setData(detailUri);
-        startActivity(openDetail);
+
+        Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(this).toBundle();
+        startActivity(openDetail, bundle);
     }
 
     private void showEmptyWidgets(){

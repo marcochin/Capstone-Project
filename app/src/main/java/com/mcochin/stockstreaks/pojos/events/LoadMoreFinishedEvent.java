@@ -1,4 +1,4 @@
-package com.mcochin.stockstreaks.events;
+package com.mcochin.stockstreaks.pojos.events;
 
 import com.mcochin.stockstreaks.pojos.Stock;
 
@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Created by Marco on 12/24/2015.
  */
-public class LoadMoreFinishedEvent extends Event{
+public class LoadMoreFinishedEvent extends Event {
     private List<Stock> mStockList;
     private boolean mSuccessful;
 
