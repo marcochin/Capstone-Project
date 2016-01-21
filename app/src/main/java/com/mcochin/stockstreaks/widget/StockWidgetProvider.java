@@ -7,9 +7,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.os.SystemClock;
 import android.support.v4.app.TaskStackBuilder;
-import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -37,7 +35,6 @@ public class StockWidgetProvider extends AppWidgetProvider{
 
     @Override
     public void onEnabled(Context context) {
-        Log.d(TAG, "onEnabled");
         // Start alarmManager
         Calendar stockMarketClose = Utility.getNewYorkCalendarQuickSetup(
                 Utility.STOCK_MARKET_UPDATE_HOUR,
@@ -60,7 +57,6 @@ public class StockWidgetProvider extends AppWidgetProvider{
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        Log.d(TAG, "onUpdate");
         // Perform this loop procedure for each App Widget that belongs to this provider
         for (int appWidgetId : appWidgetIds) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget);
@@ -102,7 +98,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
-        Log.d(TAG, "onReceive");
+//        Log.d(TAG, "onReceive");
         String action = intent.getAction();
         if(action.equals(ACTION_DATA_UPDATED) || action.equals(ACTION_DATA_UPDATE_ERROR)
                 || action.equals(ACTION_DATA_REFRESH)) {
@@ -117,7 +113,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
                     case ACTION_DATA_REFRESH:
                         if (!MyApplication.getInstance().isRefreshing()
                                 && Utility.canUpdateList(context.getContentResolver())) {
-                            Log.d(TAG, "ACTION_DATA_REFRESH");
+//                            Log.d(TAG, "ACTION_DATA_REFRESH");
 
                             MyApplication.getInstance().setRefreshing(true);
                             views.setViewVisibility(R.id.progress_wheel, View.VISIBLE);
@@ -129,13 +125,13 @@ public class StockWidgetProvider extends AppWidgetProvider{
                         break;
 
                     case ACTION_DATA_UPDATED:
-                        Log.d(TAG, "ACTION_DATA_UPDATED");
+//                        Log.d(TAG, "ACTION_DATA_UPDATED");
                         views.setViewVisibility(R.id.progress_wheel, View.INVISIBLE);
                         appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_list);
                         break;
 
                     case ACTION_DATA_UPDATE_ERROR:
-                        Log.d(TAG, "ACTION_DATA_UPDATE_ERROR");
+//                        Log.d(TAG, "ACTION_DATA_UPDATE_ERROR");
                         views.setViewVisibility(R.id.progress_wheel, View.INVISIBLE);
                         break;
                 }

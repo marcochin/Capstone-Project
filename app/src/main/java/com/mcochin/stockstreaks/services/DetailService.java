@@ -88,6 +88,13 @@ public class DetailService extends Service {
         getContentResolver().update(StockContract.StockEntry.buildUri(symbol), values, null, null);
     }
 
+    /**
+     * Retrieves the symbol's one year history and calculates its prev. streak, streak's year high,
+     * and streak's year low.
+     * @param symbol
+     * @return
+     * @throws IOException
+     */
     private ContentValues getDetailValues(String symbol) throws IOException{
         Cursor cursor = null;
         ContentValues values = null;
@@ -110,7 +117,7 @@ public class DetailService extends Service {
             final int indexPrevStreakEndPrice = 1;
             final int indexStreak = 2;
 
-            // Get streak end date and streak from the specified symbol
+            // Get prev streak end date and streak from the specified symbol
             cursor = getContentResolver().query(
                     StockContract.StockEntry.buildUri(symbol),
                     projection,

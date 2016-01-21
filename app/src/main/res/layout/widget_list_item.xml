@@ -8,10 +8,11 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/widget_list_item"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="@dimen/widget_list_item_padding"
-    android:baselineAligned="false">
+    android:baselineAligned="false"
+    android:focusable="true">
 
     <LinearLayout
         android:layout_width="0dp"

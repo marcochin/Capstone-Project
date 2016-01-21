@@ -31,7 +31,6 @@ public class ListManagerFragment extends Fragment{
      * This is true if the list is loading a few on the bottom
      */
     private static volatile boolean mLoadingMore = false;
-    private int testSymbol = 0;
 
     public interface EventListener{
         void onLoadFromDbFinished();
@@ -76,6 +75,9 @@ public class ListManagerFragment extends Fragment{
         super.onDetach();
     }
 
+    /**
+     * Initializes the list by loading data from where the user left off from the last session.
+     */
     public void initFromDb(){
         // Get load list of symbols to query
         new AsyncTask<Context, Void, Void>(){
@@ -121,7 +123,7 @@ public class ListManagerFragment extends Fragment{
     }
 
     /**
-     * Refreshes the list.
+     * Initializes the list by refreshing the list.
      * @param attachSymbol An option to query a symbol once the list has done refreshing.
      */
     public void initFromRefresh(final String attachSymbol){
@@ -154,6 +156,10 @@ public class ListManagerFragment extends Fragment{
         getContext().startService(serviceIntent);
     }
 
+    /**
+     * Starts a service to perform a network request to load data for the specified symbol.
+     * @param symbol
+     */
     public void loadSymbol(String symbol){
         // Start service to retrieve stock info
         Intent serviceIntent = new Intent(getContext(), MainService.class);
@@ -180,119 +186,6 @@ public class ListManagerFragment extends Fragment{
         }else{
             mLoadingMore = false;
         }
-    }
-    public void testLoadSymbol(){
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                Stock stock = new Stock();
-                stock.setSymbol("Add");
-                stock.setChangeDollar(3.33f);
-                stock.setChangePercent(3.33f);
-                stock.setFullName("test inc");
-                stock.setRecentClose(3.33f);
-                stock.setStreak(-33);
-                mListManipulator.addItemToTop(stock);
-
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                if (mEventListener != null) {
-                    mEventListener.onLoadSymbolFinished(new LoadSymbolFinishedEvent(
-                            MyApplication.getInstance().getSessionId(),
-                            null,
-                            true));
-                }
-            }
-        }.execute();
-    }
-
-    public void testRefresh() {
-        MyApplication.getInstance().setRefreshing(true);
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                mListManipulator.setShownListCursor(null);
-                testSymbol = 0;
-                for (int i = 0; i < ListManipulator.MORE; i++){
-                    Stock stock = new Stock();
-                    stock.setSymbol(Integer.toString(testSymbol++));
-                    stock.setChangeDollar(3.33f);
-                    stock.setChangePercent(3.33f);
-                    stock.setFullName("test inc");
-                    stock.setRecentClose(3.33f);
-                    stock.setStreak(-33);
-
-                    mListManipulator.addItemToBottom(stock);
-                }
-                MyApplication.getInstance().setRefreshing(false);
-
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                if (mEventListener != null) {
-                    mEventListener.onRefreshFinished(new AppRefreshFinishedEvent(
-                            MyApplication.getInstance().getSessionId(),
-                            null,
-                            true));
-                }
-            }
-        }.execute();
-    }
-
-    public void testLoadMore() {
-        mLoadingMore = true;
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                for (int i = 0; i < ListManipulator.MORE; i++){
-                    Stock stock = new Stock();
-                    stock.setSymbol(Integer.toString(testSymbol++));
-                    stock.setChangeDollar(3.33f);
-                    stock.setChangePercent(3.33f);
-                    stock.setFullName("test inc");
-                    stock.setRecentClose(3.33f);
-                    stock.setStreak(-33);
-
-                    mListManipulator.addItemToPosition(mListManipulator.getCount() - 1, stock);
-
-                }
-                // Remove loading item if it exists
-                mListManipulator.removeLoadingItem();
-                mLoadingMore = false;
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                if (mEventListener != null) {
-                    mEventListener.onLoadMoreFinished(new LoadMoreFinishedEvent(
-                            MyApplication.getInstance().getSessionId(),
-                            null,
-                            true));
-                }
-            }
-        }.execute();
-    }
-
-    public boolean testCanLoadMore(){
-        return testSymbol < 50;
     }
 
     /**
@@ -332,6 +225,10 @@ public class ListManagerFragment extends Fragment{
         return loadList;
     }
 
+    /**
+     * A callback for the when a symbol has finished loading from the network.
+     * @param event
+     */
     public void onEventMainThread(final LoadSymbolFinishedEvent event){
         // We use async task for the benefit of them executing sequentially in a single
         // background thread. And in order to prevent using the synchronized keyword in the main
@@ -354,6 +251,10 @@ public class ListManagerFragment extends Fragment{
         }.execute();
     }
 
+    /**
+     * A callback for the when the "more" symbols have finished dynamically loaded from the network.
+     * @param event
+     */
     public void onEventMainThread(final LoadMoreFinishedEvent event){
         if(!event.getSessionId().equals(MyApplication.getInstance().getSessionId())){
             return;
@@ -382,6 +283,10 @@ public class ListManagerFragment extends Fragment{
         }.execute();
     }
 
+    /**
+     * A callback for the when the app has finished refreshing the list.
+     * @param event
+     */
     public void onEventMainThread(final AppRefreshFinishedEvent event){
         new AsyncTask<Void, Void, Void>() {
             @Override
@@ -408,6 +313,10 @@ public class ListManagerFragment extends Fragment{
         }.execute();
     }
 
+    /**
+     * A callback for the when the the widget wants the app to refresh the list instead of itself.
+     * @param event
+     */
     public void onEventMainThread(final WidgetRefreshDelegateEvent event){
         new AsyncTask<Context, Void, Void>(){
             @Override
@@ -433,6 +342,10 @@ public class ListManagerFragment extends Fragment{
         return mListManipulator;
     }
 
+
+    /**
+     * @return true if the app is currently loading "more".
+     */
     public boolean isLoadingMore() {
         return mLoadingMore;
     }

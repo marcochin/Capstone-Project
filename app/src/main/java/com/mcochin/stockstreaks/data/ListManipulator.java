@@ -1,16 +1,11 @@
 package com.mcochin.stockstreaks.data;
 
 import android.content.ContentProviderOperation;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.util.Log;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.mcochin.stockstreaks.R;
-import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.pojos.Stock;
@@ -58,91 +53,9 @@ public class ListManipulator {
     private boolean mListUpdated;
 
     /**
-     * Add a new query item to the top of the list
-     * @param stock
+     * Sets the cursor of the shown list. It will extract data from the cursor to populate the list.
+     * @param cursor
      */
-    public void addItemToTop(Stock stock){
-        synchronized (this) {
-            stock.setId(mUniqueId++);
-            mShownList.add(0, stock);
-            mListUpdated = true;
-            printList();
-        }
-    }
-
-    /**
-     * Add an updated db item to the bottom of the list
-     * @param stock
-     */
-    public void addItemToBottom(Stock stock){
-        synchronized (this) {
-            stock.setId(mUniqueId++);
-            mShownList.add(stock);
-            addToLoadListPositionBookmark(1);
-            mListUpdated = true;
-            printList();
-        }
-    }
-
-    /**
-     * Add an updated db item to the bottom of the list
-     * @param stock
-     */
-    public void addItemToPosition(int position, Stock stock){
-        synchronized (this) {
-            stock.setId(mUniqueId++);
-            mShownList.add(position, stock);
-            addToLoadListPositionBookmark(1);
-            mListUpdated = true;
-            printList();
-        }
-    }
-
-    public void addLoadingItem(){
-        Stock stock = new Stock();
-        stock.setId(mUniqueId++);
-        stock.setSymbol(LOADING_ITEM);
-        mShownList.add(stock);
-        printList();
-    }
-
-    public void removeLoadingItem(){
-        if(isLoadingItemPresent()){
-            mShownList.remove(getCount() - 1);
-        }
-        printList();
-    }
-
-    public boolean isLoadingItemPresent(){
-        if(getCount() > 0) {
-            return mShownList.get(getCount() - 1).getSymbol().equals(LOADING_ITEM);
-        }
-        return false;
-    }
-
-    public void addToLoadListPositionBookmark(int addToBookmark){
-        if(addToBookmark > 0 ) {
-            mLoadListPositionBookmark += addToBookmark;
-        } else{
-            throw new IllegalArgumentException("Must be a positive number.");
-        }
-    }
-
-    public int getCount(){
-        return mShownList.size();
-    }
-
-    public Stock getItem(int index) {
-        if (index < 0 || index >= getCount()) {
-            throw new IndexOutOfBoundsException("index = " + index);
-        }
-        return mShownList.get(index);
-    }
-
-    public boolean isListUpdated(){
-        return mListUpdated;
-    }
-
     public void setShownListCursor(Cursor cursor){
         synchronized (this) {
             mUniqueId = 0;
@@ -159,11 +72,91 @@ public class ListManipulator {
         }
     }
 
+    /**
+     * Sets the load list. This list is used to keep track of what items need to be loaded and
+     * which ones are already loaded.
+     * @param loadList
+     */
     public void setLoadList(String[] loadList) {
         mLoadListPositionBookmark = 0;
         mLoadList = loadList;
     }
 
+    /**
+     * Add a new query item to the top of the list
+     * @param stock
+     */
+    public void addItemToTop(Stock stock){
+        synchronized (this) {
+            stock.setId(mUniqueId++);
+            mShownList.add(0, stock);
+            mListUpdated = true;
+        }
+    }
+
+    /**
+     * Add an updated db item to the bottom of the list
+     * @param stock
+     */
+    public void addItemToBottom(Stock stock){
+        synchronized (this) {
+            stock.setId(mUniqueId++);
+            mShownList.add(stock);
+            addToLoadListPositionBookmark(1);
+            mListUpdated = true;
+        }
+    }
+
+    /**
+     * Add an updated db item to the bottom of the list
+     * @param stock
+     */
+    public void addItemToPosition(int position, Stock stock){
+        synchronized (this) {
+            stock.setId(mUniqueId++);
+            mShownList.add(position, stock);
+            addToLoadListPositionBookmark(1);
+            mListUpdated = true;
+        }
+    }
+
+    /**
+     * Adds a "dummy" loading item to the bottom of the list with a specific signature to let
+     * the adapter know that it is a loading item. This item is used for dynamic loads.
+     */
+    public void addLoadingItem(){
+        Stock stock = new Stock();
+        stock.setId(mUniqueId++);
+        stock.setSymbol(LOADING_ITEM);
+        mShownList.add(stock);
+    }
+
+    /**
+     * Removes the "dummy" loading item from the bottom of the list.
+     */
+    public void removeLoadingItem(){
+        if(isLoadingItemPresent()){
+            mShownList.remove(getCount() - 1);
+        }
+    }
+
+    /**
+     * Returns the list item at specified index
+     * @param position
+     * @return
+     */
+    public Stock getItem(int position) {
+        if (position < 0 || position >= getCount()) {
+            throw new IndexOutOfBoundsException("index = " + position);
+        }
+        return mShownList.get(position);
+    }
+
+    /**
+     * Moves an item from one position of the list to another.
+     * @param fromPosition
+     * @param toPosition
+     */
     public void moveItem(int fromPosition, int toPosition) {
         synchronized (this) {
             Stock stock = mShownList.remove(fromPosition);
@@ -172,12 +165,20 @@ public class ListManipulator {
         }
     }
 
+    /**
+     * Removes an item from specified position.
+     * @param position
+     */
     public void removeItem(int position) {
         mLastRemovedItem = mShownList.remove(position);
         mLastRemovedPosition = position;
         mListUpdated = true;
     }
 
+    /**
+     * Undoes the removal of the last removed item.
+     * @return the previous position of the removed item
+     */
     public int undoLastRemoveItem() {
         if (mLastRemovedItem != null) {
             int insertedPosition;
@@ -197,6 +198,10 @@ public class ListManipulator {
         }
     }
 
+    /**
+     * Permanently deletes an items from the db once the chance to undo a removal has passed.
+     * @param context
+     */
     public void permanentlyDeleteLastRemoveItem(Context context){
         synchronized (this) {
             if (mLastRemovedItem != null) {
@@ -212,6 +217,10 @@ public class ListManipulator {
         }
     }
 
+    /**
+     * @return an array of items that will be dynamically loaded according to the bookmark of the
+     * the load list.
+     */
     public String[] getMoreToLoad(){
         String [] nextFewToLoad = null;
 
@@ -237,8 +246,50 @@ public class ListManipulator {
         return nextFewToLoad;
     }
 
+    /**
+     * @return true if the loading item is present, false otherwise.
+     */
+    public boolean isLoadingItemPresent(){
+        if(getCount() > 0) {
+            return mShownList.get(getCount() - 1).getSymbol().equals(LOADING_ITEM);
+        }
+        return false;
+    }
+
+    /**
+     * @return true if the list was updated/modified after an orientation change or app startup,
+     * false otherwise.
+     */
+    public boolean isListUpdated(){
+        return mListUpdated;
+    }
+
+    /**
+     * @return true if there are more items to load from the load list, false otherwise.
+     */
     public boolean canLoadMore(){
         return mLoadList != null && mLoadListPositionBookmark < mLoadList.length;
+    }
+
+    /**
+     * @return The current list size.
+     */
+    public int getCount(){
+        return mShownList.size();
+    }
+
+    /**
+     * THe load list is a list of all symbols in the db in their correct list positions. This
+     * increments an index integer bookmark to keep track of what symbols need to be dynamically
+     * loaded.
+     * @param addToBookmark The amount to increment the bookmark by.
+     */
+    public void addToLoadListPositionBookmark(int addToBookmark){
+        if(addToBookmark > 0 ) {
+            mLoadListPositionBookmark += addToBookmark;
+        } else{
+            throw new IllegalArgumentException("Must be a positive number.");
+        }
     }
 
     /**
@@ -305,15 +356,5 @@ public class ListManipulator {
 
             mListUpdated = false;
         }
-    }
-
-    private void printList(){
-        String printList = "";
-        StringBuilder stringBuilder = new StringBuilder(printList);
-        for(int i = 0; i < mShownList.size(); i++){
-            stringBuilder.append(mShownList.get(i).getSymbol());
-            stringBuilder.append(", ");
-        }
-        Log.d(TAG, stringBuilder.toString());
     }
 }

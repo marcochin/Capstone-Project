@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingTop="@dimen/widget_list_item_padding">
+    android:paddingTop="@dimen/widget_list_item_padding"
+    android:focusable="true">
 
     <TextView
         android:id="@+id/text_update_time"

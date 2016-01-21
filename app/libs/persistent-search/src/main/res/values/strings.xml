@@ -1,6 +1,6 @@
 <resources>
     <string name="speak_now">Speak now</string>
-    <string name="content_description_mic">Speech To Text</string>
+    <string name="content_description_mic">Clear Search</string>
     <string name="content_description_menu">Menu</string>
     <string name="content_description_close_search">Close Search</string>
     <string name="content_description_nav">Navigation</string>

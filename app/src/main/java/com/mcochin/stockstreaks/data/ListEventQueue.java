@@ -34,6 +34,11 @@ public class ListEventQueue {
         return sListEventQueue;
     }
 
+    /**
+     * Posts an event to {@link EventBus}. If there is no subscribers for the event or if
+     * there are already events on the event queue, the event will be added to the event queue.
+     * @param event The {@link Event} to be posted.
+     */
     public void post(Event event){
         EventBus eventBus = EventBus.getDefault();
         Class c = getEventType(event);
@@ -45,6 +50,9 @@ public class ListEventQueue {
         }
     }
 
+    /**
+     * Post all events that are queue in the event queue.
+     */
     public void postAllFromQueue(){
         EventBus eventBus = EventBus.getDefault();
 
@@ -63,7 +71,6 @@ public class ListEventQueue {
      * @param event The event to figure out the type for.
      * @return Class obj that represents the event class.
      */
-
     private Class getEventType(Event event) {
         if (event instanceof LoadMoreFinishedEvent) {
             return LoadMoreFinishedEvent.class;

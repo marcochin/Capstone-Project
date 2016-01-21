@@ -87,11 +87,20 @@ public class StockContract {
         }
     }
 
+    /**
+     * Extracts the symbol from the URI
+     * @param uri The URI to extract the symbol from.
+     * @return
+     */
     public static String getSymbolFromUri(Uri uri){
         // content://com.mcochin.stockstreaks/stocks/GPRO
         return uri.getPathSegments().get(1);
     }
 
+    /**
+     * @param uri
+     * @return true if the uri is referring to the save state path, false otherwise.
+     */
     public static boolean isSaveStateUri(Uri uri){
         // content://com.mcochin.stockstreaks/save_state/
         return uri.getPathSegments().get(0).equals(PATH_SAVE_STATE);

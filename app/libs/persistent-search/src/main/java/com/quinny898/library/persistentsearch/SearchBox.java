@@ -71,7 +71,6 @@ public class SearchBox extends RelativeLayout {
 	private ImageView mic;
 	private ImageView overflow;
     private PopupMenu popupMenu;
-    private ImageView drawerLogo;
 	private SearchListener listener;
 	private MenuListener menuListener;
 	private FrameLayout rootLayout;
@@ -124,7 +123,6 @@ public class SearchBox extends RelativeLayout {
 		this.pb = (ProgressBar) findViewById(R.id.pb);
 		this.mic = (ImageView) findViewById(R.id.mic);
 		this.overflow = (ImageView) findViewById(R.id.overflow);
-		this.drawerLogo = (ImageView) findViewById(R.id.drawer_logo);
 
 		init(attrs);
 
@@ -620,18 +618,6 @@ public class SearchBox extends RelativeLayout {
 	}
 	
 	/***
-	 * Set the image drawable of the drawer icon logo (do not set if you have not hidden the menu icon)
-	 * @param icon Icon
-	 */
-	public void setDrawerLogo(Drawable icon) {
-		drawerLogo.setImageDrawable(icon);
-	}
-	
-	public void setDrawerLogo(Integer icon) {
-		setDrawerLogo(ContextCompat.getDrawable(getContext(), icon));
-	}
-	
-	/***
 	 * Set the SearchFilter used to filter out results based on the current search term
 	 * @param filter SearchFilter
 	 */
@@ -827,7 +813,6 @@ public class SearchBox extends RelativeLayout {
 	private void openSearch() {
 		if(animateDrawerLogo){
 			this.materialMenu.animateState(IconState.ARROW);
-			this.drawerLogo.setVisibility(View.GONE);
 		}
 		this.materialMenu.setContentDescription(getContext()
 				.getResources().getString(R.string.content_description_close_search));
@@ -869,7 +854,6 @@ public class SearchBox extends RelativeLayout {
     private void closeSearch() {
         if(animateDrawerLogo){
             this.materialMenu.animateState(IconState.BURGER);
-            this.drawerLogo.setVisibility(View.VISIBLE);
         }
 		this.materialMenu.setContentDescription(getContext()
 				.getResources().getString(R.string.content_description_nav));

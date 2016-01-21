@@ -284,18 +284,36 @@ public class StockProvider extends ContentProvider {
         return super.call(method, arg, extras);
     }
 
+    /**
+     * Loops through ops and queries the ops' URI to retrieve the modified data to add to the list.
+     * It will then post an event containing the data.
+     * @param ops List of operations that contain the URI's that were modified.
+     * @param sessionId session id of the current session
+     */
     private void performLoadSymbol(ArrayList<ContentProviderOperation> ops, String sessionId){
         List<Stock> stockList = loopThroughOperations(ops);
         LoadSymbolFinishedEvent event = new LoadSymbolFinishedEvent(sessionId, stockList.get(0), true);
         ListEventQueue.getInstance().post(event);
     }
 
+    /**
+     * Loops through ops and queries the ops' URI to retrieve the modified data to add to the list.
+     * It will then post an event containing the data.
+     * @param ops List of operations that contain the URI's that were modified.
+     * @param sessionId session id of the current session
+     */
     private void performLoadAFew(ArrayList<ContentProviderOperation> ops, String sessionId){
         List<Stock> stockList = loopThroughOperations(ops);
         LoadMoreFinishedEvent event = new LoadMoreFinishedEvent(sessionId, stockList, true);
         ListEventQueue.getInstance().post(event);
     }
 
+    /**
+     * Loops through ops and queries the ops' URI to retrieve the modified data to add to the list.
+     * It will then post an event containing the data.
+     * @param ops List of operations that contain the URI's that were modified.
+     * @param sessionId session id of the current session
+     */
     private void performRefresh(ArrayList<ContentProviderOperation> ops, String sessionId){
         List<Stock> stockList = loopThroughOperations(ops);
         AppRefreshFinishedEvent event = new AppRefreshFinishedEvent(sessionId, stockList, true);

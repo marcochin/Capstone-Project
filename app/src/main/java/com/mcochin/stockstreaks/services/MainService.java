@@ -96,7 +96,7 @@ public class MainService extends IntentService {
 
                 case ACTION_LOAD_MORE:
                     String[] symbols = intent.getStringArrayExtra(KEY_LOAD_MORE_QUERY);
-                    performActionLoadAFew(symbols);
+                    performActionLoadMore(symbols);
                     break;
 
                 case ACTION_APP_REFRESH:
@@ -166,8 +166,8 @@ public class MainService extends IntentService {
         applyOperations(ops, StockProvider.METHOD_LOAD_SYMBOL, null);
     }
 
-    private void performActionLoadAFew(String[] symbolsToLoad) throws IOException{
-        ArrayList<ContentProviderOperation> ops = getLoadAFewOperations(symbolsToLoad);
+    private void performActionLoadMore(String[] symbolsToLoad) throws IOException{
+        ArrayList<ContentProviderOperation> ops = getLoadMoreOperations(symbolsToLoad);
         applyOperations(ops, StockProvider.METHOD_LOAD_A_FEW, null);
     }
 
@@ -221,7 +221,7 @@ public class MainService extends IntentService {
                 }
                 if (cursorCount != 0) {
                     ContentProviderOperation updateTimeOp = getUpdateTimeOperation();
-                    ArrayList<ContentProviderOperation> ops = getLoadAFewOperations(symbolsToLoad);
+                    ArrayList<ContentProviderOperation> ops = getLoadMoreOperations(symbolsToLoad);
 
                     ops.add(updateTimeOp);
                     applyOperations(ops, StockProvider.METHOD_REFRESH, null);
@@ -237,6 +237,12 @@ public class MainService extends IntentService {
         return false;
     }
 
+    /**
+     * Calculates the stock's values that is shown in the list's item view.
+     * @param stock
+     * @return
+     * @throws IOException
+     */
     private ContentValues getMainValues(Stock stock) throws IOException{
         float recentClose = 0;
         ContentValues values;
@@ -287,6 +293,14 @@ public class MainService extends IntentService {
         return values;
     }
 
+    /**
+     * Loops through the stock's history to calculate it's current streak and streak info.
+     * This only loops through enough of the history to calculate info needed to show in the list
+     * item.
+     * @param historyList
+     * @param recentClose
+     * @return
+     */
     private ContentValues getValuesFromHistoryList(List<HistoricalQuote> historyList,
                                                    float recentClose){
         int streak = 0;
@@ -366,7 +380,14 @@ public class MainService extends IntentService {
         return values;
     }
 
-    private ArrayList<ContentProviderOperation> getLoadAFewOperations(String[] symbolsToLoad) throws IOException{
+    /**
+     * Queries the network for the symbolsToLoad in one request to retrieve their latest
+     * main values.
+     * @param symbolsToLoad The symbols to be updated.
+     * @return This will return the update operations of the stocks needed to update the db.
+     * @throws IOException
+     */
+    private ArrayList<ContentProviderOperation> getLoadMoreOperations(String[] symbolsToLoad) throws IOException{
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
         Map<String, Stock> stockList = YahooFinance.get(symbolsToLoad);
@@ -391,6 +412,12 @@ public class MainService extends IntentService {
         return ops;
     }
 
+    /**
+     * Gets an update operation to update the update time.
+     * The update time will be updated whenever the list refreshes and whenever a new symbol has
+     * been added.
+     * @return an update operation to update the update time.
+     */
     private ContentProviderOperation getUpdateTimeOperation(){
         ContentValues values = new ContentValues();
         values.put(SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI, System.currentTimeMillis());
@@ -402,6 +429,13 @@ public class MainService extends IntentService {
                 .build();
     }
 
+    /**
+     * Gets an update operation to update the shown position bookmark to the last shown position
+     * bookmark. The shown list position bookmark needs to be updated whenever a the list is
+     * refreshed or items are added after load "more".
+     * @return an update operation to update the shown position bookmark to the last shown position
+     * bookmark.
+     */
     private ContentProviderOperation getListPositionBookmarkOperation(String symbol){
         Cursor cursor = null;
         int listPosition = ListManipulator.MORE; //Default to "more" in case something goes wrong
@@ -431,6 +465,12 @@ public class MainService extends IntentService {
                 .build();
     }
 
+    /**
+     * Sends the operations to the Content Provider to be executed.
+     * @param ops the operations to be executed
+     * @param method the custom method of your choice.
+     * @param arg
+     */
     private void applyOperations(ArrayList<ContentProviderOperation> ops, String method, String arg){
         Bundle extras = new Bundle();
         extras.putParcelableArrayList(StockProvider.KEY_OPERATIONS, ops);
@@ -444,7 +484,8 @@ public class MainService extends IntentService {
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {
-        // Send broadcast to hide the progress wheel in case off task removal
+        // If the task was swiped while list was refreshing,
+        // send broadcast to hide the progress wheel.
         sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
     }
 }

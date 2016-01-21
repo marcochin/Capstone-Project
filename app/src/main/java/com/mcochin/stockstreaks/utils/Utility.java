@@ -10,13 +10,12 @@ import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.util.Pair;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
-import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
+import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 
@@ -74,7 +73,6 @@ public class Utility {
      */
     public static boolean isServiceRunning(ActivityManager manager, String serviceName) {
         for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            Log.d("Utility", serviceName + " " + service.service.getClassName());
             if (serviceName.equals(service.service.getClassName())) {
                 return true;
             }
@@ -105,7 +103,7 @@ public class Utility {
     }
 
     /**
-     * This is intended for threads to show toast messages.
+     * This is intended for threads to show toast messages on the main thread.
      * @param context
      * @param toastMsg
      */
@@ -119,18 +117,37 @@ public class Utility {
         });
     }
 
+    /**
+     * @return a {@link Calendar} instance with {@link TimeZone} set to New York.
+     */
     public static Calendar getNewYorkCalendarInstance(){
         return Calendar.getInstance(TimeZone.getTimeZone(YahooFinance.TIMEZONE));
     }
 
+    /**
+     * Resets the Calendar to midnight.
+     * @param calendar
+     * @return
+     */
     public static Calendar calendarTimeReset(Calendar calendar) {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
         return calendar;
     }
 
+    /**
+     * Quick way to set the {@link Calendar} time without having to use the
+     * {@link Calendar#set(int, int)}
+     * method.
+     * @param hourOfDay
+     * @param minute
+     * @param sec
+     * @param milli
+     * @return
+     */
     public static Calendar getNewYorkCalendarQuickSetup(int hourOfDay, int minute, int sec, int milli) {
         Calendar calendar = getNewYorkCalendarInstance();
         calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
@@ -141,20 +158,26 @@ public class Utility {
         return calendar;
     }
 
-    public static Calendar getNewYorkCalendarQuickSetup(int hourOfDay, int minute, int milli, int month,
-                                                        int dayOfMonth, int year) {
-        // we are changing the month, day, and year so new york instance doesn't matter
-        Calendar calendar = getNewYorkCalendarInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-        calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.MILLISECOND, milli);
-        calendar.set(Calendar.YEAR, year);
-        calendar.set(Calendar.MONTH, month);
-        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
 
-        return calendar;
-    }
+//    public static Calendar getNewYorkCalendarQuickSetup(int hourOfDay, int minute, int milli, int month,
+//                                                        int dayOfMonth, int year) {
+//        // we are changing the month, day, and year so new york instance doesn't matter
+//        Calendar calendar = getNewYorkCalendarInstance();
+//        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+//        calendar.set(Calendar.MINUTE, minute);
+//        calendar.set(Calendar.MILLISECOND, milli);
+//        calendar.set(Calendar.YEAR, year);
+//        calendar.set(Calendar.MONTH, month);
+//        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+//
+//        return calendar;
+//    }
 
+    /**
+     * Extracts the {@link Stock} from the cursor's current position.
+     * @param cursor
+     * @return
+     */
     public static Stock getStockFromCursor(Cursor cursor){
         String symbol = cursor.getString(ListManipulator.INDEX_SYMBOL);
         String fullName = cursor.getString(ListManipulator.INDEX_FULL_NAME);
@@ -327,6 +350,12 @@ public class Utility {
         return false;
     }
 
+    /**
+     * Determines a stock's change color, e.g. green for up and red for down. It also determines
+     * which image id to use for the stock arrow image.
+     * @param change The change amount of a stock
+     * @return
+     */
     public static Pair<Integer, Integer> getChangeColorAndArrowDrawableIds(float change){
         Integer colorId;
         Integer arrowDrawableId;
@@ -348,10 +377,20 @@ public class Utility {
         return new Pair<>(colorId, arrowDrawableId);
     }
 
+    /**
+     * Rounds a float to two decimals.
+     * @param f the float to round
+     * @return the float rounded to two decimals.
+     */
     public static float roundTo2FloatDecimals(float f){
         return Float.parseFloat(roundTo2StringDecimals(f));
     }
 
+    /**
+     * Rounds a float to two decimals.
+     * @param f the float to round
+     * @return a String representation of the float rounded to two decimals.
+     */
     public static String roundTo2StringDecimals(float f){
         return String.format("%.2f", f);
     }

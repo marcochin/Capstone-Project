@@ -169,6 +169,9 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         }
     }
 
+    /**
+     * Initializes the details extras section by starting a loader to query for symbol's data.
+     */
     private void initializeDetailExtrasSection(){
         showProgressWheel();
 
@@ -176,6 +179,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         loaderManager.restartLoader(ID_LOADER_DETAILS, null, this);
     }
 
+    /**
+     * Starts the a {@link DetailService} to perform a network request to retrieve the symbol's
+     * history.
+     */
     private void startDetailService(){
         showProgressWheel();
 

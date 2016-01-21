@@ -14,6 +14,7 @@
         android:paddingBottom="@dimen/list_item_vertical_padding"
         android:paddingLeft="@dimen/list_item_horizontal_padding"
         android:paddingRight="@dimen/list_item_horizontal_padding"
+        android:focusable="true"
         app:columnCount="4">
 
         <TextView
