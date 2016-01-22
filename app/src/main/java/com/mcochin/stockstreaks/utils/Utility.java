@@ -90,8 +90,8 @@ public class Utility {
         Cursor cursor = null;
         try{
             cursor = cr.query(StockEntry.buildUri(symbol), null, null, null, null);
-            if(cursor != null){
-                return cursor.moveToFirst();
+            if(cursor != null && cursor.getCount() > 0){
+                return true;
             }
 
         }finally {

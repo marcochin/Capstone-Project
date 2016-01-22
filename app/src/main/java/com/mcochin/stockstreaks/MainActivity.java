@@ -15,6 +15,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -454,6 +455,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if(position != RecyclerView.NO_POSITION) {
             final ListManipulator listManipulator = getListManipulator();
             String removeSymbol = listManipulator.getItem(position).getSymbol();
+            // Delete the lastRemovedItem before, removing another item. Can't rely on Snackbar's
+            // onDismissed() callback because it only gets called AFTER this method is finished.
+            listManipulator.permanentlyDeleteLastRemoveItem(MainActivity.this);
             listManipulator.removeItem(position);
 
             if(listManipulator.getCount() == 0){
@@ -495,15 +499,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     .setCallback(new Snackbar.Callback() {
                         @Override
                         public void onDismissed(Snackbar snackbar, int event) {
-                            if(event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
-                                new AsyncTask<Void, Void, Void>() {
-                                    @Override
-                                    protected Void doInBackground(Void... params) {
-                                        listManipulator.permanentlyDeleteLastRemoveItem(
-                                                MainActivity.this);
-                                        return null;
-                                    }
-                                }.execute();
+                            if(event != Snackbar.Callback.DISMISS_EVENT_ACTION
+                                    && event != Snackbar.Callback.DISMISS_EVENT_CONSECUTIVE) {
+                                listManipulator.permanentlyDeleteLastRemoveItem(MainActivity.this);
                             }
                         }
                     });

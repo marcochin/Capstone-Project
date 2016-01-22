@@ -13,7 +13,12 @@
         android:layout_marginLeft="-4dp"
         android:layout_marginRight="-4dp"
         android:layout_marginTop="-4dp"
-        android:background="@drawable/search_bg">
+        android:background="@drawable/search_bg"
+        android:focusableInTouchMode="true"
+        android:nextFocusForward="@+id/material_menu_button"
+        android:nextFocusRight="@+id/material_menu_button"
+        android:nextFocusLeft="@+id/material_menu_button"
+        android:nextFocusUp="@+id/material_menu_button">
 
         <ListView
             android:id="@+id/results"
@@ -38,9 +43,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="8dp"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/search_button_selector"
+                android:background="@drawable/generic_button_selector"
                 android:contentDescription="@string/content_description_nav"
-                android:focusableInTouchMode="true"
                 android:focusable="true"
                 app:mm_color="@color/search_box_grey"
                 app:mm_strokeWidth="2"
@@ -59,12 +63,12 @@
                 android:layout_alignParentStart="true"
                 android:layout_marginLeft="54dp"
                 android:layout_marginStart="54dp"
-                android:singleLine="true"
                 android:gravity="center_vertical"
+                android:background="@drawable/logo_selector"
                 android:textColor="@color/search_box_grey"
                 android:textSize="@dimen/logo_text_size_default"
                 android:focusable="true"
-                android:clickable="true"
+                android:singleLine="true"
                 tools:text="Logo"/>
 
             <com.com.mcochin.custom.BackPressEditText
@@ -83,7 +87,7 @@
                 android:textColor="@color/search_box_black"
                 android:singleLine="true"
                 android:imeOptions="actionDone|flagNoFullscreen"
-                android:visibility="gone" >
+                android:visibility="gone">
             </com.com.mcochin.custom.BackPressEditText>
 
             <ImageView
@@ -99,7 +103,7 @@
                 android:layout_marginRight="13dp"
                 android:layout_marginEnd="13dp"
                 android:src="@drawable/ic_action_mic"
-                android:background="@drawable/search_button_selector"
+                android:background="@drawable/generic_button_selector"
                 android:contentDescription="@string/content_description_mic"
                 android:focusable="true"/>
 
@@ -115,7 +119,7 @@
                 android:layout_marginEnd="13dp"
                 android:src="@drawable/ic_overflow"
                 android:contentDescription="@string/content_description_menu"
-                android:background="@drawable/search_button_selector"
+                android:background="@drawable/generic_button_selector"
                 android:focusable="true"
                 android:visibility="gone"/>
 

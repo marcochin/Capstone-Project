@@ -12,7 +12,7 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
     android:orientation="horizontal"
     android:padding="@dimen/widget_list_item_padding"
     android:baselineAligned="false"
-    android:focusable="true">
+    android:background="@drawable/widget_list_item_selector">
 
     <LinearLayout
         android:layout_width="0dp"

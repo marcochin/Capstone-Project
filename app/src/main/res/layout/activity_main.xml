@@ -5,7 +5,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootView"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:nextFocusForward="@+id/material_menu_button"
+    android:nextFocusDown="@+id/material_menu_button"
+    android:nextFocusRight="@+id/material_menu_button">
 
     <com.quinny898.library.persistentsearch.SearchBox
         android:id="@+id/appBar"

@@ -21,4 +21,5 @@
     <!-- the activated state color of list_item-->
     <color name="activated">#E0E0E0</color>
     <color name="bg_item_dragging_active">#99ffb1</color>
+    <color name="widget_item_highlight">#1f000000</color>
 </resources>

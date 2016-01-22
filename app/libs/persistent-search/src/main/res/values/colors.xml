@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- logo_highlight can't use the same color as button_highlight because the button's ripples
+    automatically add a little bit transparency. The logo has no ripples and so
+    we can't use ?attr/colorControlHighlight for the logo's color. Even though it's
+    clickable, it doesn't have any pressed state since it's suppose to disappear
+    instantly. And so it will not add any transparency to the color: ?attr/colorControlHighlight.
+    The default for ?attr/colorControlHighlight might change with next Android versions, so we
+    make a copy color of ?attr/colorControlHighlight as button_highlight and then find a lighter
+    shade of that color as logo_highlight maintaining consistency for future Android versions-->
     <color name="button_highlight">#1f000000</color>
+    <color name="logo_highlight">#f1f1f1</color>
+
     <color name="search_box_black">#212121</color>
     <color name="search_box_grey">#616161</color>
 </resources>

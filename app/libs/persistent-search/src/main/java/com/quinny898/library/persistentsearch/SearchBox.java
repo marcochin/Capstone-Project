@@ -193,11 +193,9 @@ public class SearchBox extends RelativeLayout {
 
 		search.setOnKeyListener(new OnKeyListener() {
 			public boolean onKey(View v, int keyCode, KeyEvent event) {
-
-				switch (keyCode) {
-					case KeyEvent.KEYCODE_ENTER:
-						search(getSearchText());
-						return true;
+				if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_UP) {
+					search(getSearchText());
+					return true;
 				}
 
 				return false;
