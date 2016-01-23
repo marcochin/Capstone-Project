@@ -44,7 +44,7 @@
 
     <!--Common between left columns-->
     <style name="DetailColumnsCommon.TextSize.LeftCommon">
-        <item name="android:gravity">end</item>
+        <item name="android:gravity">@integer/gravity_detail_text_view_rtl_fix</item>
         <item name="android:paddingLeft">@dimen/detail_common_column_outer_padding</item>
         <item name="android:paddingStart">@dimen/detail_common_column_outer_padding</item>
         <item name="android:paddingRight">@dimen/detail_left_column_inner_padding</item>

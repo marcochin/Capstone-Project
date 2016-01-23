@@ -190,7 +190,6 @@ public class SearchBox extends RelativeLayout {
 				return false;
 			}
 		});
-
 		search.setOnKeyListener(new OnKeyListener() {
 			public boolean onKey(View v, int keyCode, KeyEvent event) {
 				if (keyCode == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_UP) {
@@ -461,7 +460,12 @@ public class SearchBox extends RelativeLayout {
 	}
 
 	private void micStateChanged() {
-		mic.setVisibility((!isMic || isMicEnabled()) ? VISIBLE : GONE);
+		if(!isMic || isMicEnabled()){
+			mic.setVisibility(VISIBLE);
+
+		}else{
+			mic.setVisibility(GONE);
+		}
 	}
 
 	private void micStateChanged(boolean isMic) {

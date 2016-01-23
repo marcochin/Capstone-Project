@@ -18,7 +18,7 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_weight="5">
+        android:layout_weight="4.75">
 
         <TextView
             style="@style/ListItemBlackText"
@@ -34,6 +34,10 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
             android:textColor="@color/secondary_text"
             android:singleLine="true"
             android:ellipsize="end"
+            android:paddingEnd="@dimen/text_view_full_name_padding_end"
+            android:paddingStart="0dp"
+            android:paddingRight="@dimen/text_view_full_name_padding_end"
+            android:paddingLeft="0dp"
             tools:text="GoPro, Inc."/>
     </LinearLayout>
 

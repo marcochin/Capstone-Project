@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="material_menu_rotation">0</integer>
+
+    <!-- 8388611 is start|center_vertical-->
+    <integer name="gravity_search_bar_rtl_fix">8388627</integer>
+</resources>

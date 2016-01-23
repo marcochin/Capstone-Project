@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Stock Streaks</string>
+    <string name="app_name" translatable="false">Stock Streaks</string>
     <string name="app_name_initials">&#160;SS&#160;</string>
 
     <!-- Admob -->

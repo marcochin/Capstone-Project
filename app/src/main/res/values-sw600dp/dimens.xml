@@ -14,4 +14,7 @@
     <!-- For the load items we want them to be the same size as a regular item, but since a regular
     item is wrap_content we are just going by eye-->
     <dimen name="list_item_estimated_height">70dp</dimen>
+
+    <!-- widget -->
+    <dimen name="widget_min_width">320dp</dimen>
 </resources>

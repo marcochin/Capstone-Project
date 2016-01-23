@@ -25,8 +25,8 @@
     <dimen name="detail_left_column_inner_padding">15dp</dimen>
     <dimen name="detail_common_column_outer_padding">0dp</dimen>
 
-    <!-- On devices < sw360dp scrollview generates this whitespace on bottom of screen for
-    some reason and we need to fill it out vertically-->
+        <!-- On devices < sw360dp scrollview generates this whitespace on bottom of screen for
+        some reason and we need to fill it out vertically-->
     <dimen name="detail_section_vertical_padding">24dp</dimen>
     <dimen name="detail_section_horizontal_padding">20dp</dimen>
     <!--End Detail fragment-->
@@ -38,13 +38,16 @@
     <!--list_item-->
     <dimen name="list_item_vertical_padding">10dp</dimen>
     <dimen name="list_item_horizontal_padding">10dp</dimen>
-    <item name="text_change_amt_column_weight" type="dimen" format="integer">5</item>
+    <dimen name="text_view_full_name_padding_end">10dp</dimen>
     <dimen name="progress_wheel_size">40dp</dimen>
-    <!-- For the load items we want them to be the same size as a regular item, but since a regular
-    item is wrap_content we are just going by eye-->
+    <item name="text_change_amt_column_weight" type="dimen" format="integer">5</item>
+    <!-- For the load items (list_item_loading & widgetList_item_load_more) we want them to be the
+    same size as a regular item, but since a regular item is wrap_content we are just going by eye-->
     <dimen name="list_item_estimated_height">60dp</dimen>
 
-    <!-- widget (formula 70dp x n - 30 dp)-->
+    <!-- widget (formula 70dp x n - 30 dp) This formula is not accurate for tablets. For tablets
+    I had to allocate an extra column (70dp) to reach my desired 4 columns. This is because
+    tablets are too big and interprets 250dp as 3 columns-->
     <dimen name="widget_min_width">300dp</dimen>
     <dimen name="widget_min_height">110dp</dimen>
     <dimen name="widget_min_resize_width">@dimen/widget_min_width</dimen>

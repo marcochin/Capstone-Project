@@ -22,7 +22,8 @@
             android:id="@+id/text_symbol"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_columnWeight="5"
+            android:gravity="@integer/gravity_list_item_text_view_rtl_fix"
+            app:layout_columnWeight="4.75"
             tools:text="GPRO"/>
 
         <TextView
@@ -55,7 +56,12 @@
             android:textColor="@color/secondary_text"
             android:singleLine="true"
             android:ellipsize="end"
-            app:layout_columnWeight="5"
+            android:paddingEnd="@dimen/text_view_full_name_padding_end"
+            android:paddingStart="0dp"
+            android:paddingRight="@dimen/text_view_full_name_padding_end"
+            android:paddingLeft="0dp"
+            android:gravity="@integer/gravity_list_item_text_view_rtl_fix"
+            app:layout_columnWeight="4.75"
             tools:text="GoPro, Inc."/>
 
         <TextView
@@ -68,22 +74,4 @@
             tools:textColor="@color/stock_down_red"/>
 
     </android.support.v7.widget.GridLayout>
-
-    <ProgressBar
-        android:id="@+id/progress_wheel_load_a_few"
-        android:layout_width="@dimen/progress_wheel_size"
-        android:layout_height="@dimen/progress_wheel_size"
-        android:indeterminate="true"
-        android:layout_gravity="center"
-        android:visibility="invisible" />
-
-    <Button
-        style="?android:attr/borderlessButtonStyle"
-        android:id="@+id/button_retry"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:text="@string/button_retry"
-        android:visibility="invisible"/>
-
 </FrameLayout>
