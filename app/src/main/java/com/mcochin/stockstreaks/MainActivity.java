@@ -358,12 +358,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
 
             // Send to analytics what symbols were added.
-//            MyApplication.getInstance().getDefaultTracker().send(new HitBuilders.EventBuilder()
-//                    .setCategory(getString(R.string.analytics_category))
-//                    .setAction(getString(R.string.analytics_action_add))
-//                    .setLabel(getString(R.string.analytics_label_add_placeholder,
-//                            event.getStock().getSymbol()))
-//                    .build());
+            MyApplication.getInstance().getDefaultTracker().send(new HitBuilders.EventBuilder()
+                    .setCategory(getString(R.string.analytics_category))
+                    .setAction(getString(R.string.analytics_action_add))
+                    .setLabel(getString(R.string.analytics_label_add_placeholder,
+                            event.getStock().getSymbol()))
+                    .build());
         } else{
             if(getListManipulator().getCount() == 0 ){
                 showEmptyWidgets();
