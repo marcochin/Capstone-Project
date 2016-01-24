@@ -3,14 +3,14 @@ Android: Stock Streaks is an app that follows and tracks historical data of your
 
 ---
 ### Notes
-This app has incorporated `Google Analytics` and `Google AdMob` libraries, but with their service ids removed.
+This app has incorporated `Google Analytics` and `Google AdMob` libraries, but with their service ids removed. However, the app will still run regardless.
 Please insert your own ids as shown below:
 
-For Analytics in `res/xml/analytics_tracker.xml`:
+For `Analytics` in `res/xml/analytics_tracker.xml`:
 
     <string name="ga_trackingId">YOUR_ANALYTICS_TRACKING_ID_HERE</string>
     
-For Admob: in `res/strings.xml`:
+For `Admob:` in `res/strings.xml`:
 
     // This current id is a interstitial TEST id. Replace it with your own personal id.
     <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
