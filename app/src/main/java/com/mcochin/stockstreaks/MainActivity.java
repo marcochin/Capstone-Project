@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         initSavedInstanceState(savedInstanceState);
         initOverflowMenu();
         initRecyclerView();
-//        initInterstitialAd();
+        initInterstitialAd();
 
         mListFragment.setEventListener(this);
         mSwipeToRefresh.setOnRefreshListener(this);
