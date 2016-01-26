@@ -203,10 +203,10 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                     bgResId = R.drawable.bg_item_dragging_active_state;
 
                 }else if (position == 0 && mIsPhone) {
-                    bgResId = R.drawable.list_item_first_selector;
+                    bgResId = R.drawable.selector_list_item_first;
 
                 } else {
-                    bgResId = R.drawable.list_item_selector;
+                    bgResId = R.drawable.selector_list_item;
                 }
 
                 myHolder.mContainer.setBackgroundResource(bgResId);

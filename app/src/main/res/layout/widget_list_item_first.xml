@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingTop="@dimen/widget_list_item_padding"
-    android:background="@drawable/widget_list_item_selector">
+    android:background="@drawable/selector_widget_list_item">
 
     <TextView
         android:id="@+id/text_update_time"

@@ -2,6 +2,7 @@
 <resources>
     <color name="colorPrimary">#18d886</color>
     <color name="colorPrimaryDark">#12a868</color>
+    <color name="colorPrimaryDarker">#2e4134</color>
     <color name="colorAccent">#18d886</color>
 
     <color name="secondary_text">#727272</color>
@@ -9,17 +10,19 @@
     <color name="white_grey">#f5f5f5</color>
     <color name="black">#000000</color>
 
+    <!--list_item-->
+    <color name="list_item_bg_color">@color/white_grey</color>
+    <color name="list_item_first_bg_color">@color/white</color>
+
     <!--stock up or down colors-->
     <color name="stock_up_green">#0ec24d</color>
     <color name="stock_down_red">#ff0000</color>
     <color name="stock_neutral">#727272</color>
 
     <!--Detail Fragment extra colors -->
-    <color name="detail_extras_background">#2e4134</color>
     <color name="detail_extras_label">#def5db</color>
 
     <!-- the activated state color of list_item-->
     <color name="activated">#E0E0E0</color>
     <color name="bg_item_dragging_active">#99ffb1</color>
-    <color name="widget_item_highlight">#1f000000</color>
 </resources>

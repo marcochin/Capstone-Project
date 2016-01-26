@@ -20,5 +20,5 @@
 
     <!-- Default, "just hangin' out" state. The base state also
          implements the ripple effect. -->
-    <item android:drawable="@drawable/list_item_selector_base" />
+    <item android:drawable="@drawable/selector_list_item_base" />
 </selector>

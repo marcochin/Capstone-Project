@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- We use CoordinatorLayout so our Snack-bar can be dismissed by swiping.-->
+<merge
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.quinny898.library.persistentsearch.SearchBox
+        android:id="@+id/search_box"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/app_bar_height"
+        android:background="@color/colorPrimary"
+        app:hintText="@string/search_hint"
+        app:logoText="@string/app_name"
+        app:typefacePath="@string/logo_typeface_path"/>
+
+    <include layout="@layout/activity_main_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/app_bar_height"/>
+
+</merge>

@@ -11,7 +11,7 @@
     android:paddingStart="@dimen/detail_section_horizontal_padding"
     android:paddingRight="@dimen/detail_section_horizontal_padding"
     android:paddingEnd="@dimen/detail_section_horizontal_padding"
-    android:background="@color/detail_extras_background">
+    android:background="@color/colorPrimaryDarker">
 
     <android.support.v7.widget.GridLayout
         android:id="@+id/detail_extras_info"

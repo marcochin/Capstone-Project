@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- We have to  make a different selector for menu item because on jelly bean. Using
+@drawable/abc_list_selector_holo_light" as our drawable removes the left padding of the menu item-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true" android:drawable="@color/logo_highlight"/>
+    <item android:state_focused="true" android:drawable="@color/logo_highlight"/>
+
+    <!-- Default, "just hangin' out" state.  This is part of
+         ActionBarCompat -->
+    <item android:drawable="@android:color/transparent" />
+</selector>

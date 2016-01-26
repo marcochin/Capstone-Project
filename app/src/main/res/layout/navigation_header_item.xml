@@ -4,10 +4,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="100dp"
     android:gravity="center"
     android:background="@color/colorPrimaryDarker"
     android:textColor="@color/white"
-    android:textSize="72dp"
+    android:textSize="56dp"
     android:text="@string/app_name_initials"
     app:fontName="@string/logo_font_name"/>

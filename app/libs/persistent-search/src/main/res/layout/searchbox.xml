@@ -45,7 +45,7 @@
                 android:layout_marginStart="8dp"
                 android:layout_marginRight="8dp"
                 android:layout_marginEnd="8dp"
-                android:background="@drawable/generic_button_selector"
+                android:background="@drawable/selector_transparent_button"
                 android:contentDescription="@string/content_description_nav"
                 android:focusable="true"
                 android:rotation="@integer/material_menu_rotation"
@@ -65,7 +65,7 @@
                 android:layout_toLeftOf="@+id/mic"
                 android:layout_toStartOf="@+id/mic"
                 android:gravity="@integer/gravity_search_bar_rtl_fix"
-                android:background="@drawable/logo_selector"
+                android:background="@drawable/selector_logo"
                 android:textColor="@color/search_box_grey"
                 android:textSize="@dimen/logo_text_size_default"
                 android:focusable="true"
@@ -73,7 +73,7 @@
                 tools:text="Logo"/>
 
             <com.com.mcochin.custom.BackPressEditText
-                android:id="@+id/search"
+                android:id="@+id/edit_text_search"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignBottom="@+id/material_menu_button"
@@ -107,7 +107,7 @@
                 android:layout_marginLeft="10dp"
                 android:layout_marginStart="10dp"
                 android:src="@drawable/ic_action_mic"
-                android:background="@drawable/generic_button_selector"
+                android:background="@drawable/selector_transparent_button"
                 android:contentDescription="@string/content_description_mic"
                 android:focusable="true" />
 
@@ -123,7 +123,7 @@
                 android:layout_marginEnd="8dp"
                 android:src="@drawable/ic_overflow"
                 android:contentDescription="@string/content_description_menu"
-                android:background="@drawable/generic_button_selector"
+                android:background="@drawable/selector_transparent_button"
                 android:focusable="true"
                 android:visibility="gone"/>
 

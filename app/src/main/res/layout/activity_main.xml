@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- We use CoordinatorLayout so our Snack-bar can be dismissed by swiping.-->
-<android.support.design.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/rootView"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:nextFocusForward="@+id/material_menu_button"
-    android:nextFocusDown="@+id/material_menu_button"
-    android:nextFocusRight="@+id/material_menu_button">
+    android:layout_height="match_parent">
 
-    <com.quinny898.library.persistentsearch.SearchBox
-        android:id="@+id/appBar"
-        android:layout_width="wrap_content"
-        android:layout_height="@dimen/app_bar_height"
-        android:background="@color/colorPrimary"
-        app:hintText="@string/search_hint"
-        app:logoText="@string/app_name"
-        app:typefacePath="@string/logo_typeface_path"/>
-
-    <include layout="@layout/activity_main_recycler_view"
+    <android.support.design.widget.CoordinatorLayout
+        android:id="@+id/coordinator_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="@dimen/app_bar_height"/>
+        android:layout_height="match_parent">
 
-</android.support.design.widget.CoordinatorLayout>
+        <include layout="@layout/activity_main_base"/>
+
+    </android.support.design.widget.CoordinatorLayout>
+
+    <android.support.design.widget.NavigationView
+        android:id="@+id/navigation_view"
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@color/white"
+        app:menu="@menu/menu_navigation"
+        app:headerLayout="@layout/navigation_header_item"
+        app:itemBackground="@drawable/selector_navigation_menu_item"/>
+
+</android.support.v4.widget.DrawerLayout>

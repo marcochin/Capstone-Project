@@ -6,6 +6,7 @@
     android:id="@+id/detail_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    app:cardUseCompatPadding="true"
     app:cardElevation="@dimen/detail_card_elevation">
 
 </android.support.v7.widget.CardView>

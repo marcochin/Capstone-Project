@@ -5,21 +5,27 @@
     <!-- Admob -->
     <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
 
-    <!-- Analytics (If you have alot of analytics code-->
+    <!-- Analytics -->
     <string name="analytics_category">Symbol Event</string>
     <string name="analytics_action_add">Item Add</string>
     <string name="analytics_label_add_placeholder">Add %1$s</string>
 
+    <!-- Overflow menu -->
+    <string name="overflow_refresh">Refresh</string>
+    <string name="overflow_sort">Sort</string>
+
+    <!-- Navigation menu -->
+    <string name="navigation_help">Help</string>
+    <string name="navigation_about">About</string>
+
     <!-- Toolbar menu -->
-    <string name="action_refresh">Refresh</string>
-    <string name="action_sort">Sort</string>
     <string name="search_hint">Add Symbol...</string>
     <string name="logo_typeface_path" translatable="false">fonts/harlowsi.TTF</string>
 
-    <!-- logo -->
+    <!-- Logo -->
     <string name="logo_font_name">harlowsi.TTF</string>
 
-    <!-- toast msgs -->
+    <!-- Toast msgs -->
     <string name="toast_error_retrieving_data">Error retrieving data from server</string>
     <string name="toast_symbol_not_found">Symbol not found</string>
     <string name="toast_empty_search">Please enter a symbol</string>
@@ -30,10 +36,10 @@
     <string name="toast_placeholder_symbol_exists">%1$s already exists</string>
     <string name="toast_placeholder_error_stock_limit">Unable to exceed max limit of %1$d stocks</string>
 
-    <!--RecyclerView-->
+    <!-- RecyclerView-->
     <string name="empty_list_msg">Use the search box above\nto add a stock.</string>
 
-    <!--content description-->
+    <!-- Content description-->
     <string name="content_description_stock_arrow">Stock arrow</string>
     <string name="content_description_button_refresh">Refresh</string>
 

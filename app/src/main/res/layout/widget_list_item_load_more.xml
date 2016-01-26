@@ -7,5 +7,5 @@ Focusable views somehow do not  fire any pending intents in widgets.-->
     android:layout_height="@dimen/widget_list_item_estimated_height"
     android:textColor="@color/black"
     android:gravity="center"
-    android:background="@drawable/widget_list_item_selector"
+    android:background="@drawable/selector_widget_list_item"
     android:text="@string/widget_button_load_more" />

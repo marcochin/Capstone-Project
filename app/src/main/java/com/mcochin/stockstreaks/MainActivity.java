@@ -2,20 +2,25 @@ package com.mcochin.stockstreaks;
 
 import android.app.ActivityManager;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.NinePatchDrawable;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.internal.NavigationMenuItemView;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
+import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -79,13 +84,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private RecyclerViewSwipeManager mSwipeManager;
     private RecyclerViewTouchActionGuardManager mTouchActionGuardManager;
 
+    private DrawerLayout mDrawerLayout;
     private EditText mSearchEditText;
     private TextView mLogo;
-    private SearchBox mAppBar;
+    private SearchBox mToolbar;
     private SwipeRefreshLayout mSwipeToRefresh;
     private Snackbar mSnackbar;
     private View mDetailContainer;
-    private View mRootView;
+    private View mCoordinatorLayout;
     private View mProgressWheel;
     private View mEmptyMsg;
     private ListManagerFragment mListFragment;
@@ -106,25 +112,27 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         setContentView(R.layout.activity_main);
 
         // Find our views from the xml layout
-        mDetailContainer = findViewById(R.id.detail_container);
-        mRootView = findViewById(R.id.rootView);
-        mProgressWheel = findViewById(R.id.progress_wheel);
         mEmptyMsg = findViewById(R.id.text_empty_list);
-        mAppBar = (SearchBox)findViewById(R.id.appBar);
+        mCoordinatorLayout = findViewById(R.id.coordinator_layout);
+        mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        mDetailContainer = findViewById(R.id.detail_container);
         mLogo = (TextView)findViewById(R.id.logo);
-        mSearchEditText = (EditText)findViewById(R.id.search);
-        mSwipeToRefresh = (SwipeRefreshLayout)findViewById(R.id.swipe_to_refresh);
+        mProgressWheel = findViewById(R.id.progress_wheel);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
+        mSearchEditText = (EditText)findViewById(R.id.edit_text_search);
+        mSwipeToRefresh = (SwipeRefreshLayout)findViewById(R.id.swipe_to_refresh);
+        mToolbar = (SearchBox)findViewById(R.id.search_box);
 
         // Init savedInstanceState first as many components rely on it
         initSavedInstanceState(savedInstanceState);
+        initNavigationMenu();
         initOverflowMenu();
         initRecyclerView();
-        initInterstitialAd();
+//        initInterstitialAd();
 
         mListFragment.setEventListener(this);
         mSwipeToRefresh.setOnRefreshListener(this);
-        mAppBar.setSearchListener(this);
+        mToolbar.setSearchListener(this);
 
         mNumberOfLaunchItems = getResources().getInteger(R.integer.numberOfLaunchItems);
     }
@@ -169,11 +177,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
             // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
-                mAppBar.toggleSearch();
+                mToolbar.toggleSearch();
 
             } else if(!savedInstanceState.getBoolean(KEY_LOGO_VISIBLE)){
                 // Else if not focused, but logo is invisible, open search w/o the focus
-                mAppBar.toggleSearch();
+                mToolbar.toggleSearch();
                 mSearchEditText.clearFocus();
             }
 
@@ -358,12 +366,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
 
             // Send to analytics what symbols were added.
-            MyApplication.getInstance().getDefaultTracker().send(new HitBuilders.EventBuilder()
-                    .setCategory(getString(R.string.analytics_category))
-                    .setAction(getString(R.string.analytics_action_add))
-                    .setLabel(getString(R.string.analytics_label_add_placeholder,
-                            event.getStock().getSymbol()))
-                    .build());
+//            MyApplication.getInstance().getDefaultTracker().send(new HitBuilders.EventBuilder()
+//                    .setCategory(getString(R.string.analytics_category))
+//                    .setAction(getString(R.string.analytics_action_add))
+//                    .setLabel(getString(R.string.analytics_label_add_placeholder,
+//                            event.getStock().getSymbol()))
+//                    .build());
         } else{
             if(getListManipulator().getCount() == 0 ){
                 showEmptyWidgets();
@@ -477,7 +485,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             // Snack-bar to give the option to undo the removal of an item or else it will
             // permanently delete from database once it is dismissed.
             mSnackbar = Snackbar.make(
-                    mRootView,
+                    mCoordinatorLayout,
                     getString(R.string.placeholder_snackbar_main_text, removeSymbol), Snackbar.LENGTH_LONG)
                     .setAction(R.string.snackbar_action_text, new View.OnClickListener() {
                         @Override
@@ -495,8 +503,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                                 }
                             }
                         }
-                    })
-                    .setCallback(new Snackbar.Callback() {
+                    }).setCallback(new Snackbar.Callback() {
                         @Override
                         public void onDismissed(Snackbar snackbar, int event) {
                             if(event != Snackbar.Callback.DISMISS_EVENT_ACTION
@@ -506,6 +513,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                         }
                     });
             mSnackbar.show();
+
         }
     }
 
@@ -541,23 +549,55 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     /**
+     * Initializes the navigation menu.
+     */
+    private void initNavigationMenu(){
+        final NavigationView navigationView = (NavigationView)findViewById(R.id.navigation_view);
+
+        mToolbar.setMenuListener(new SearchBox.MenuListener() {
+            @Override
+            public void onMenuClick() {
+                mDrawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
+
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(MenuItem item) {
+                int itemId = item.getItemId();
+                switch (itemId){
+                    case R.id.navigation_help:
+                        Toast.makeText(MainActivity.this, "help", Toast.LENGTH_SHORT).show();
+                        break;
+                    case R.id.navigation_about:
+                        Toast.makeText(MainActivity.this, "about", Toast.LENGTH_SHORT).show();
+                        break;
+                }
+
+                mDrawerLayout.closeDrawer(GravityCompat.START);
+                return true;
+            }
+        });
+    }
+
+    /**
      * Initializes the overflow menu.
      */
-    public void initOverflowMenu(){
-        mAppBar.setOverflowMenu(R.menu.menu_main);
-        mAppBar.setOverflowMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+    private void initOverflowMenu(){
+        mToolbar.setOverflowMenu(R.menu.menu_overflow);
+        mToolbar.setOverflowMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 int id = item.getItemId();
 
                 switch (id) {
-                    case R.id.action_refresh:
+                    case R.id.overflow_refresh:
                         if (!MyApplication.getInstance().isRefreshing()
                                 && Utility.canUpdateList(getContentResolver())) {
                             refreshList(null);
                         }
                         break;
-                    case R.id.action_sort:
+                    case R.id.overflow_sort:
                         break;
                 }
                 return false;
@@ -654,9 +694,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && mDetailContainer == null) {
                     if (recyclerView.computeVerticalScrollOffset() <= 2) { //0 or 1 not reliable
-                        mAppBar.setElevation(0);
+                        mToolbar.setElevation(0);
                     } else {
-                        mAppBar.setElevation(
+                        mToolbar.setElevation(
                                 getResources().getDimension(R.dimen.appbar_elevation));
                     }
                 }
@@ -785,6 +825,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
 
         return null;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(mDrawerLayout.isDrawerOpen(GravityCompat.START)){
+            mDrawerLayout.closeDrawer(GravityCompat.START);
+        }else {
+            super.onBackPressed();
+        }
     }
 
     @Override
