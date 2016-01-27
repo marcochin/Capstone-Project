@@ -33,7 +33,6 @@
             android:textColor="@color/secondary_text"
             android:singleLine="true"
             android:ellipsize="end"
-            android:textSize="@dimen/full_name_text_size"
             app:layout_columnSpan="3"
             app:layout_columnWeight="1"
             tools:text="GoPro, Inc."/>

@@ -2,13 +2,4 @@
 <resources>
     <!-- Number of list items the app should load at launch-->
     <integer name="numberOfLaunchItems">16</integer>
-
-    <!-- 8388613 is gravity end. 8388611 is gravity start. Refactoring will not work because for
-    this variable because android marks referencing gravity in resources as red. We have
-    to use to workaround due to TextView bug of not respecting our gravity in rtl mode-->
-    <!-- used in list_item.xml -->
-    <integer name="gravity_list_item_text_view_rtl_fix">8388611</integer>
-
-    <!-- used in styles.xml DetailColumnsCommon.TextSize.LeftCommon -->
-    <integer name="gravity_detail_text_view_rtl_fix">8388613</integer>
 </resources>

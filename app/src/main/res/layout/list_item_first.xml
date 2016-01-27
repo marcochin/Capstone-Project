@@ -31,41 +31,40 @@
             android:gravity="center_horizontal"
             android:singleLine="true"
             android:ellipsize="end"
-            android:textSize="@dimen/full_name_text_size"
             app:layout_columnSpan="2"
             app:layout_columnWeight="1"
             tools:text="GoPro, Inc."/>
 
         <TextView
+            android:textAppearance="@style/ListItemFirstTextLarge"
             android:id="@+id/text_symbol"
             android:layout_width="0dp"
             android:gravity="center_horizontal"
-            android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:text="GPRO"/>
 
         <TextView
+            android:textAppearance="@style/ListItemFirstTextLarge"
             android:id="@+id/text_change_dollar"
             android:layout_width="0dp"
             android:gravity="center_horizontal"
-            android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
             tools:text="$-1282.91"/>
 
         <TextView
+            android:textAppearance="@style/ListItemFirstTextLarge"
             android:id="@+id/text_recent_close"
             android:layout_width="0dp"
             android:gravity="center_horizontal"
-            android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:text="$1220.23"/>
 
         <TextView
+            android:textAppearance="@style/ListItemFirstTextLarge"
             android:id="@+id/text_change_percent"
             android:layout_width="0dp"
             android:gravity="center_horizontal"
-            android:textAppearance="@style/ListItemFirstTextLarge"
             app:layout_columnWeight="1"
             tools:textColor="@color/stock_down_red"
             tools:text="-1120.23%"/>
@@ -77,10 +76,10 @@
             app:layout_columnWeight="1">
 
             <TextView
+                android:textAppearance="@style/ListItemFirstTextLarge"
                 android:id="@+id/text_streak"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/ListItemFirstTextLarge"
                 android:text="33 days"
                 tools:text="33 days"/>
 

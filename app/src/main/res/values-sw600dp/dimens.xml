@@ -4,7 +4,6 @@
     <!-- Values for the cardView detail view in tablets-->
     <dimen name="details_app_bar_overlap">24dp</dimen>
     <dimen name="detail_card_elevation">6dp</dimen>
-
     <dimen name="card_view_horizontal_margin">0dp</dimen>
     <dimen name="card_view_height">330dp</dimen>
 

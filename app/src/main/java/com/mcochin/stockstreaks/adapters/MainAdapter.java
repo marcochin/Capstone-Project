@@ -145,6 +145,7 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             String recentClose = resources.getString(
                     R.string.placeholder_dollar,
                     Utility.roundTo2StringDecimals(stock.getRecentClose()));
+
             float changeDollar = stock.getChangeDollar();
             float changePercent = stock.getChangePercent();
             int streak = stock.getStreak();
@@ -170,7 +171,8 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                     Utility.roundTo2StringDecimals(changePercent));
 
             // Set our updateTime, dollar/percent change, change color, and streak
-            if (position == 0 && resources.getBoolean(R.bool.is_phone)) { //list_first_item
+            // list_first_item
+            if (position == 0 && resources.getBoolean(R.bool.is_phone)) {
                 Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
                 SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
                         R.string.update_time_format_wide), Locale.US);

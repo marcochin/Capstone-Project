@@ -15,14 +15,13 @@
     <dimen name="stock_arrow_margin_left">2dp</dimen>
 
     <!--Detail fragment-->
-    <dimen name="full_name_text_size">16sp</dimen>
     <dimen name="symbol_text_size">24sp</dimen>
 
     <dimen name="column_item_text_size">18sp</dimen>
     <dimen name="column_item_vertical_margin">5dp</dimen>
 
-    <dimen name="detail_right_column_inner_padding">15dp</dimen>
-    <dimen name="detail_left_column_inner_padding">15dp</dimen>
+    <dimen name="detail_right_column_inner_padding">30dp</dimen>
+    <dimen name="detail_left_column_inner_padding">0dp</dimen>
     <dimen name="detail_common_column_outer_padding">0dp</dimen>
 
         <!-- On devices < sw360dp scrollview generates this whitespace on bottom of screen for

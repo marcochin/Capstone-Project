@@ -115,7 +115,7 @@ public class SearchBox extends RelativeLayout {
 		this.searchOpen = false;
 		this.isMic = true;
 		this.materialMenu = (MaterialMenuView) findViewById(R.id.material_menu_button);
-		this.logo = (TextView) findViewById(R.id.logo);
+		this.logo = (TextView) findViewById(R.id.search_box_logo);
 		this.search = (BackPressEditText) findViewById(R.id.edit_text_search);
 		this.results = (ListView) findViewById(R.id.results);
 		this.pb = (ProgressBar) findViewById(R.id.pb);

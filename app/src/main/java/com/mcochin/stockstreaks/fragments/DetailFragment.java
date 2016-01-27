@@ -234,7 +234,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
                 mTextSymbol.setText(symbol);
                 mTextFullName.setText(fullName);
-                mTextRecentClose.setText(Utility.roundTo2StringDecimals(recentClose));
+                mTextRecentClose.setText(getString(R.string.placeholder_dollar,
+                        Utility.roundTo2StringDecimals(recentClose)));
                 mTextStreak.setText(getString(Math.abs(streak) == 1 ?
                         R.string.placeholder_day : R.string.placeholder_days, streak));
 

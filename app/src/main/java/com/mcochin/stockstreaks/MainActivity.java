@@ -2,14 +2,11 @@ package com.mcochin.stockstreaks;
 
 import android.app.ActivityManager;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.graphics.drawable.NinePatchDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.internal.NavigationMenuItemView;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -20,7 +17,6 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -32,7 +28,6 @@ import android.widget.Toast;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
-import com.google.android.gms.analytics.HitBuilders;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
@@ -86,7 +81,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     private DrawerLayout mDrawerLayout;
     private EditText mSearchEditText;
-    private TextView mLogo;
+    private TextView mSearchLogo;
     private SearchBox mToolbar;
     private SwipeRefreshLayout mSwipeToRefresh;
     private Snackbar mSnackbar;
@@ -116,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mCoordinatorLayout = findViewById(R.id.coordinator_layout);
         mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
         mDetailContainer = findViewById(R.id.detail_container);
-        mLogo = (TextView)findViewById(R.id.logo);
+        mSearchLogo = (TextView)findViewById(R.id.search_box_logo);
         mProgressWheel = findViewById(R.id.progress_wheel);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
         mSearchEditText = (EditText)findViewById(R.id.edit_text_search);
@@ -839,7 +834,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putBoolean(KEY_SEARCH_FOCUSED, mSearchEditText.isFocused());
-        outState.putBoolean(KEY_LOGO_VISIBLE, mLogo.getVisibility() == View.VISIBLE);
+        outState.putBoolean(KEY_LOGO_VISIBLE, mSearchLogo.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_PROGRESS_WHEEL_VISIBLE, mProgressWheel.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_EMPTY_MSG_VISIBLE, mEmptyMsg.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_DYNAMIC_SCROLL_ENABLED, mDynamicScrollLoadEnabled);

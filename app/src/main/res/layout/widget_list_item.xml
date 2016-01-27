@@ -21,7 +21,7 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
         android:layout_weight="4.75">
 
         <TextView
-            style="@style/ListItemBlackText"
+            android:textAppearance="@style/ListItemBlackText"
             android:id="@+id/text_symbol"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -51,7 +51,7 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
             <TextView
-                style="@style/ListItemBlackText"
+                android:textAppearance="@style/ListItemBlackText"
                 android:id="@+id/text_recent_close"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -62,7 +62,7 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
                 tools:text="$6333.26"/>
 
             <TextView
-                style="@style/ListItemBlackText"
+                android:textAppearance="@style/ListItemBlackText"
                 android:id="@+id/text_streak"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -88,7 +88,7 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
             android:id="@+id/text_change_amt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            tools:text="$-2222.00 (-2223.44%)"
+            tools:text="$-2222.00(-2223.44%)"
             tools:textColor="@color/stock_down_red"/>
 
     </LinearLayout>
