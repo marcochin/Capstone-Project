@@ -7,6 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:cardUseCompatPadding="true"
-    app:cardElevation="@dimen/detail_card_elevation">
+    app:cardElevation="@dimen/detail_card_elevation"
+    app:cardPreventCornerOverlap="false">
 
 </android.support.v7.widget.CardView>

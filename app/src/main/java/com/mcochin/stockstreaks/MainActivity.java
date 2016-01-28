@@ -2,6 +2,7 @@ package com.mcochin.stockstreaks;
 
 import android.app.ActivityManager;
 import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.NinePatchDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -17,14 +18,17 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.PopupMenu;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
@@ -42,13 +46,13 @@ import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
+import com.mcochin.stockstreaks.fragments.DetailEmptyFragment;
+import com.mcochin.stockstreaks.fragments.DetailFragment;
+import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
-import com.mcochin.stockstreaks.fragments.DetailEmptyFragment;
-import com.mcochin.stockstreaks.fragments.DetailFragment;
-import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
@@ -89,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private View mCoordinatorLayout;
     private View mProgressWheel;
     private View mEmptyMsg;
+    private View mOverflowMenu;
     private ListManagerFragment mListFragment;
 
     private boolean mFirstOpen;
@@ -112,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
         mDetailContainer = findViewById(R.id.detail_container);
         mSearchLogo = (TextView)findViewById(R.id.search_box_logo);
+        mOverflowMenu = findViewById(R.id.overflow);
         mProgressWheel = findViewById(R.id.progress_wheel);
         mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
         mSearchEditText = (EditText)findViewById(R.id.edit_text_search);
@@ -561,11 +567,19 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             public boolean onNavigationItemSelected(MenuItem item) {
                 int itemId = item.getItemId();
                 switch (itemId){
-                    case R.id.navigation_help:
-                        Toast.makeText(MainActivity.this, "help", Toast.LENGTH_SHORT).show();
+                    case R.id.navigation_faq:
+                        new MaterialDialog.Builder(MainActivity.this)
+                                .title(R.string.navigation_faq)
+                                .content(R.string.dialog_faq)
+                                .positiveText(R.string.dialog_close)
+                                .show();
                         break;
                     case R.id.navigation_about:
-                        Toast.makeText(MainActivity.this, "about", Toast.LENGTH_SHORT).show();
+                        new MaterialDialog.Builder(MainActivity.this)
+                                .title(R.string.navigation_about)
+                                .content(R.string.dialog_about)
+                                .positiveText(R.string.dialog_close)
+                                .show();
                         break;
                 }
 
@@ -579,25 +593,61 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
      * Initializes the overflow menu.
      */
     private void initOverflowMenu(){
-        mToolbar.setOverflowMenu(R.menu.menu_overflow);
-        mToolbar.setOverflowMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+        mToolbar.setOverflowMenuClickLister(new View.OnClickListener() {
             @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                int id = item.getItemId();
+            public void onClick(View v) {
+                LayoutInflater layoutInflater = (LayoutInflater)getBaseContext()
+                        .getSystemService(LAYOUT_INFLATER_SERVICE);
+                View overflowPopUp = layoutInflater.inflate(R.layout.overflow_menu_custom, null);
 
-                switch (id) {
-                    case R.id.overflow_refresh:
-                        if (!MyApplication.getInstance().isRefreshing()
-                                && Utility.canUpdateList(getContentResolver())) {
-                            refreshList(null);
-                        }
-                        break;
-                    case R.id.overflow_sort:
-                        break;
-                }
-                return false;
+                final PopupWindow popupWindow = new PopupWindow(overflowPopUp,
+                        getResources().getDimensionPixelSize(R.dimen.overflow_menu_width),
+                        ViewGroup.LayoutParams.WRAP_CONTENT, true);
+
+                // A workaround to dismiss PopUpWindow to be dismissed when touched outside.
+                popupWindow.setBackgroundDrawable(new ColorDrawable());
+
+
+                int cardViewCompatPaddingVerticalOffset =
+                        getResources().getDimensionPixelSize(R.dimen.overflow_menu_compat_padding);
+                // Horizontal Offset is 0 because no matter how much we offset it will not offset any
+                // more to the right since we set compat padding to true on the
+                // menu card view. That extra padding will not go off screen since it is part of the
+                // menu now and Android wants to fit the entire view on screen.
+                popupWindow.showAsDropDown(mOverflowMenu, 0, -cardViewCompatPaddingVerticalOffset);
             }
         });
+
+//        mToolbar.setOverflowMenu(R.menu.menu_overflow);
+//        mToolbar.setOverflowMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+//            @Override
+//            public boolean onMenuItemClick(MenuItem item) {
+//                int id = item.getItemId();
+//
+//                switch (id) {
+//                    case R.id.overflow_refresh:
+//                        if (!MyApplication.getInstance().isRefreshing()
+//                                && Utility.canUpdateList(getContentResolver())) {
+//                            refreshList(null);
+//                        }
+//                        break;
+//                    case R.id.overflow_sort:
+//                        new MaterialDialog.Builder(MainActivity.this)
+//                                .title("Sort")
+//                                .customView(R.layout.dialog_custom_sort, false)
+//                                .positiveText("Sort")
+//                                .negativeText(android.R.string.cancel)
+//                                .onPositive(new MaterialDialog.SingleButtonCallback() {
+//                                    @Override
+//                                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+//
+//                                    }
+//                                }).show();
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
     }
 
     /**

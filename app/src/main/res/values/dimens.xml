@@ -14,6 +14,11 @@
     <dimen name="stock_arrow_size_first">16dp</dimen>
     <dimen name="stock_arrow_margin_left">2dp</dimen>
 
+    <!--Overflow Menu -->
+    <dimen name="overflow_menu_width">180dp</dimen>
+    <dimen name="overflow_menu_elevation">8dp</dimen>
+    <dimen name="overflow_menu_compat_padding">8dp</dimen>
+
     <!--Detail fragment-->
     <dimen name="symbol_text_size">24sp</dimen>
 

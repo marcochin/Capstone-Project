@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.annotation.IntDef;
 import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
@@ -12,7 +13,11 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.utils.Utility;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -24,6 +29,7 @@ public class ListManipulator {
 
     public static final int MORE = 8;
     public static final int LIST_LIMIT = 200;
+
     public static final String LOADING_ITEM = "loadingItem";
 
     public static final String[] STOCK_PROJECTION = new String[]{
@@ -42,6 +48,22 @@ public class ListManipulator {
     public static final int INDEX_CHANGE_DOLLAR = 3;
     public static final int INDEX_CHANGE_PERCENT = 4;
     public static final int INDEX_STREAK = 5;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({SORT_ALPHABETICAL_ASC, SORT_ALPHABETICAL_DESC, SORT_DOLLAR_CHANGE_ASC,
+            SORT_DOLLAR_CHANGE_DESC, SORT_PERCENT_CHANGE_ASC, SORT_PERCENT_CHANGE_DESC,
+            SORT_RECENT_CLOSE_ASC, SORT_RECENT_CLOSE_DESC, SORT_STREAK_ASC, SORT_STREAK_DESC})
+    public @interface SORT_PREFERENCE{}
+    public static final int SORT_ALPHABETICAL_ASC = 0;
+    public static final int SORT_ALPHABETICAL_DESC = 1;
+    public static final int SORT_STREAK_ASC = 2;
+    public static final int SORT_STREAK_DESC = 3;
+    public static final int SORT_DOLLAR_CHANGE_ASC = 4;
+    public static final int SORT_DOLLAR_CHANGE_DESC = 5;
+    public static final int SORT_PERCENT_CHANGE_ASC = 6;
+    public static final int SORT_PERCENT_CHANGE_DESC = 7;
+    public static final int SORT_RECENT_CLOSE_ASC = 8;
+    public static final int SORT_RECENT_CLOSE_DESC = 9;
 
     private List<Stock> mShownList = new ArrayList<>();
     private String[] mLoadList;
@@ -290,6 +312,31 @@ public class ListManipulator {
             mLoadListPositionBookmark += addToBookmark;
         } else{
             throw new IllegalArgumentException("Must be a positive number.");
+        }
+    }
+
+    public void sort(@SORT_PREFERENCE int sortPreference){
+        switch (sortPreference){
+            case SORT_ALPHABETICAL_ASC:
+                break;
+            case SORT_ALPHABETICAL_DESC:
+                break;
+            case SORT_DOLLAR_CHANGE_ASC:
+                break;
+            case SORT_DOLLAR_CHANGE_DESC:
+                break;
+            case SORT_PERCENT_CHANGE_ASC:
+                break;
+            case SORT_PERCENT_CHANGE_DESC:
+                break;
+            case SORT_STREAK_ASC:
+                break;
+            case SORT_STREAK_DESC:
+                break;
+            case SORT_RECENT_CLOSE_ASC:
+                break;
+            case SORT_RECENT_CLOSE_DESC:
+                break;
         }
     }
 

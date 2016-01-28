@@ -14,10 +14,6 @@
     <string name="overflow_refresh">Refresh</string>
     <string name="overflow_sort">Sort</string>
 
-    <!-- Navigation menu -->
-    <string name="navigation_help">Help</string>
-    <string name="navigation_about">About</string>
-
     <!-- Toolbar menu -->
     <string name="search_hint">Add Symbol...</string>
     <string name="logo_typeface_path" translatable="false">fonts/harlowsi.TTF</string>
@@ -73,5 +69,41 @@
     <!-- Widget -->
     <string name="widget_empty_list">No Information Available</string>
     <string name="widget_button_load_more">LOAD MORE</string>
+
+    <!-- Navigation menu -->
+    <string name="navigation_faq">FAQ</string>
+    <string name="navigation_about">About</string>
+
+    <!-- Navigation menu item dialogs -->
+    <string name="dialog_close">CLOSE</string>
+    <string name="dialog_faq"><b>What do the $/% changes reflect?</b>
+        \nThe $/% changes reflects the TOTAL change from its previous streak and not the change
+        from its previous close like you would normally see. It gives a better perspective on how
+        much a stock has changed over the course of its streak.
+
+        \n\n<b>Is the stock data live data?</b>
+        \nNo, the app only displays information from its most recent close.
+
+        \n\n<b>When can I refresh the stock list?</b>
+        \nThe stock list can be refreshed at 4:30PM EST. I am aware that markets close at 4:00PM, but
+        due to limitations of the API there is a delay in the updating of prices.
+
+        \n\n<b>Do you have a widget?</b>
+        \nYes, depending on if your device supports it, I have created a widget you can use on your
+        home screen. When you enable the widget, you\'ll also enable automatic updates.
+    </string>
+
+    <string name="dialog_about">This app was created as my final project towards my Android Developer
+        Nanodegree which is developed together by Udacity and Google.
+
+        \n\nStock Streaks was an idea I had when out of curiosity I just wanted to find out how
+        many days in a row a stock has gone up or down. This information might not have any merit
+        to it, but maybe some of you might still find it interesting nonetheless.
+
+        \n\nIt took me about a period of three and a half months to complete everything, so I hope
+        you like it!
+    </string>
+
+
 
 </resources>

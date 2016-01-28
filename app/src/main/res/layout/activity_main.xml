@@ -22,6 +22,6 @@
         android:background="@color/white"
         app:menu="@menu/menu_navigation"
         app:headerLayout="@layout/navigation_header_item"
-        app:itemBackground="@drawable/selector_navigation_menu_item"/>
+        app:itemBackground="@drawable/selector_menu_navigation_item"/>
 
 </android.support.v4.widget.DrawerLayout>

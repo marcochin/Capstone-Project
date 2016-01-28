@@ -23,6 +23,7 @@ import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
+import com.mcochin.stockstreaks.widget.StockWidgetRemoteViewsService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -172,7 +173,7 @@ public class MainService extends IntentService {
     }
 
     private void performActionAppRefresh()throws IOException{
-        if(!refreshList()){
+        if(!refreshList(false)){
             ListEventQueue.getInstance().post(new AppRefreshFinishedEvent(mSessionId, null, false));
             sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
         }
@@ -184,31 +185,33 @@ public class MainService extends IntentService {
         if(EventBus.getDefault().hasSubscriberForEvent(WidgetRefreshDelegateEvent.class)){
             ListEventQueue.getInstance().post(new WidgetRefreshDelegateEvent(mSessionId));
 
-        }else {
-            if(!refreshList()){
-                ListEventQueue.getInstance().post(new AppRefreshFinishedEvent(mSessionId, null, false));
-                sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
-            }
+        }else if(!refreshList(true)){
+            ListEventQueue.getInstance().post(new AppRefreshFinishedEvent(mSessionId, null, false));
+            sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
         }
     }
 
     /**
+     * @param refreshingFromWidget set to true if only the widget is refreshing, false otherwise
      * @return true there are items to be refreshed, false if there are no items in the list
      * @throws IOException
-     * @throws IllegalArgumentException
      */
-    private boolean refreshList()throws IOException{
+    private boolean refreshList(boolean refreshingFromWidget)throws IOException{
         Cursor cursor = null;
         try {
             final String[] projection = new String[]{StockEntry.COLUMN_SYMBOL};
             final int indexSymbol = 0;
+
+            // Widget does not have the ability to add more to its list, so we need to load a little
+            // bit more on its refresh to make it more useful.
+            int more = refreshingFromWidget? StockWidgetRemoteViewsService.MORE : ListManipulator.MORE;
 
             // Query db for the FIRST FEW as a normal refresh would do.
             cursor = getContentResolver().query(
                     StockEntry.CONTENT_URI,
                     projection,
                     StockProvider.LIST_POSITION_SELECTION,
-                    new String[]{Integer.toString(ListManipulator.MORE)},
+                    new String[]{Integer.toString(more)},
                     StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 
             if (cursor != null) {

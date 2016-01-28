@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+
+    <RadioGroup
+        android:id="@+id/sort_pref_radio_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Alphabetical"/>
+
+        <RadioButton android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Streak"/>
+
+        <RadioButton android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="$ Change"/>
+
+        <RadioButton android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="% Change"/>
+
+        <RadioButton android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Recent Close"/>
+    </RadioGroup>
+
+    <RadioGroup
+        android:id="@+id/sort_asc_desc_radio_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp"
+        android:gravity="end">
+
+        <RadioButton android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ascending"/>
+
+        <RadioButton android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Descending"/>
+
+    </RadioGroup>
+</LinearLayout>

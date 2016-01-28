@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Number of list items the app should load at launch-->
-    <integer name="numberOfLaunchItems">16</integer>
+    <integer name="numberOfLaunchItems">20</integer>
 </resources>

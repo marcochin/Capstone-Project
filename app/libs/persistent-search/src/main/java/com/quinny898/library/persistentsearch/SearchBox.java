@@ -69,8 +69,6 @@ public class SearchBox extends RelativeLayout {
 	private ImageView mic;
 	private ImageView overflow;
     private PopupMenu popupMenu;
-	private SearchListener listener;
-	private MenuListener menuListener;
 	private FrameLayout rootLayout;
 	private ProgressBar pb;
 	private ArrayList<SearchResult> initialResults;
@@ -84,6 +82,9 @@ public class SearchBox extends RelativeLayout {
 	private android.support.v4.app.Fragment mContainerSupportFragment;
 	private SearchFilter mSearchFilter;
 	private ArrayAdapter<? extends SearchResult> mAdapter;
+
+	private SearchListener listener;
+	private MenuListener menuListener;
 
     /**
 	 * Create a new searchbox
@@ -167,13 +168,6 @@ public class SearchBox extends RelativeLayout {
 				} else {
 					micClick();
 				}
-			}
-		});
-
-		overflow.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				popupMenu.show();
 			}
 		});
 
@@ -471,15 +465,10 @@ public class SearchBox extends RelativeLayout {
 		micStateChanged();
 	}
 
-    public void setOverflowMenu(@MenuRes int overflowMenuResId) {
-        overflow.setVisibility(VISIBLE);
-        popupMenu = new PopupMenu(getContext(), overflow);
-        popupMenu.getMenuInflater().inflate(overflowMenuResId, popupMenu.getMenu());
-    }
-
-    public void setOverflowMenuItemClickListener(PopupMenu.OnMenuItemClickListener onMenuItemClickListener) {
-        popupMenu.setOnMenuItemClickListener(onMenuItemClickListener);
-    }
+	public void setOverflowMenuClickLister(OnClickListener clickListener){
+		overflow.setVisibility(VISIBLE);
+		overflow.setOnClickListener(clickListener);
+	}
 	
 	/***
 	 * Set whether to show the progress bar spinner

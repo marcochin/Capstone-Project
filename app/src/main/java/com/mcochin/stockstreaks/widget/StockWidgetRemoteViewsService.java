@@ -22,6 +22,8 @@ import java.util.Locale;
  * Created by Marco on 12/27/2015.
  */
 public class StockWidgetRemoteViewsService extends RemoteViewsService{
+    public static final int MORE = 12;
+
     public static final String[] STOCK_PROJECTION = new String[]{
             StockEntry.COLUMN_SYMBOL,
             StockEntry.COLUMN_FULL_NAME,
