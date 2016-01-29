@@ -5,16 +5,14 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.annotation.IntDef;
-import android.util.Log;
+import android.widget.Toast;
 
+import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.utils.Utility;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -49,21 +47,28 @@ public class ListManipulator {
     public static final int INDEX_CHANGE_PERCENT = 4;
     public static final int INDEX_STREAK = 5;
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({SORT_ALPHABETICAL_ASC, SORT_ALPHABETICAL_DESC, SORT_DOLLAR_CHANGE_ASC,
-            SORT_DOLLAR_CHANGE_DESC, SORT_PERCENT_CHANGE_ASC, SORT_PERCENT_CHANGE_DESC,
-            SORT_RECENT_CLOSE_ASC, SORT_RECENT_CLOSE_DESC, SORT_STREAK_ASC, SORT_STREAK_DESC})
-    public @interface SORT_PREFERENCE{}
-    public static final int SORT_ALPHABETICAL_ASC = 0;
-    public static final int SORT_ALPHABETICAL_DESC = 1;
-    public static final int SORT_STREAK_ASC = 2;
-    public static final int SORT_STREAK_DESC = 3;
-    public static final int SORT_DOLLAR_CHANGE_ASC = 4;
-    public static final int SORT_DOLLAR_CHANGE_DESC = 5;
-    public static final int SORT_PERCENT_CHANGE_ASC = 6;
-    public static final int SORT_PERCENT_CHANGE_DESC = 7;
-    public static final int SORT_RECENT_CLOSE_ASC = 8;
-    public static final int SORT_RECENT_CLOSE_DESC = 9;
+    // Need to bitwise OR these guys together to make fusion ha
+    public static final int SORT_ALPHABETICAL = 1;
+    public static final int SORT_STREAK = 2;
+    public static final int SORT_CHANGE_DOLLAR = 4;
+    public static final int SORT_CHANGE_PERCENT = 8;
+    public static final int SORT_RECENT_CLOSE = 16;
+
+    public static final int SORT_ASC = 1;
+    public static final int SORT_DESC = 1024;
+
+    // These are our fusion ha's
+    public static final int SORT_ASC_ALPHABETICAL = 1;
+    public static final int SORT_ASC_STREAK = 3;
+    public static final int SORT_ASC_CHANGE_DOLLAR = 5;
+    public static final int SORT_ASC_CHANGE_PERCENT = 9;
+    public static final int SORT_ASC_RECENT_CLOSE = 17;
+
+    public static final int SORT_DESC_ALPHABETICAL = 1025;
+    public static final int SORT_DESC_STREAK = 1026;
+    public static final int SORT_DESC_CHANGE_DOLLAR = 1028;
+    public static final int SORT_DESC_CHANGE_PERCENT = 1032;
+    public static final int SORT_DESC_RECENT_CLOSE = 1040;
 
     private List<Stock> mShownList = new ArrayList<>();
     private String[] mLoadList;
@@ -77,9 +82,10 @@ public class ListManipulator {
 
     /**
      * Sets the cursor of the shown list. It will extract data from the cursor to populate the list.
+     *
      * @param cursor
      */
-    public void setShownListCursor(Cursor cursor){
+    public void setShownListCursor(Cursor cursor) {
         synchronized (this) {
             mUniqueId = 0;
             mShownList.clear();
@@ -98,6 +104,7 @@ public class ListManipulator {
     /**
      * Sets the load list. This list is used to keep track of what items need to be loaded and
      * which ones are already loaded.
+     *
      * @param loadList
      */
     public void setLoadList(String[] loadList) {
@@ -107,9 +114,10 @@ public class ListManipulator {
 
     /**
      * Add a new query item to the top of the list
+     *
      * @param stock
      */
-    public void addItemToTop(Stock stock){
+    public void addItemToTop(Stock stock) {
         synchronized (this) {
             stock.setId(mUniqueId++);
             mShownList.add(0, stock);
@@ -119,9 +127,10 @@ public class ListManipulator {
 
     /**
      * Add an updated db item to the bottom of the list
+     *
      * @param stock
      */
-    public void addItemToBottom(Stock stock){
+    public void addItemToBottom(Stock stock) {
         synchronized (this) {
             stock.setId(mUniqueId++);
             mShownList.add(stock);
@@ -132,9 +141,10 @@ public class ListManipulator {
 
     /**
      * Add an updated db item to the bottom of the list
+     *
      * @param stock
      */
-    public void addItemToPosition(int position, Stock stock){
+    public void addItemToPosition(int position, Stock stock) {
         synchronized (this) {
             stock.setId(mUniqueId++);
             mShownList.add(position, stock);
@@ -147,7 +157,7 @@ public class ListManipulator {
      * Adds a "dummy" loading item to the bottom of the list with a specific signature to let
      * the adapter know that it is a loading item. This item is used for dynamic loads.
      */
-    public void addLoadingItem(){
+    public void addLoadingItem() {
         Stock stock = new Stock();
         stock.setId(mUniqueId++);
         stock.setSymbol(LOADING_ITEM);
@@ -157,14 +167,15 @@ public class ListManipulator {
     /**
      * Removes the "dummy" loading item from the bottom of the list.
      */
-    public void removeLoadingItem(){
-        if(isLoadingItemPresent()){
+    public void removeLoadingItem() {
+        if (isLoadingItemPresent()) {
             mShownList.remove(getCount() - 1);
         }
     }
 
     /**
      * Returns the list item at specified index
+     *
      * @param position
      * @return
      */
@@ -177,6 +188,7 @@ public class ListManipulator {
 
     /**
      * Moves an item from one position of the list to another.
+     *
      * @param fromPosition
      * @param toPosition
      */
@@ -190,6 +202,7 @@ public class ListManipulator {
 
     /**
      * Removes an item from specified position.
+     *
      * @param position
      */
     public void removeItem(int position) {
@@ -200,6 +213,7 @@ public class ListManipulator {
 
     /**
      * Undoes the removal of the last removed item.
+     *
      * @return the previous position of the removed item
      */
     public int undoLastRemoveItem() {
@@ -223,9 +237,10 @@ public class ListManipulator {
 
     /**
      * Permanently deletes an items from the db once the chance to undo a removal has passed.
+     *
      * @param context
      */
-    public void permanentlyDeleteLastRemoveItem(Context context){
+    public void permanentlyDeleteLastRemoveItem(Context context) {
         synchronized (this) {
             if (mLastRemovedItem != null) {
                 context.getContentResolver().delete(
@@ -233,7 +248,6 @@ public class ListManipulator {
                         null,
                         null
                 );
-
                 mLastRemovedItem = null;
                 mListUpdated = true;
             }
@@ -244,10 +258,10 @@ public class ListManipulator {
      * @return an array of items that will be dynamically loaded according to the bookmark of the
      * the load list.
      */
-    public String[] getMoreToLoad(){
-        String [] nextFewToLoad = null;
+    public String[] getMoreToLoad() {
+        String[] nextFewToLoad = null;
 
-        if(canLoadMore()) {
+        if (canLoadMore()) {
             boolean loadMore;
 
             int whatsLeftToLoad = mLoadList.length - mLoadListPositionBookmark;
@@ -272,8 +286,8 @@ public class ListManipulator {
     /**
      * @return true if the loading item is present, false otherwise.
      */
-    public boolean isLoadingItemPresent(){
-        if(getCount() > 0) {
+    public boolean isLoadingItemPresent() {
+        if (getCount() > 0) {
             return mShownList.get(getCount() - 1).getSymbol().equals(LOADING_ITEM);
         }
         return false;
@@ -283,21 +297,36 @@ public class ListManipulator {
      * @return true if the list was updated/modified after an orientation change or app startup,
      * false otherwise.
      */
-    public boolean isListUpdated(){
+    public boolean isListUpdated() {
         return mListUpdated;
+    }
+
+    /**
+     * We have to limit the amount of items a user can have to prevent the API quota from being
+     * reached. Checks to see if the user can add more items or not.
+     *
+     * @return true if you have reached the limit, false otherwise.
+     */
+    public boolean isListLimitReached(Context context) {
+        if (mShownList.size() >= ListManipulator.LIST_LIMIT) {
+            Toast.makeText(context, context.getString(R.string.toast_placeholder_error_stock_limit,
+                    ListManipulator.LIST_LIMIT), Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return false;
     }
 
     /**
      * @return true if there are more items to load from the load list, false otherwise.
      */
-    public boolean canLoadMore(){
+    public boolean canLoadMore() {
         return mLoadList != null && mLoadListPositionBookmark < mLoadList.length;
     }
 
     /**
      * @return The current list size.
      */
-    public int getCount(){
+    public int getCount() {
         return mShownList.size();
     }
 
@@ -305,43 +334,78 @@ public class ListManipulator {
      * THe load list is a list of all symbols in the db in their correct list positions. This
      * increments an index integer bookmark to keep track of what symbols need to be dynamically
      * loaded.
+     *
      * @param addToBookmark The amount to increment the bookmark by.
      */
-    public void addToLoadListPositionBookmark(int addToBookmark){
-        if(addToBookmark > 0 ) {
+    public void addToLoadListPositionBookmark(int addToBookmark) {
+        if (addToBookmark > 0) {
             mLoadListPositionBookmark += addToBookmark;
-        } else{
+        } else {
             throw new IllegalArgumentException("Must be a positive number.");
         }
     }
 
-    public void sort(@SORT_PREFERENCE int sortPreference){
-        switch (sortPreference){
-            case SORT_ALPHABETICAL_ASC:
+    /**
+     * Sorts the list depending on you sort preference
+     * @param sortPreference
+     * <ul>
+     *     <li>SORT_ASC_ALPHABETICAL</li>
+     *     <li>SORT_ASC_STREAK</li>
+     *     <li>SORT_ASC_CHANGE_DOLLAR</li>
+     *     <li>SORT_ASC_CHANGE_PERCENT</li>
+     *     <li>SORT_ASC_RECENT_CLOSE</li>
+     *     <li>SORT_DESC_ALPHABETICAL</li>
+     *     <li>SORT_DESC_STREAK</li>
+     *     <li>SORT_DESC_CHANGE_DOLLAR</li>
+     *     <li>SORT_DESC_CHANGE_PERCENT</li>
+     *     <li>SORT_DESC_RECENT_CLOSE</li>
+     * </ul>
+     */
+    public void sort(int sortPreference) {
+        Comparator<Stock> comparator;
+
+        switch (sortPreference) {
+            case SORT_ASC_ALPHABETICAL:
+                comparator = new ComparatorAscAlphabetical();
                 break;
-            case SORT_ALPHABETICAL_DESC:
+            case SORT_DESC_ALPHABETICAL:
+                comparator = new ComparatorDescAlphabetical();
                 break;
-            case SORT_DOLLAR_CHANGE_ASC:
+            case SORT_ASC_STREAK:
+                comparator = new ComparatorAscStreak();
                 break;
-            case SORT_DOLLAR_CHANGE_DESC:
+            case SORT_DESC_STREAK:
+                comparator = new ComparatorDescStreak();
                 break;
-            case SORT_PERCENT_CHANGE_ASC:
+            case SORT_ASC_CHANGE_DOLLAR:
+                comparator = new ComparatorAscChangeDollar();
                 break;
-            case SORT_PERCENT_CHANGE_DESC:
+            case SORT_DESC_CHANGE_DOLLAR:
+                comparator = new ComparatorDescChangeDollar();
                 break;
-            case SORT_STREAK_ASC:
+            case SORT_ASC_CHANGE_PERCENT:
+                comparator = new ComparatorAscChangePercent();
                 break;
-            case SORT_STREAK_DESC:
+            case SORT_DESC_CHANGE_PERCENT:
+                comparator = new ComparatorDescChangePercent();
                 break;
-            case SORT_RECENT_CLOSE_ASC:
+            case SORT_ASC_RECENT_CLOSE:
+                comparator = new ComparatorAscRecentClose();
                 break;
-            case SORT_RECENT_CLOSE_DESC:
+            case SORT_DESC_RECENT_CLOSE:
+                comparator = new ComparatorDescRecentClose();
                 break;
+            default:
+                throw new IllegalArgumentException("Invalid sort preference");
         }
+
+        Collections.sort(mShownList, comparator);
+        mListUpdated = true;
     }
 
     /**
      * Saves the list positions of every item. Should be called from a background thread
+     *
      * @param context Context
      */
     // All synchronized blocks in this class are so they don't interfere with this method.
@@ -352,9 +416,9 @@ public class ListManipulator {
             // because during orientation change, we need to persist the loading item.
             int mShownListSize;
 
-            if(mShownList.isEmpty()){
+            if (mShownList.isEmpty()) {
                 mShownListSize = 0;
-            }else {
+            } else {
                 mShownListSize = isLoadingItemPresent() ? mShownList.size() - 1 : mShownList.size();
             }
 
@@ -403,6 +467,76 @@ public class ListManipulator {
                     extras);
 
             mListUpdated = false;
+        }
+    }
+
+    private static class ComparatorAscAlphabetical implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return lhs.getSymbol().compareTo(rhs.getSymbol());
+        }
+    }
+
+    private static class ComparatorDescAlphabetical implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return -lhs.getSymbol().compareTo(rhs.getSymbol());
+        }
+    }
+
+    private static class ComparatorAscStreak implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return Utility.compare(lhs.getStreak(), rhs.getStreak());
+        }
+    }
+
+    private static class ComparatorDescStreak implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return -Utility.compare(lhs.getStreak(), rhs.getStreak());
+        }
+    }
+
+    private static class ComparatorAscChangeDollar implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return Float.compare(lhs.getChangeDollar(), rhs.getChangeDollar());
+        }
+    }
+
+    private static class ComparatorDescChangeDollar implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return -Float.compare(lhs.getChangeDollar(), rhs.getChangeDollar());
+        }
+    }
+
+    private static class ComparatorAscChangePercent implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return Float.compare(lhs.getChangePercent(), rhs.getChangePercent());
+        }
+    }
+
+    private static class ComparatorDescChangePercent implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return -Float.compare(lhs.getChangePercent(), rhs.getChangePercent());
+        }
+    }
+
+    private static class ComparatorAscRecentClose implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return Float.compare(lhs.getRecentClose(), rhs.getRecentClose());
+        }
+    }
+
+    private static class ComparatorDescRecentClose implements Comparator<Stock>{
+        @Override
+        public int compare(Stock lhs, Stock rhs) {
+            return -Float.compare(lhs.getRecentClose(), rhs.getRecentClose());
         }
     }
 }

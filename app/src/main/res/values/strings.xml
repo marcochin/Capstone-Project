@@ -10,6 +10,10 @@
     <string name="analytics_action_add">Item Add</string>
     <string name="analytics_label_add_placeholder">Add %1$s</string>
 
+    <!-- Navigation menu -->
+    <string name="navigation_faq">FAQ</string>
+    <string name="navigation_about">About</string>
+
     <!-- Overflow menu -->
     <string name="overflow_refresh">Refresh</string>
     <string name="overflow_sort">Sort</string>
@@ -21,14 +25,25 @@
     <!-- Logo -->
     <string name="logo_font_name">harlowsi.TTF</string>
 
+    <!-- Sort dialog-->
+    <string name="sort_alphabetical">Alphabetical</string>
+    <string name="sort_streak">Streak</string>
+    <string name="sort_change_dollar">$ Change</string>
+    <string name="sort_change_percent">% Change</string>
+    <string name="sort_recent_close">Recent Close</string>
+    <string name="sort_ascending">Ascending (Lowest First)</string>
+    <string name="sort_descending">Descending (Highest First)</string>
+
     <!-- Toast msgs -->
     <string name="toast_error_retrieving_data">Error retrieving data from server</string>
+    <string name="toast_error_updating_list">Error updating list</string>
+    <string name="toast_error_refresh_list">List out of sync. Please refresh list</string>
+
+    <string name="toast_list_is_up_to_date">List is up to date</string>
     <string name="toast_symbol_not_found">Symbol not found</string>
     <string name="toast_empty_search">Please enter a symbol</string>
     <string name="toast_no_network">No Network Connection</string>
     <string name="toast_already_up_to_date">Already up to date</string>
-    <string name="toast_error_updating_list">Error updating list</string>
-    <string name="toast_error_refresh_list">List out of sync. Please refresh list</string>
     <string name="toast_placeholder_symbol_exists">%1$s already exists</string>
     <string name="toast_placeholder_error_stock_limit">Unable to exceed max limit of %1$d stocks</string>
 
@@ -70,10 +85,6 @@
     <string name="widget_empty_list">No Information Available</string>
     <string name="widget_button_load_more">LOAD MORE</string>
 
-    <!-- Navigation menu -->
-    <string name="navigation_faq">FAQ</string>
-    <string name="navigation_about">About</string>
-
     <!-- Navigation menu item dialogs -->
     <string name="dialog_close">CLOSE</string>
     <string name="dialog_faq"><b>What do the $/% changes reflect?</b>
@@ -103,7 +114,4 @@
         \n\nIt took me about a period of three and a half months to complete everything, so I hope
         you like it!
     </string>
-
-
-
 </resources>

@@ -34,6 +34,7 @@ public class DetailService extends Service {
     public static final String KEY_DETAIL_SYMBOL = "detailSymbol";
     public static final String KEY_SESSION_ID ="sessionId";
 
+    //needs to be 366 since we need to compare closing to prev day's closing price
     private static final int YEAR = 366;
 
     Queue<Intent> mQueue = new LinkedList<>();

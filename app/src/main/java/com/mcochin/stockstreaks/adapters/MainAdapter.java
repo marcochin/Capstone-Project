@@ -61,11 +61,11 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     // Interfaces
     public interface EventListener {
-        void onItemClick(MainViewHolder holder);
-        void onItemRemoved(MainViewHolder holder);
-        void onItemMoved(int fromPosition, int toPosition);
-        void onItemRetryClick(LoadViewHolder holder);
-        void onItemTouch(View v, MotionEvent event);
+        void onStockItemClick(MainViewHolder holder);
+        void onStockItemRemoved(MainViewHolder holder);
+        void onStockItemMoved(int fromPosition, int toPosition);
+        void onLoadItemRetryClick(LoadViewHolder holder);
+        void onStockItemTouch(View v, MotionEvent event);
     }
 
     // NOTE: Make accessible with shorter name
@@ -279,7 +279,7 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             return;
         }
         if(mEventListener != null){
-            mEventListener.onItemMoved(fromPosition, toPosition);
+            mEventListener.onStockItemMoved(fromPosition, toPosition);
         }
     }
 
@@ -348,7 +348,7 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             super.onPerformAction();
             //Log.d(TAG, "onPerformAction");
             if(mAdapter.mEventListener != null) {
-                mAdapter.mEventListener.onItemRemoved(mHolder);
+                mAdapter.mEventListener.onStockItemRemoved(mHolder);
             }
         }
 
@@ -402,14 +402,14 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         @Override
         public void onClick(View v) {
             if (mEventListener != null) {
-                mEventListener.onItemClick(this);
+                mEventListener.onStockItemClick(this);
             }
         }
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             if (mEventListener != null) {
-                mEventListener.onItemTouch(v, event);
+                mEventListener.onStockItemTouch(v, event);
             }
             return false;
         }
@@ -436,7 +436,7 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
         @Override
         public void onClick(View v) {
-            mEventListener.onItemRetryClick(this);
+            mEventListener.onLoadItemRetryClick(this);
         }
     }
 }

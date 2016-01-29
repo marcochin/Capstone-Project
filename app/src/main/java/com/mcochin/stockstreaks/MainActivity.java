@@ -28,7 +28,6 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
@@ -49,6 +48,9 @@ import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.fragments.DetailEmptyFragment;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
+import com.mcochin.stockstreaks.fragments.dialogs.AboutDialog;
+import com.mcochin.stockstreaks.fragments.dialogs.FaqDialog;
+import com.mcochin.stockstreaks.fragments.dialogs.SortDialog;
 import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
@@ -93,14 +95,17 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private View mCoordinatorLayout;
     private View mProgressWheel;
     private View mEmptyMsg;
-    private View mOverflowMenu;
     private ListManagerFragment mListFragment;
+
+    private View mOverflowMenuButton;
+    private PopupWindow mOverflowMenuPopUp;
+    private View.OnClickListener mOverflowItemListener;
 
     private boolean mFirstOpen;
     private boolean mStartedFromWidget;
+    private boolean mDragClickPreventionEnabled;
     private boolean mDynamicScrollLoadEnabled;
     private boolean mDynamicScrollLoadAnother;
-    private boolean mDragClickPreventionEnabled;
     private int mNumberOfLaunchItems;
 
     private InterstitialAd mInterstitialAd;
@@ -114,15 +119,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // Find our views from the xml layout
         mEmptyMsg = findViewById(R.id.text_empty_list);
         mCoordinatorLayout = findViewById(R.id.coordinator_layout);
-        mDrawerLayout = (DrawerLayout)findViewById(R.id.drawer_layout);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDetailContainer = findViewById(R.id.detail_container);
-        mSearchLogo = (TextView)findViewById(R.id.search_box_logo);
-        mOverflowMenu = findViewById(R.id.overflow);
+        mSearchLogo = (TextView) findViewById(R.id.search_box_logo);
+        mOverflowMenuButton = findViewById(R.id.overflow);
         mProgressWheel = findViewById(R.id.progress_wheel);
-        mRecyclerView = (RecyclerView)findViewById(R.id.recycler_view);
-        mSearchEditText = (EditText)findViewById(R.id.edit_text_search);
-        mSwipeToRefresh = (SwipeRefreshLayout)findViewById(R.id.swipe_to_refresh);
-        mToolbar = (SearchBox)findViewById(R.id.search_box);
+        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mSearchEditText = (EditText) findViewById(R.id.edit_text_search);
+        mSwipeToRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_to_refresh);
+        mToolbar = (SearchBox) findViewById(R.id.search_box);
 
         // Init savedInstanceState first as many components rely on it
         initSavedInstanceState(savedInstanceState);
@@ -140,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     /**
      * Initializes variables depending on the state of savedInstanceState
+     *
      * @param savedInstanceState
      */
     private void initSavedInstanceState(Bundle savedInstanceState) {
@@ -160,7 +166,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
             // Checks to see if app is opened from widget
             Uri detailUri = getIntent().getData();
-            if(detailUri != null){
+            if (detailUri != null) {
                 mStartedFromWidget = true;
                 String symbol = StockContract.getSymbolFromUri(detailUri);
 
@@ -168,11 +174,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     insertFragmentIntoDetailContainer(symbol);
                 }
             }
-            if(!mStartedFromWidget && mDetailContainer != null){
+            if (!mStartedFromWidget && mDetailContainer != null) {
                 showDetailEmptyFragment();
             }
+        }
 
-        } else{
+        // saveInstanceState != null
+        else {
             mListFragment = ((ListManagerFragment) getSupportFragmentManager()
                     .findFragmentByTag(ListManagerFragment.TAG));
 
@@ -180,16 +188,16 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mToolbar.toggleSearch();
 
-            } else if(!savedInstanceState.getBoolean(KEY_LOGO_VISIBLE)){
+            } else if (!savedInstanceState.getBoolean(KEY_LOGO_VISIBLE)) {
                 // Else if not focused, but logo is invisible, open search w/o the focus
                 mToolbar.toggleSearch();
                 mSearchEditText.clearFocus();
             }
 
-            if(savedInstanceState.getBoolean(KEY_PROGRESS_WHEEL_VISIBLE)){
+            if (savedInstanceState.getBoolean(KEY_PROGRESS_WHEEL_VISIBLE)) {
                 mProgressWheel.setVisibility(View.VISIBLE);
 
-            } else if (savedInstanceState.getBoolean(KEY_EMPTY_MSG_VISIBLE)){
+            } else if (savedInstanceState.getBoolean(KEY_EMPTY_MSG_VISIBLE)) {
                 mEmptyMsg.setVisibility(View.VISIBLE);
             }
 
@@ -204,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         // Checks to see if app is opened from widget
         Uri detailUri = intent.getData();
-        if(detailUri != null){
+        if (detailUri != null) {
             String symbol = StockContract.getSymbolFromUri(detailUri);
 
             if (mDetailContainer != null) {
@@ -229,53 +237,61 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     /**
      * Grabs the stock list from the db when app is first opened and updates it if possible.
      */
-    private void fetchStockList(){
+    private void fetchStockList() {
         ListEventQueue listEventQueue = ListEventQueue.getInstance();
 
-        if(mFirstOpen) {
+        if (mFirstOpen) {
             mDynamicScrollLoadAnother = false;
             showProgressWheel();
             listEventQueue.clearQueue();
             mListFragment.initFromDb();
-        }else {
-            listEventQueue.postAllFromQueue();
 
-            if(Utility.canUpdateList(getContentResolver())) {
-                if (MyApplication.getInstance().isRefreshing()) {
-                    showProgressWheel();
-                } else{
-                    // Make sure it is not refreshing so we don't refresh twice
-                    refreshList(null);
-                }
-            }
+        } else {
+            listEventQueue.postAllFromQueue();
+            refreshList(null, false);
         }
         mFirstOpen = false;
     }
 
     /**
      * Sends a request to refresh the list.
+     *
      * @param attachSymbol The symbol to load after the list has been refreshed. This is to ensure
      *                     already loaded symbols will be in sync with the new symbol.
+     * @param showUpToDateToast set to true if you would like a toast to notify if you're already up to
+     *                          date.
+     * @return true if list can be refreshed, false otherwise.
      */
-    private void refreshList(String attachSymbol){
-        mDynamicScrollLoadEnabled = false;
-        mDynamicScrollLoadAnother = false;
-        showProgressWheel();
+    private boolean refreshList(String attachSymbol, boolean showUpToDateToast) {
+        if (MyApplication.getInstance().isRefreshing()) {
+            showProgressWheel();
 
-        // Dismiss Snack-bar to prevent undo removal because the old data will not be in sync with
-        // new data when list is refreshed.
-        if (mSnackbar != null && mSnackbar.isShown()) {
-            mSnackbar.dismiss();
+        }else if(Utility.canUpdateList(getContentResolver())){
+            // We set Dynamic scroll to false here as early as possible as a precaution to prevent
+            // load as we don't setRefreshing to true until initFromRefresh();
+            mDynamicScrollLoadEnabled = false;
+            mDynamicScrollLoadAnother = false;
+            showProgressWheel();
+
+            // Dismiss Snack-bar to prevent undo removal because the old data will not be in sync with
+            // new data when list is refreshed.
+            if (mSnackbar != null && mSnackbar.isShown()) {
+                mSnackbar.dismiss();
+            }
+            mListFragment.initFromRefresh(attachSymbol);
+            return true;
+
+        }else if(showUpToDateToast){
+            Toast.makeText(this, R.string.toast_list_is_up_to_date, Toast.LENGTH_SHORT).show();
         }
-        mListFragment.initFromRefresh(attachSymbol);
+
+        return false;
     }
 
     @Override // SwipeRefreshLayout.OnRefreshListener
     public void onRefresh() {
         mSwipeToRefresh.setRefreshing(false);
-        if(!MyApplication.getInstance().isRefreshing() && Utility.canUpdateList(getContentResolver())) {
-            refreshList(null);
-        }
+        refreshList(null, true);
     }
 
     @Override // SearchBox.SearchListener
@@ -305,22 +321,17 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // SearchBox.SearchListener
     public void onSearch(String query) {
-        if(!isListLimitReached()){
+        if (!getListManipulator().isListLimitReached(MainActivity.this)) {
             query = query.toUpperCase(Locale.US);
 
             if (TextUtils.isEmpty(query)) {
                 Toast.makeText(this, R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
 
-            } else {
-                if(!MyApplication.getInstance().isRefreshing()
-                        && Utility.canUpdateList(getContentResolver())) {
-                    // Refresh the shownList BEFORE fetching a new stock. This is to prevent
-                    // fetching the new stock twice when it becomes apart of that list.
-                    refreshList(query);
-                } else{
-                    mListFragment.loadSymbol(query);
-                }
+            } else if(!refreshList(query, false)){
+                // Refresh the shownList BEFORE fetching a new stock. This is to prevent
+                // fetching the new stock twice when it becomes apart of that list.
                 showProgressWheel();
+                mListFragment.loadSymbol(query);
             }
         }
     }
@@ -330,22 +341,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         hideProgressWheel();
         mAdapter.notifyDataSetChanged();
 
-        if(getListManipulator().getCount() == 0 ){
+        if (getListManipulator().getCount() == 0) {
             showEmptyMessage();
 
-        }else if(mDetailContainer != null && !mStartedFromWidget){
+        } else if (mDetailContainer != null && !mStartedFromWidget) {
             // Load the first item into the container, when db finishes loading
             insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
         }
 
-        if (Utility.canUpdateList(getContentResolver())) {
-            if (MyApplication.getInstance().isRefreshing()) {
-                showProgressWheel();
-            } else{
-                // Make sure it is not refreshing so we don't refresh twice
-                refreshList(null);
-            }
-        }else if(getListManipulator().getCount() < mNumberOfLaunchItems){
+        if (!refreshList(null, false) && getListManipulator().getCount() < mNumberOfLaunchItems) {
             dynamicLoadMore();
         }
     }
@@ -354,8 +358,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     public void onLoadSymbolFinished(LoadSymbolFinishedEvent event) {
         hideProgressWheel();
 
-        if(event.isSuccessful()) {
-            if(!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
+        if (event.isSuccessful()) {
+            if (!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
                 mAdapter.notifyItemInserted(0);
                 mRecyclerView.smoothScrollToPosition(0);
             }
@@ -373,8 +377,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 //                    .setLabel(getString(R.string.analytics_label_add_placeholder,
 //                            event.getStock().getSymbol()))
 //                    .build());
-        } else{
-            if(getListManipulator().getCount() == 0 ){
+        } else {
+            if (getListManipulator().getCount() == 0) {
                 showEmptyWidgets();
             }
         }
@@ -383,23 +387,23 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadMoreFinished(LoadMoreFinishedEvent event) {
-        if(event.isSuccessful()) {
-            if(!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
+        if (event.isSuccessful()) {
+            if (!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
                 mAdapter.notifyDataSetChanged();
             }
 
             // Load more only if number of launch items are not reached or if we have the signal to
             // load another
-            if(getListManipulator().getCount() < mNumberOfLaunchItems || mDynamicScrollLoadAnother){
+            if (getListManipulator().getCount() < mNumberOfLaunchItems || mDynamicScrollLoadAnother) {
                 dynamicLoadMore();
                 mDynamicScrollLoadAnother = false;
-            }else{
+            } else {
                 mDynamicScrollLoadEnabled = true;
             }
 
-        }else{
+        } else {
             //Show retry button
-            if(!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
+            if (!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
                 mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
             }
         }
@@ -409,7 +413,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // ListManipulatorFragment.EventListener
     public void onRefreshFinished(AppRefreshFinishedEvent event) {
         hideProgressWheel();
-        if(event.isSuccessful()) {
+        if (event.isSuccessful()) {
             mAdapter.notifyDataSetChanged();
             dynamicLoadMore();
 
@@ -418,8 +422,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
             }
 
-        } else{
-            if(getListManipulator().getCount() == 0 ){
+        } else {
+            if (getListManipulator().getCount() == 0) {
                 showEmptyWidgets();
             }
         }
@@ -433,8 +437,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // MainAdapter.EventListener
-    public void onItemClick(MainAdapter.MainViewHolder holder) {
-        if(!mDragClickPreventionEnabled) {
+    public void onStockItemClick(MainAdapter.MainViewHolder holder) {
+        if (!mDragClickPreventionEnabled) {
             int position = holder.getAdapterPosition();
 
             if (position != RecyclerView.NO_POSITION) {
@@ -448,8 +452,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 }
 
                 // Check if it is time to show interstitial ad
-                if(mItemClicksForInterstitial >= CLICKS_UNTIL_INTERSTITIAL
-                        && mInterstitialAd.isLoaded()){
+                if (mItemClicksForInterstitial >= CLICKS_UNTIL_INTERSTITIAL
+                        && mInterstitialAd.isLoaded()) {
                     mInterstitialAd.show();
                 }
                 mItemClicksForInterstitial++;
@@ -458,10 +462,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // MainAdapter.EventListener
-    public void onItemRemoved(MainAdapter.MainViewHolder holder) {
+    public void onStockItemRemoved(MainAdapter.MainViewHolder holder) {
         int position = holder.getAdapterPosition();
 
-        if(position != RecyclerView.NO_POSITION) {
+        if (position != RecyclerView.NO_POSITION) {
             final ListManipulator listManipulator = getListManipulator();
             String removeSymbol = listManipulator.getItem(position).getSymbol();
             // Delete the lastRemovedItem before, removing another item. Can't rely on Snackbar's
@@ -469,16 +473,16 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             listManipulator.permanentlyDeleteLastRemoveItem(MainActivity.this);
             listManipulator.removeItem(position);
 
-            if(listManipulator.getCount() == 0){
+            if (listManipulator.getCount() == 0) {
                 showEmptyWidgets();
 
-            }else if(mDetailContainer != null){
+            } else if (mDetailContainer != null) {
                 // Show the first item in the detail container if the one being removed is
                 // currently in the detail container.
-                String detailSymbol = ((DetailFragment)getSupportFragmentManager()
+                String detailSymbol = ((DetailFragment) getSupportFragmentManager()
                         .findFragmentByTag(DetailFragment.TAG)).getSymbol();
 
-                if(detailSymbol.equals(removeSymbol)){
+                if (detailSymbol.equals(removeSymbol)) {
                     insertFragmentIntoDetailContainer(listManipulator.getItem(0).getSymbol());
                 }
             }
@@ -491,14 +495,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     .setAction(R.string.snackbar_action_text, new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            if(!isListLimitReached()){
+                            if (!getListManipulator().isListLimitReached(MainActivity.this)) {
                                 hideEmptyMessage();
 
                                 int undoPosition = listManipulator.undoLastRemoveItem();
                                 mAdapter.notifyItemInserted(undoPosition);
                                 mRecyclerView.smoothScrollToPosition(undoPosition);
 
-                                if(mDetailContainer != null) {
+                                if (mDetailContainer != null) {
                                     insertFragmentIntoDetailContainer(
                                             listManipulator.getItem(undoPosition).getSymbol());
                                 }
@@ -507,7 +511,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     }).setCallback(new Snackbar.Callback() {
                         @Override
                         public void onDismissed(Snackbar snackbar, int event) {
-                            if(event != Snackbar.Callback.DISMISS_EVENT_ACTION
+                            if (event != Snackbar.Callback.DISMISS_EVENT_ACTION
                                     && event != Snackbar.Callback.DISMISS_EVENT_CONSECUTIVE) {
                                 listManipulator.permanentlyDeleteLastRemoveItem(MainActivity.this);
                             }
@@ -519,41 +523,41 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // MainAdapter.EventListener
-    public void onItemMoved(int fromPosition, int toPosition) {
+    public void onStockItemMoved(int fromPosition, int toPosition) {
         getListManipulator().moveItem(fromPosition, toPosition);
     }
 
     @Override // MainAdapter.EventListener
-    public void onItemRetryClick(MainAdapter.LoadViewHolder holder) {
-        if(Utility.canUpdateList(getContentResolver())){
-            Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
-
-        }else if(!MyApplication.getInstance().isRefreshing()) {
-            mListFragment.loadMore();
-            mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
-        }
-    }
-
-    @Override // MainAdapter.EventListener
-    public void onItemTouch(View v, MotionEvent event) {
-        switch (event.getAction()){
+    public void onStockItemTouch(View v, MotionEvent event) {
+        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mDragClickPreventionEnabled = false;
                 break;
 
             case MotionEvent.ACTION_CANCEL:
-                if(mDragDropManager != null && !mDragDropManager.isDragging()) {
+                if (mDragDropManager != null && !mDragDropManager.isDragging()) {
                     mDragDropManager.cancelDrag();
                 }
                 break;
         }
     }
 
+    @Override // MainAdapter.EventListener
+    public void onLoadItemRetryClick(MainAdapter.LoadViewHolder holder) {
+        if (Utility.canUpdateList(getContentResolver())) {
+            Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
+
+        } else if (!MyApplication.getInstance().isRefreshing()) {
+            mListFragment.loadMore();
+            mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
+        }
+    }
+
     /**
      * Initializes the navigation menu.
      */
-    private void initNavigationMenu(){
-        final NavigationView navigationView = (NavigationView)findViewById(R.id.navigation_view);
+    private void initNavigationMenu() {
+        final NavigationView navigationView = (NavigationView) findViewById(R.id.navigation_view);
 
         mToolbar.setMenuListener(new SearchBox.MenuListener() {
             @Override
@@ -562,27 +566,20 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
         });
 
+        // Setup navigation menu clicks here
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem item) {
                 int itemId = item.getItemId();
-                switch (itemId){
+                switch (itemId) {
                     case R.id.navigation_faq:
-                        new MaterialDialog.Builder(MainActivity.this)
-                                .title(R.string.navigation_faq)
-                                .content(R.string.dialog_faq)
-                                .positiveText(R.string.dialog_close)
-                                .show();
+                        new FaqDialog().show(getSupportFragmentManager(), FaqDialog.TAG);
                         break;
+
                     case R.id.navigation_about:
-                        new MaterialDialog.Builder(MainActivity.this)
-                                .title(R.string.navigation_about)
-                                .content(R.string.dialog_about)
-                                .positiveText(R.string.dialog_close)
-                                .show();
+                        new AboutDialog().show(getSupportFragmentManager(), AboutDialog.TAG);
                         break;
                 }
-
                 mDrawerLayout.closeDrawer(GravityCompat.START);
                 return true;
             }
@@ -592,21 +589,20 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     /**
      * Initializes the overflow menu.
      */
-    private void initOverflowMenu(){
+    private void initOverflowMenu() {
         mToolbar.setOverflowMenuClickLister(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                LayoutInflater layoutInflater = (LayoutInflater)getBaseContext()
+                LayoutInflater layoutInflater = (LayoutInflater) getBaseContext()
                         .getSystemService(LAYOUT_INFLATER_SERVICE);
-                View overflowPopUp = layoutInflater.inflate(R.layout.overflow_menu_custom, null);
+                View overflowLayout = layoutInflater.inflate(R.layout.overflow_menu_custom, null);
 
-                final PopupWindow popupWindow = new PopupWindow(overflowPopUp,
+                mOverflowMenuPopUp = new PopupWindow(overflowLayout,
                         getResources().getDimensionPixelSize(R.dimen.overflow_menu_width),
                         ViewGroup.LayoutParams.WRAP_CONTENT, true);
 
                 // A workaround to dismiss PopUpWindow to be dismissed when touched outside.
-                popupWindow.setBackgroundDrawable(new ColorDrawable());
-
+                mOverflowMenuPopUp.setBackgroundDrawable(new ColorDrawable());
 
                 int cardViewCompatPaddingVerticalOffset =
                         getResources().getDimensionPixelSize(R.dimen.overflow_menu_compat_padding);
@@ -614,46 +610,43 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 // more to the right since we set compat padding to true on the
                 // menu card view. That extra padding will not go off screen since it is part of the
                 // menu now and Android wants to fit the entire view on screen.
-                popupWindow.showAsDropDown(mOverflowMenu, 0, -cardViewCompatPaddingVerticalOffset);
+                mOverflowMenuPopUp.showAsDropDown(mOverflowMenuButton, 0, -cardViewCompatPaddingVerticalOffset);
+
+                overflowLayout.findViewById(R.id.overflow_refresh)
+                        .setOnClickListener(mOverflowItemListener);
+                overflowLayout.findViewById(R.id.overflow_sort)
+                        .setOnClickListener(mOverflowItemListener);
             }
         });
 
-//        mToolbar.setOverflowMenu(R.menu.menu_overflow);
-//        mToolbar.setOverflowMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-//            @Override
-//            public boolean onMenuItemClick(MenuItem item) {
-//                int id = item.getItemId();
-//
-//                switch (id) {
-//                    case R.id.overflow_refresh:
-//                        if (!MyApplication.getInstance().isRefreshing()
-//                                && Utility.canUpdateList(getContentResolver())) {
-//                            refreshList(null);
-//                        }
-//                        break;
-//                    case R.id.overflow_sort:
-//                        new MaterialDialog.Builder(MainActivity.this)
-//                                .title("Sort")
-//                                .customView(R.layout.dialog_custom_sort, false)
-//                                .positiveText("Sort")
-//                                .negativeText(android.R.string.cancel)
-//                                .onPositive(new MaterialDialog.SingleButtonCallback() {
-//                                    @Override
-//                                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-//
-//                                    }
-//                                }).show();
-//                        break;
-//                }
-//                return false;
-//            }
-//        });
+        // Setup overflow menu clicks here
+        mOverflowItemListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switch (v.getId()) {
+                    case R.id.overflow_refresh:
+                        refreshList(null, true);
+                        break;
+
+                    case R.id.overflow_sort:
+                        SortDialog.newInstance(new SortDialog.OnSortFinishedListener() {
+                            @Override
+                            public void onSortFinished() {
+                                mAdapter.notifyDataSetChanged();
+                            }
+                        }).show(getSupportFragmentManager(), SortDialog.TAG);
+                        break;
+                }
+
+                mOverflowMenuPopUp.dismiss();
+            }
+        };
     }
 
     /**
      * Initializes the {@link RecyclerView}.
      */
-    private void initRecyclerView(){
+    private void initRecyclerView() {
         // Touch guard manager  (this class is required to suppress scrolling while swipe-dismiss animation is running)
         mTouchActionGuardManager = new RecyclerViewTouchActionGuardManager();
         mTouchActionGuardManager.setInterceptVerticalScrollingWhileAnimationRunning(true);
@@ -729,7 +722,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
      * depending on the scroll offset. Also it will attempt to load more data when the last item
      * if the list is shown.
      */
-    private void initDynamicScrollListener(){
+    private void initDynamicScrollListener() {
         // When recyclerView is scrolled all the way to the top, appbar elevation will disappear.
         // When you start scrolling down elevation will reappear.
 
@@ -745,8 +738,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                                 getResources().getDimension(R.dimen.appbar_elevation));
                     }
                 }
-                if(mDynamicScrollLoadEnabled
-                        && mLayoutManager.findLastVisibleItemPosition() == getListManipulator().getCount() - 1){
+                if (mDynamicScrollLoadEnabled
+                        && mLayoutManager.findLastVisibleItemPosition() == getListManipulator().getCount() - 1) {
                     dynamicLoadMore();
                 }
             }
@@ -756,27 +749,30 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     /**
      * Loads more data to the bottom of your list.
      */
-    private void dynamicLoadMore(){
+    private void dynamicLoadMore() {
         ListManipulator listManipulator = getListManipulator();
 
         if (!listManipulator.isLoadingItemPresent()
                 && !MyApplication.getInstance().isRefreshing()
-            && listManipulator.canLoadMore()) {
+                && listManipulator.canLoadMore()) {
             // Insert loading item
             listManipulator.addLoadingItem();
 
-            if(!Utility.canUpdateList(getContentResolver())) {
+            if (!Utility.canUpdateList(getContentResolver())) {
                 mListFragment.loadMore();
-            }else {
+            } else {
                 Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
             }
 
             // Must notifyItemInserted AFTER loadMore for mIsLoadingAFew to be updated
-            if(!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
+            if (!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
                 mAdapter.notifyItemInserted(listManipulator.getCount() - 1);
             }
 
-            if(mDynamicScrollLoadEnabled){
+            // When dynamic scroll is enabled and it load we will load twice. We immediately disable
+            // dynamic scroll as a precaution to prevent overlapping of loads. We will re-enable
+            // after callback is called.
+            if (mDynamicScrollLoadEnabled) {
                 mDynamicScrollLoadAnother = true;
                 mDynamicScrollLoadEnabled = false;
             }
@@ -784,24 +780,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     /**
-     * We have to limit the amount of items a user can have to prevent the API quota from being
-     * reached. Checks to see if the user can add more items or not.
-     * @return true if you have reached the limit, false otherwise.
-     */
-    private boolean isListLimitReached(){
-        if(getListManipulator().getCount() >= ListManipulator.LIST_LIMIT){
-            Toast.makeText(this, getString(R.string.toast_placeholder_error_stock_limit,
-                    ListManipulator.LIST_LIMIT), Toast.LENGTH_SHORT).show();
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Inserts a {@link DetailFragment} containing the symbol's details into the Detail Container.
+     *
      * @param symbol The symbol to insert the fragment for.
      */
-    private void insertFragmentIntoDetailContainer(@NonNull String symbol){
+    private void insertFragmentIntoDetailContainer(@NonNull String symbol) {
         Uri detailUri = StockEntry.buildUri(symbol);
         Bundle args = new Bundle();
         args.putParcelable(DetailFragment.KEY_DETAIL_URI, detailUri);
@@ -816,9 +799,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     /**
      * Inserts a {@link DetailFragment} containing the symbol's details into the
      * {@link DetailActivity}.
+     *
      * @param symbol The symbol to insert the fragment for.
      */
-    private void insertFragmentIntoDetailActivity(@NonNull String symbol){
+    private void insertFragmentIntoDetailActivity(@NonNull String symbol) {
         mSearchEditText.clearFocus();
         Uri detailUri = StockEntry.buildUri(symbol);
         //If phone open activity
@@ -829,9 +813,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         startActivity(openDetail, bundle);
     }
 
-    private void showEmptyWidgets(){
+    private void showEmptyWidgets() {
         showEmptyMessage();
-        if(mDetailContainer != null){
+        if (mDetailContainer != null) {
             showDetailEmptyFragment();
         }
     }
@@ -842,13 +826,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 .commit();
     }
 
-    private void showEmptyMessage(){
-        if(mProgressWheel.getVisibility() == View.INVISIBLE){
+    private void showEmptyMessage() {
+        if (mProgressWheel.getVisibility() == View.INVISIBLE) {
             mEmptyMsg.setVisibility(View.VISIBLE);
         }
     }
 
-    private void hideEmptyMessage(){
+    private void hideEmptyMessage() {
         mEmptyMsg.setVisibility(View.INVISIBLE);
     }
 
@@ -857,15 +841,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mProgressWheel.setVisibility(View.VISIBLE);
     }
 
-    private void hideProgressWheel(){
-        if(!Utility.isServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE),
-                MainService.class.getName())){
+    private void hideProgressWheel() {
+        if (!Utility.isServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE),
+                MainService.class.getName())) {
             mProgressWheel.setVisibility(View.INVISIBLE);
         }
     }
 
     public ListManipulator getListManipulator() {
-        if(mListFragment != null) {
+        if (mListFragment != null) {
             return mListFragment.getListManipulator();
         }
 
@@ -874,9 +858,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override
     public void onBackPressed() {
-        if(mDrawerLayout.isDrawerOpen(GravityCompat.START)){
+        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
             mDrawerLayout.closeDrawer(GravityCompat.START);
-        }else {
+        } else {
             super.onBackPressed();
         }
     }
@@ -903,7 +887,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override
     public void onStop() {
-        if(mRecyclerView != null){
+        if (mRecyclerView != null) {
             mRecyclerView.clearOnScrollListeners();
         }
         EventBus.getDefault().unregister(mListFragment);
@@ -949,7 +933,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     /**
      * Initializes the interstitial ad.
      */
-    private void initInterstitialAd(){
+    private void initInterstitialAd() {
         mInterstitialAd = new InterstitialAd(this);
         mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
 
@@ -967,7 +951,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     /**
      * Requests a new interstitial ad to be loaded.
      */
-    private void requestNewInterstitialAd(){
+    private void requestNewInterstitialAd() {
         mInterstitialAd.loadAd(new AdRequest.Builder().build());
     }
 }

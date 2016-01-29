@@ -35,15 +35,16 @@ public class Utility {
 
     /**
      * Calculates the change in dollars and percentage between the two prices.
-     * @param recentClose Stock's recent close
+     *
+     * @param recentClose        Stock's recent close
      * @param prevStreakEndPrice Previous streak's end price for the stock
      * @return A Pair containing:
      * <ul>
-     *     <li>Pair.first is the change in dollars</li>
-     *     <li>Pair.second is the change in percentage</li>
+     * <li>Pair.first is the change in dollars</li>
+     * <li>Pair.second is the change in percentage</li>
      * </ul>
      */
-    public static Pair<Float, Float> calculateChange(float recentClose, float prevStreakEndPrice){
+    public static Pair<Float, Float> calculateChange(float recentClose, float prevStreakEndPrice) {
         float changeDollar = recentClose - prevStreakEndPrice;
         float changePercent = changeDollar / prevStreakEndPrice * 100;
 
@@ -68,6 +69,7 @@ public class Utility {
 
     /**
      * Detects to see if {@link MainService} is still running.
+     *
      * @param manager ActivityManager
      * @return returns true if running, false otherwise
      */
@@ -82,20 +84,21 @@ public class Utility {
 
     /**
      * Used to determine is a symbol already exists in the database
+     *
      * @param symbol The symbol to look up
-     * @param cr The ContentResolver to access your ContentProvider
+     * @param cr     The ContentResolver to access your ContentProvider
      * @return true if exists, otherwise false
      */
-    public static boolean isEntryExist(String symbol, ContentResolver cr){
+    public static boolean isEntryExist(String symbol, ContentResolver cr) {
         Cursor cursor = null;
-        try{
+        try {
             cursor = cr.query(StockEntry.buildUri(symbol), null, null, null, null);
-            if(cursor != null && cursor.getCount() > 0){
+            if (cursor != null && cursor.getCount() > 0) {
                 return true;
             }
 
-        }finally {
-            if(cursor != null){
+        } finally {
+            if (cursor != null) {
                 cursor.close();
             }
         }
@@ -104,6 +107,7 @@ public class Utility {
 
     /**
      * This is intended for threads to show toast messages on the main thread.
+     *
      * @param context
      * @param toastMsg
      */
@@ -120,12 +124,13 @@ public class Utility {
     /**
      * @return a {@link Calendar} instance with {@link TimeZone} set to New York.
      */
-    public static Calendar getNewYorkCalendarInstance(){
+    public static Calendar getNewYorkCalendarInstance() {
         return Calendar.getInstance(TimeZone.getTimeZone(YahooFinance.TIMEZONE));
     }
 
     /**
      * Resets the Calendar to midnight.
+     *
      * @param calendar
      * @return
      */
@@ -142,6 +147,7 @@ public class Utility {
      * Quick way to set the {@link Calendar} time without having to use the
      * {@link Calendar#set(int, int)}
      * method.
+     *
      * @param hourOfDay
      * @param minute
      * @param sec
@@ -175,10 +181,11 @@ public class Utility {
 
     /**
      * Extracts the {@link Stock} from the cursor's current position.
+     *
      * @param cursor
      * @return
      */
-    public static Stock getStockFromCursor(Cursor cursor){
+    public static Stock getStockFromCursor(Cursor cursor) {
         String symbol = cursor.getString(ListManipulator.INDEX_SYMBOL);
         String fullName = cursor.getString(ListManipulator.INDEX_FULL_NAME);
         float recentClose = cursor.getFloat(ListManipulator.INDEX_RECENT_CLOSE);
@@ -200,6 +207,7 @@ public class Utility {
 
     /**
      * Gets last update time from db
+     *
      * @param cr
      * @return returns the lastUpdateTime or null if not yet exist
      */
@@ -222,8 +230,8 @@ public class Utility {
                 long updateTimeInMilli = cursor.getLong(indexTimeInMilli);
                 lastUpdateTime.setTimeInMillis(updateTimeInMilli);
             }
-        }finally {
-            if(cursor!=null){
+        } finally {
+            if (cursor != null) {
                 cursor.close();
             }
         }
@@ -232,6 +240,7 @@ public class Utility {
 
     /**
      * Gets the last shown position + 1. The bookmark is always 1 above the actual position.
+     *
      * @param cr
      * @return returns the last shown position or -1 if not yet exist
      */
@@ -252,8 +261,8 @@ public class Utility {
             if (cursor != null && cursor.moveToFirst()) {
                 shownPosBookmark = cursor.getInt(indexBookmark);
             }
-        }finally {
-            if(cursor!=null){
+        } finally {
+            if (cursor != null) {
                 cursor.close();
             }
         }
@@ -263,9 +272,10 @@ public class Utility {
     /**
      * Checks if the current time is between trading hours, regardless if stock market is closed or
      * not.
+     *
      * @return
      */
-    public static boolean isDuringTradingHours(){
+    public static boolean isDuringTradingHours() {
         //9:30am
         Calendar stockMarketOpen = Utility.getNewYorkCalendarQuickSetup(
                 Utility.STOCK_MARKET_OPEN_HOUR,
@@ -284,7 +294,7 @@ public class Utility {
 
         // If nowTime is between 9:30am EST and 4:30 pm EST
         // assume it is trading hours
-        if(!nowTime.before(stockMarketOpen) && nowTime.before(stockMarketClose)){
+        if (!nowTime.before(stockMarketOpen) && nowTime.before(stockMarketClose)) {
             return true;
         }
 
@@ -293,15 +303,16 @@ public class Utility {
 
     /**
      * Checks to see if the stock list is up to date, if not then update
+     *
      * @param cr ContentResolver to query db for the previous update time
      * @return true if list can be updated, else false
      */
-    public static boolean canUpdateList(ContentResolver cr){
+    public static boolean canUpdateList(ContentResolver cr) {
         // NOTE: This method can be a problem for those holidays where the market is only open
         // for half a day. For best accuracy, we need to make an api call to get the last trade day
         // to compare w/ our updateTime. However, I think this is good enough.
         Calendar lastUpdateTime = getLastUpdateTime(cr);
-        if(lastUpdateTime == null) {
+        if (lastUpdateTime == null) {
             return true;
         }
 
@@ -332,18 +343,18 @@ public class Utility {
             // 2 days ago from Sunday is last Friday @ 4:30pm EST
             fourThirtyTime.add(Calendar.DAY_OF_MONTH, -2);
 
-        } else if(nowTime.before(fourThirtyTime)) {
+        } else if (nowTime.before(fourThirtyTime)) {
             if (dayOfWeek == Calendar.MONDAY) {
                 // 3 days ago from Monday is last Friday @ 4:30pm EST
                 fourThirtyTime.add(Calendar.DAY_OF_MONTH, -3);
-            } else{
+            } else {
                 // 1 day ago is yesterday @ 4:30pm EST
                 fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
             }
         }
 
         //if lastUpdateTime is before the recentClose time, then update.
-        if(lastUpdateTime.before(fourThirtyTime)){
+        if (lastUpdateTime.before(fourThirtyTime)) {
             return true;
         }
 
@@ -353,10 +364,11 @@ public class Utility {
     /**
      * Determines a stock's change color, e.g. green for up and red for down. It also determines
      * which image id to use for the stock arrow image.
+     *
      * @param change The change amount of a stock
      * @return
      */
-    public static Pair<Integer, Integer> getChangeColorAndArrowDrawableIds(float change){
+    public static Pair<Integer, Integer> getChangeColorAndArrowDrawableIds(float change) {
         Integer colorId;
         Integer arrowDrawableId;
 
@@ -379,19 +391,31 @@ public class Utility {
 
     /**
      * Rounds a float to two decimals.
+     *
      * @param f the float to round
      * @return the float rounded to two decimals.
      */
-    public static float roundTo2FloatDecimals(float f){
+    public static float roundTo2FloatDecimals(float f) {
         return Float.parseFloat(roundTo2StringDecimals(f));
     }
 
     /**
      * Rounds a float to two decimals.
+     *
      * @param f the float to round
      * @return a String representation of the float rounded to two decimals.
      */
-    public static String roundTo2StringDecimals(float f){
+    public static String roundTo2StringDecimals(float f) {
         return String.format("%.2f", f);
+    }
+
+    /**
+     * Compat version of the {@link Integer#compare(int, int)} that works in API < 19
+     * @param lhs
+     * @param rhs
+     * @return
+     */
+    public static int compare(int lhs, int rhs) {
+        return (lhs < rhs) ? -1 : ((lhs == rhs) ? 0 : 1);
     }
 }

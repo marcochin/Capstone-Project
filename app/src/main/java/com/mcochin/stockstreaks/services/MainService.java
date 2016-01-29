@@ -52,7 +52,7 @@ public class MainService extends IntentService {
     public static final String ACTION_APP_REFRESH ="actionAppRefresh";
     public static final String ACTION_WIDGET_REFRESH ="actionWidgetRefresh";
 
-    //needs to be 32 and 366 since we need to compare closing to prev day's closing price
+    //needs to be 32 since we need to compare closing to prev day's closing price
     private static final int MONTH = 32;
 
     private static final String NOT_AVAILABLE = "N/A";
