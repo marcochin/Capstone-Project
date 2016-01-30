@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.widget.Toast;
 
 import com.mcochin.stockstreaks.R;
@@ -74,11 +75,16 @@ public class ListManipulator {
     private String[] mLoadList;
     private int mLoadListPositionBookmark = 0;
 
+    // Used to track our removed items
     private Stock mLastRemovedItem = null;
     private int mLastRemovedPosition = -1;
 
+    // Keep track of how many items are in the list to limit quantity
+    private int mTotalStockItems;
+
     private int mUniqueId = 0;
     private boolean mListUpdated;
+
 
     /**
      * Sets the cursor of the shown list. It will extract data from the cursor to populate the list.
@@ -108,8 +114,9 @@ public class ListManipulator {
      * @param loadList
      */
     public void setLoadList(String[] loadList) {
-        mLoadListPositionBookmark = 0;
         mLoadList = loadList;
+        mLoadListPositionBookmark = 0;
+        mTotalStockItems = loadList.length;
     }
 
     /**
@@ -121,7 +128,9 @@ public class ListManipulator {
         synchronized (this) {
             stock.setId(mUniqueId++);
             mShownList.add(0, stock);
+
             mListUpdated = true;
+            mTotalStockItems++;
         }
     }
 
@@ -250,6 +259,7 @@ public class ListManipulator {
                 );
                 mLastRemovedItem = null;
                 mListUpdated = true;
+                mTotalStockItems--;
             }
         }
     }
@@ -308,9 +318,9 @@ public class ListManipulator {
      * @return true if you have reached the limit, false otherwise.
      */
     public boolean isListLimitReached(Context context) {
-        if (mShownList.size() >= ListManipulator.LIST_LIMIT) {
+        if (mTotalStockItems >= ListManipulator.LIST_LIMIT) {
             Toast.makeText(context, context.getString(R.string.toast_placeholder_error_stock_limit,
-                    ListManipulator.LIST_LIMIT), Toast.LENGTH_SHORT).show();
+                    LIST_LIMIT), Toast.LENGTH_SHORT).show();
             return true;
         }
         return false;

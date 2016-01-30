@@ -7,13 +7,14 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 
 import com.mcochin.stockstreaks.custom.MyApplication;
+import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.InitLoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
@@ -22,7 +23,7 @@ import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 
-public class ListManagerFragment extends Fragment{
+public class ListManagerFragment extends Fragment {
     public static final String TAG = ListManagerFragment.class.getSimpleName();
 
     private ListManipulator mListManipulator;
@@ -31,13 +32,17 @@ public class ListManagerFragment extends Fragment{
     /**
      * This is true if the list is loading a few on the bottom
      */
-    private static volatile boolean mLoadingMore = false;
+    private static volatile boolean mLoadingMore;
 
-    public interface EventListener{
+    public interface EventListener {
         void onLoadFromDbFinished();
+
         void onLoadMoreFinished(LoadMoreFinishedEvent event);
+
         void onLoadSymbolFinished(LoadSymbolFinishedEvent event);
+
         void onRefreshFinished(AppRefreshFinishedEvent event);
+
         void onWidgetRefreshDelegate(WidgetRefreshDelegateEvent event);
     }
 
@@ -68,26 +73,18 @@ public class ListManagerFragment extends Fragment{
         super.onPause();
     }
 
-    @Override
-    public void onDetach() {
-        // Release references to activity or might cause memory leak;
-        mEventListener = null;
-
-        super.onDetach();
-    }
-
     /**
      * Initializes the list by loading data from where the user left off from the last session.
      */
-    public void initFromDb(){
+    public void initFromDb() {
         // Get load list of symbols to query
-        new AsyncTask<Context, Void, Void>(){
+        new AsyncTask<Context, Void, Void>() {
             @Override
             protected Void doInBackground(Context... params) {
                 Cursor cursor = null;
                 try {
                     ContentResolver cr = params[0].getContentResolver();
-                    int shownPositionBookmark  = Utility.getShownPositionBookmark(cr);
+                    int shownPositionBookmark = Utility.getShownPositionBookmark(cr);
 
                     // Query db for data up to the list position bookmark;
                     cursor = cr.query(
@@ -100,14 +97,14 @@ public class ListManagerFragment extends Fragment{
                     // Extract Stock data from cursor
                     if (cursor != null) {
                         int cursorCount = cursor.getCount();
-                        if(cursorCount > 0) {
+                        if (cursorCount > 0) {
                             mListManipulator.setShownListCursor(cursor);
                             mListManipulator.setLoadList(getLoadListFromDb());
                             mListManipulator.addToLoadListPositionBookmark(cursorCount);
                         }
                     }
-                }finally {
-                    if(cursor != null){
+                } finally {
+                    if (cursor != null) {
                         cursor.close();
                     }
                 }
@@ -116,38 +113,39 @@ public class ListManagerFragment extends Fragment{
 
             @Override
             protected void onPostExecute(Void aVoid) {
-                if (mEventListener != null) {
-                    mEventListener.onLoadFromDbFinished();
-                }
+                ListEventQueue.getInstance().post(new InitLoadFromDbFinishedEvent(
+                        MyApplication.getInstance().getSessionId()));
             }
         }.execute(getActivity());
     }
 
     /**
      * Initializes the list by refreshing the list.
+     *
      * @param attachSymbol An option to query a symbol once the list has done refreshing.
      */
-    public void initFromRefresh(final String attachSymbol){
+    public void initFromRefresh(final String attachSymbol) {
         MyApplication.getInstance().setRefreshing(true);
         // Get load list of symbols to query
         new AsyncTask<Context, Void, Void>() {
             @Override
             protected Void doInBackground(Context... params) {
-                    refreshList(params[0]);
+                refreshList(params[0]);
 
-                    if (attachSymbol != null) {
-                        loadSymbol(attachSymbol);
-                    }
-                    return null;
+                if (attachSymbol != null) {
+                    loadSymbol(attachSymbol);
                 }
+                return null;
+            }
         }.execute(getActivity());
     }
 
     /**
      * Refreshes the list. Should be called from a background thread.
+     *
      * @param context
      */
-    private void refreshList(Context context){
+    private void refreshList(Context context) {
         if (mListManipulator.isListUpdated()) {
             mListManipulator.saveShownListState(context);
         }
@@ -159,9 +157,10 @@ public class ListManagerFragment extends Fragment{
 
     /**
      * Starts a service to perform a network request to load data for the specified symbol.
+     *
      * @param symbol
      */
-    public void loadSymbol(String symbol){
+    public void loadSymbol(String symbol) {
         // Start service to retrieve stock info
         Intent serviceIntent = new Intent(getContext(), MainService.class);
         serviceIntent.putExtra(MainService.KEY_LOAD_SYMBOL_QUERY, symbol);
@@ -184,16 +183,17 @@ public class ListManagerFragment extends Fragment{
             serviceIntent.putExtra(MainService.KEY_LOAD_MORE_QUERY, moreSymbols);
             getContext().startService(serviceIntent);
 
-        }else{
+        } else {
             mLoadingMore = false;
         }
     }
 
     /**
      * Should be called from a background thread.
+     *
      * @return a list of ALL the symbols from the db. This will serve as our load list.
      */
-    private String[] getLoadListFromDb(){
+    private String[] getLoadListFromDb() {
         Cursor cursor = null;
         String[] loadList = null;
         try {
@@ -209,17 +209,17 @@ public class ListManagerFragment extends Fragment{
                     StockProvider.ORDER_BY_LIST_POSITION_ASC_ID_DESC);
 
             // Grab symbols from cursor and put them in array
-            if(cursor != null){
+            if (cursor != null) {
                 int cursorCount = cursor.getCount();
                 loadList = new String[cursorCount];
 
-                for(int i = 0; i < cursorCount; i ++){
+                for (int i = 0; i < cursorCount; i++) {
                     cursor.moveToPosition(i);
                     loadList[i] = cursor.getString(indexSymbol);
                 }
             }
-        }finally {
-            if(cursor != null){
+        } finally {
+            if (cursor != null) {
                 cursor.close();
             }
         }
@@ -227,10 +227,21 @@ public class ListManagerFragment extends Fragment{
     }
 
     /**
-     * A callback for the when a symbol has finished loading from the network.
+     * A callback for the when loading from db as initialization of the stock list has finished.
      * @param event
      */
-    public void onEventMainThread(final LoadSymbolFinishedEvent event){
+    public void onEvent(InitLoadFromDbFinishedEvent event) {
+        if (mEventListener != null) {
+            mEventListener.onLoadFromDbFinished();
+        }
+    }
+
+    /**
+     * A callback for the when a symbol has finished loading from the network.
+     *
+     * @param event
+     */
+    public void onEventMainThread(final LoadSymbolFinishedEvent event) {
         // We use async task for the benefit of them executing sequentially in a single
         // background thread. And in order to prevent using the synchronized keyword in the main
         // thread which may block it.
@@ -254,10 +265,11 @@ public class ListManagerFragment extends Fragment{
 
     /**
      * A callback for the when the "more" symbols have finished dynamically loaded from the network.
+     *
      * @param event
      */
-    public void onEventMainThread(final LoadMoreFinishedEvent event){
-        if(!event.getSessionId().equals(MyApplication.getInstance().getSessionId())){
+    public void onEventMainThread(final LoadMoreFinishedEvent event) {
+        if (!event.getSessionId().equals(MyApplication.getInstance().getSessionId())) {
             return;
         }
         new AsyncTask<Void, Void, Void>() {
@@ -286,9 +298,10 @@ public class ListManagerFragment extends Fragment{
 
     /**
      * A callback for the when the app has finished refreshing the list.
+     *
      * @param event
      */
-    public void onEventMainThread(final AppRefreshFinishedEvent event){
+    public void onEventMainThread(final AppRefreshFinishedEvent event) {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -316,10 +329,11 @@ public class ListManagerFragment extends Fragment{
 
     /**
      * A callback for the when the the widget wants the app to refresh the list instead of itself.
+     *
      * @param event
      */
-    public void onEventMainThread(final WidgetRefreshDelegateEvent event){
-        new AsyncTask<Context, Void, Void>(){
+    public void onEventMainThread(final WidgetRefreshDelegateEvent event) {
+        new AsyncTask<Context, Void, Void>() {
             @Override
             protected Void doInBackground(Context... params) {
                 refreshList(params[0]);
@@ -335,7 +349,7 @@ public class ListManagerFragment extends Fragment{
         }.execute(getActivity());
     }
 
-    public void setEventListener(EventListener eventListener){
+    public void setEventListener(EventListener eventListener) {
         mEventListener = eventListener;
     }
 
@@ -343,15 +357,10 @@ public class ListManagerFragment extends Fragment{
         return mListManipulator;
     }
 
-
     /**
-     * @return true if the app is currently loading "more".
+     * @return true if the app is currently loading "more", false otherwise.
      */
     public boolean isLoadingMore() {
         return mLoadingMore;
-    }
-
-    public void setLoadingMore(boolean loadingAFew) {
-        mLoadingMore = loadingAFew;
     }
 }

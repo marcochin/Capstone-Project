@@ -68,7 +68,11 @@ public class MainService extends IntentService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // Every request should have a session id
+        // Every request should have a session id. The sessionId may not exist yet if the process
+        // was started by the widget and hence we have to create a new session if so.
+        if(MyApplication.getInstance().getSessionId().isEmpty()){
+            MyApplication.startNewSession();
+        }
         intent.putExtra(KEY_SESSION_ID, MyApplication.getInstance().getSessionId());
 
         return super.onStartCommand(intent, flags, startId);

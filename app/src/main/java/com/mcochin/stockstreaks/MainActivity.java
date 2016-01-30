@@ -18,6 +18,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -149,6 +150,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
      * @param savedInstanceState
      */
     private void initSavedInstanceState(Bundle savedInstanceState) {
+        // When Android kills this app because of low memory check if sessionId is empty. If it is,
+        // start the app as if it were the first time.
+        if(MyApplication.getInstance().getSessionId().isEmpty()){
+            savedInstanceState = null;
+        }
+        mListFragment = ((ListManagerFragment) getSupportFragmentManager()
+                .findFragmentByTag(ListManagerFragment.TAG));
+
         if (savedInstanceState == null) {
             mFirstOpen = true;
             // We have to generate a new session so network calls from previous sessions
@@ -156,9 +165,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             MyApplication.startNewSession();
 
             // Initialize the fragment that stores the list
-            mListFragment = new ListManagerFragment();
-            getSupportFragmentManager().beginTransaction()
-                    .add(mListFragment, ListManagerFragment.TAG).commit();
+            if(mListFragment == null) {
+                mListFragment = new ListManagerFragment();
+                getSupportFragmentManager().beginTransaction()
+                        .add(mListFragment, ListManagerFragment.TAG).commit();
+            }
 
             // Execute pending transaction to immediately add the ListManagerFragment because
             // the RecyclerView Adapter is dependent on it.
@@ -181,9 +192,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         // saveInstanceState != null
         else {
-            mListFragment = ((ListManagerFragment) getSupportFragmentManager()
-                    .findFragmentByTag(ListManagerFragment.TAG));
-
             // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mToolbar.toggleSearch();
@@ -813,6 +821,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         startActivity(openDetail, bundle);
     }
 
+    public ListManipulator getListManipulator() {
+        if (mListFragment != null) {
+            return mListFragment.getListManipulator();
+        }
+        return null;
+    }
+
     private void showEmptyWidgets() {
         showEmptyMessage();
         if (mDetailContainer != null) {
@@ -832,13 +847,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
-    private void hideEmptyMessage() {
-        mEmptyMsg.setVisibility(View.INVISIBLE);
-    }
-
     private void showProgressWheel() {
         mEmptyMsg.setVisibility(View.INVISIBLE);
         mProgressWheel.setVisibility(View.VISIBLE);
+    }
+
+    private void hideEmptyMessage() {
+        mEmptyMsg.setVisibility(View.INVISIBLE);
     }
 
     private void hideProgressWheel() {
@@ -846,14 +861,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 MainService.class.getName())) {
             mProgressWheel.setVisibility(View.INVISIBLE);
         }
-    }
-
-    public ListManipulator getListManipulator() {
-        if (mListFragment != null) {
-            return mListFragment.getListManipulator();
-        }
-
-        return null;
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.mcochin.stockstreaks.data;
 
 import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.Event;
+import com.mcochin.stockstreaks.pojos.events.InitLoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
@@ -83,7 +84,11 @@ public class ListEventQueue {
 
         } else if (event instanceof AppRefreshFinishedEvent) {
             return AppRefreshFinishedEvent.class;
+
+        } else if (event instanceof InitLoadFromDbFinishedEvent) {
+            return InitLoadFromDbFinishedEvent.class;
         }
+
         return null;
     }
 

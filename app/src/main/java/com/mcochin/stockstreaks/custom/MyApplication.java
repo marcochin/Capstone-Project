@@ -59,9 +59,6 @@ public class MyApplication extends Application {
     }
 
     public String getSessionId(){
-        if(mSessionId.isEmpty()){
-            startNewSession();
-        }
         return mSessionId;
     }
 
