@@ -61,7 +61,7 @@ public class StockWidgetProvider extends AppWidgetProvider{
         for (int appWidgetId : appWidgetIds) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget);
 
-            // Create an Intent to launch MainActivity
+            // Create an Intent to launch MainActivity from Logo
             Intent intent = new Intent(context, MainActivity.class);
             PendingIntent pendingLogoIntent = PendingIntent.getActivity(context, 0, intent, 0);
             views.setOnClickPendingIntent(R.id.logo, pendingLogoIntent);

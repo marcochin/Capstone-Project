@@ -53,6 +53,7 @@
     <!-- Content description-->
     <string name="content_description_stock_arrow">Stock arrow</string>
     <string name="content_description_button_refresh">Refresh</string>
+    <string name="content_description_button_bar_chart">Bar Chart</string>
 
     <!-- detail fragment strings-->
     <string name="recent_close">Recent Close:</string>
@@ -105,7 +106,7 @@
     </string>
 
     <string name="dialog_about">This app was created as my final project towards my Android Developer
-        Nanodegree which is developed together by Udacity and Google.
+        Nanodegree which is a program developed together by Udacity and Google.
 
         \n\nStock Streaks was an idea I had when out of curiosity I just wanted to find out how
         many days in a row a stock has gone up or down. This information might not have any merit

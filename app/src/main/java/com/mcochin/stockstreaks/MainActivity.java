@@ -53,6 +53,7 @@ import com.mcochin.stockstreaks.fragments.dialogs.AboutDialog;
 import com.mcochin.stockstreaks.fragments.dialogs.FaqDialog;
 import com.mcochin.stockstreaks.fragments.dialogs.SortDialog;
 import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.InitLoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
@@ -214,11 +215,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-
         // Checks to see if app is opened from widget
+        // On Phones opening from widget ALWAYS starts from both onCreate() and onNewIntent() with a
+        // savedInstanceState of null, even if app is already open. However on tablets, onCreate()
+        // won't be called if app is already open, only onNewIntent().
+
         Uri detailUri = intent.getData();
         if (detailUri != null) {
             String symbol = StockContract.getSymbolFromUri(detailUri);
@@ -236,7 +241,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         EventBus eventBus = EventBus.getDefault();
         eventBus.registerSticky(mListFragment);
-        eventBus.removeAllStickyEvents();
 
         // Fetch the stock list
         fetchStockList();
@@ -345,7 +349,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     @Override // ListManipulatorFragment.EventListener
-    public void onLoadFromDbFinished() {
+    public void onLoadFromDbFinished(InitLoadFromDbFinishedEvent event) {
         hideProgressWheel();
         mAdapter.notifyDataSetChanged();
 
@@ -360,6 +364,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if (!refreshList(null, false) && getListManipulator().getCount() < mNumberOfLaunchItems) {
             dynamicLoadMore();
         }
+        EventBus.getDefault().removeStickyEvent(InitLoadFromDbFinishedEvent.class);
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -390,7 +395,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 showEmptyWidgets();
             }
         }
-        EventBus.getDefault().removeAllStickyEvents();
+        EventBus.getDefault().removeStickyEvent(LoadSymbolFinishedEvent.class);
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -415,7 +420,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
             }
         }
-        EventBus.getDefault().removeAllStickyEvents();
+        EventBus.getDefault().removeStickyEvent(LoadMoreFinishedEvent.class);
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -435,13 +440,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 showEmptyWidgets();
             }
         }
-        EventBus.getDefault().removeAllStickyEvents();
+        EventBus.getDefault().removeStickyEvent(AppRefreshFinishedEvent.class);
     }
 
     @Override // ListManipulatorFragment.EventListener
     public void onWidgetRefreshDelegate(WidgetRefreshDelegateEvent event) {
         showProgressWheel();
-        EventBus.getDefault().removeAllStickyEvents();
+        EventBus.getDefault().removeStickyEvent(WidgetRefreshDelegateEvent.class);
     }
 
     @Override // MainAdapter.EventListener
@@ -497,6 +502,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
             // Snack-bar to give the option to undo the removal of an item or else it will
             // permanently delete from database once it is dismissed.
+            // Note: Snack-bar onDismiss callback follow weird order of execution. It doesn't get
+            // called when you expect it to.
             mSnackbar = Snackbar.make(
                     mCoordinatorLayout,
                     getString(R.string.placeholder_snackbar_main_text, removeSymbol), Snackbar.LENGTH_LONG)

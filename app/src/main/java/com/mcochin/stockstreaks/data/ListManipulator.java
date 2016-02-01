@@ -6,6 +6,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Parcel;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.mcochin.stockstreaks.R;
@@ -26,7 +27,7 @@ import java.util.List;
 public class ListManipulator {
     private static final String TAG = ListManipulator.class.getSimpleName();
 
-    public static final int MORE = 8;
+    public static final int MORE = 9;
     public static final int LIST_LIMIT = 200;
 
     public static final String LOADING_ITEM = "loadingItem";
@@ -218,6 +219,7 @@ public class ListManipulator {
         mLastRemovedItem = mShownList.remove(position);
         mLastRemovedPosition = position;
         mListUpdated = true;
+        mTotalStockItems--;
     }
 
     /**
@@ -237,6 +239,7 @@ public class ListManipulator {
 
             mLastRemovedItem = null;
             mLastRemovedPosition = -1;
+            mTotalStockItems++;
 
             return insertedPosition;
         } else {
@@ -259,7 +262,6 @@ public class ListManipulator {
                 );
                 mLastRemovedItem = null;
                 mListUpdated = true;
-                mTotalStockItems--;
             }
         }
     }

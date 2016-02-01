@@ -14,6 +14,7 @@ import android.support.v4.util.Pair;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -144,7 +145,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onStart() {
         super.onStart();
-        EventBus.getDefault().register(this);
+        EventBus eventBus = EventBus.getDefault();
+        eventBus.registerSticky(this);
     }
 
     @Override
@@ -175,7 +177,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private void initializeDetailExtrasSection(){
         showProgressWheel();
 
-        LoaderManager loaderManager = ((AppCompatActivity)getContext()).getSupportLoaderManager();
+        LoaderManager loaderManager = getActivity().getSupportLoaderManager();
         loaderManager.restartLoader(ID_LOADER_DETAILS, null, this);
     }
 
@@ -186,15 +188,15 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private void startDetailService(){
         showProgressWheel();
 
-        Intent serviceIntent = new Intent(getContext(), DetailService.class);
+        Intent serviceIntent = new Intent(getActivity(), DetailService.class);
         serviceIntent.putExtra(DetailService.KEY_DETAIL_SYMBOL,
                 StockContract.getSymbolFromUri(mDetailUri));
-        getContext().startService(serviceIntent);
+        getActivity().startService(serviceIntent);
     }
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return new CursorLoader(getContext(),
+        return new CursorLoader(getActivity(),
                 mDetailUri,
                 DETAIL_PROJECTION,
                 null,
@@ -202,10 +204,16 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 null);
     }
 
+    // This function is also guaranteed to be called prior to the release of the last data that was
+    // supplied for this Loader." During onResume it is perfectly reasonable that the loader
+    // releases its data and reloads during onResume. Yes, if you are seeing a behavior where the
+    // loader may callback and you don't want that callback, then destroy the loader.
+    // http://stackoverflow.com/questions/21031692/why-is-onloadfinished-called-again-after-fragment-resumed
+    // This is ok for me as it doesn't really break my program.. only happens for the first onResume
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if(data != null && data.moveToFirst()){
 
+        if(data != null && data.moveToFirst()){
             String symbol = data.getString(INDEX_SYMBOL);
             String fullName = data.getString(INDEX_FULL_NAME);
             float recentClose = data.getFloat(INDEX_RECENT_CLOSE);
@@ -219,7 +227,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
             // Set update time
             Date lastUpdate = Utility.getLastUpdateTime(
-                    getContext().getContentResolver()).getTime();
+                    getActivity().getContentResolver()).getTime();
             SimpleDateFormat sdf = new SimpleDateFormat(
                     getString(R.string.update_time_format_wide), Locale.US);
             String lastUpdateString = getString(R.string.placeholder_update_time,
@@ -243,7 +251,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 //Determine the color and the arrow image of the changes
                 Pair<Integer, Integer> changeColorAndDrawableIds =
                         Utility.getChangeColorAndArrowDrawableIds(changeDollar);
-                int color = ContextCompat.getColor(getContext(), changeColorAndDrawableIds.first);
+                int color = ContextCompat.getColor(getActivity(), changeColorAndDrawableIds.first);
                 mImageStreakArrow.setBackgroundResource(changeColorAndDrawableIds.second);
 
                 mTextChangeDollar.setText(getString(R.string.placeholder_dollar,
@@ -274,6 +282,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     mImagePrevStreakArrow.setBackgroundResource(R.drawable.ic_streak_down);
                 }
                 showExtrasInfo();
+                getActivity().getSupportLoaderManager().destroyLoader(ID_LOADER_DETAILS);
 
             }else if(mReplyButtonVisible){
                 showRetryButton();
@@ -289,7 +298,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     }
 
     public void onEventMainThread(LoadDetailErrorEvent event){
-        showRetryButton();
+        // Make sure we don't process the event of another stock symbol
+        if(event.getSymbol().equals(getSymbol())) {
+            showRetryButton();
+        }
+        EventBus.getDefault().removeStickyEvent(LoadDetailErrorEvent.class);
     }
 
     private void showProgressWheel(){

@@ -45,7 +45,7 @@
                 android:layout_marginStart="8dp"
                 android:layout_marginRight="8dp"
                 android:layout_marginEnd="8dp"
-                android:background="@drawable/selector_transparent_button"
+                android:background="@drawable/selector_button_transparent"
                 android:contentDescription="@string/content_description_nav"
                 android:focusable="true"
                 app:mm_color="@color/search_box_grey"
@@ -105,7 +105,7 @@
                 android:layout_marginLeft="10dp"
                 android:layout_marginStart="10dp"
                 android:src="@drawable/ic_action_mic"
-                android:background="@drawable/selector_transparent_button"
+                android:background="@drawable/selector_button_transparent"
                 android:contentDescription="@string/content_description_mic"
                 android:focusable="true" />
 
@@ -121,7 +121,7 @@
                 android:layout_marginEnd="8dp"
                 android:src="@drawable/ic_overflow"
                 android:contentDescription="@string/content_description_menu"
-                android:background="@drawable/selector_transparent_button"
+                android:background="@drawable/selector_button_transparent"
                 android:focusable="true"
                 android:visibility="gone"/>
 

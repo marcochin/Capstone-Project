@@ -33,6 +33,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 // Unique keys will be auto-generated in either case. AutoIncrement just makes sure
                 // the id will be greater than previous id.
                 StockEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                StockEntry.COLUMN_LIST_POSITION + " INTEGER DEFAULT -1, " +
                 StockEntry.COLUMN_SYMBOL + " TEXT NOT NULL, " +
                 StockEntry.COLUMN_FULL_NAME + " TEXT NOT NULL, " +
                 StockEntry.COLUMN_RECENT_CLOSE + " REAL DEFAULT 0, " +
@@ -44,7 +45,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 StockEntry.COLUMN_PREV_STREAK + " INTEGER DEFAULT 0, " +
                 StockEntry.COLUMN_STREAK_YEAR_HIGH + " INTEGER DEFAULT 0, " +
                 StockEntry.COLUMN_STREAK_YEAR_LOW + " INTEGER DEFAULT 0, " +
-                StockEntry.COLUMN_LIST_POSITION + " INTEGER DEFAULT -1, " +
+                StockEntry.COLUMN_STREAK_CHART_MAP + " TEXT DEFAULT '', " +
 
                 // All symbols should be unique
                 " UNIQUE (" + StockEntry.COLUMN_SYMBOL + "));";

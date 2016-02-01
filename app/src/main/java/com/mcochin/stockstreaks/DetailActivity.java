@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.fragments.DetailFragment;
@@ -19,25 +20,17 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_detail);
 
         if(savedInstanceState == null) {
+            // Unlike Main Activity, the onNewIntent will not be called is launched from widget.
+            // That is why we don't have onNewIntent and is why why can add fragment instead of
+            // replace. Launching DetailActivity from widget will always have a null
+            // savedInstanceState.
             Uri detailUri = getIntent().getData();
 
-            // Activity launched with pending intent always gives a null savedInstanceState?
-            // When we click "LOAD MORE" in widget it will be a null uri
-            if(detailUri == null){
+            if(detailUri != null){
+                insertFragmentIntoDetailContainer(detailUri);
+            }else{
                 finish();
             }
-            insertFragmentIntoDetailContainer(detailUri);
-        }
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-
-        // Checks to see if app is opened from widget
-        Uri detailUri = intent.getData();
-        if(detailUri != null){
-            insertFragmentIntoDetailContainer(detailUri);
         }
     }
 

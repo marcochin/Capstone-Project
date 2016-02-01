@@ -73,6 +73,7 @@ public class ListEventQueue {
      * @return Class obj that represents the event class.
      */
     private Class getEventType(Event event) {
+        // After every event remember to removeAllStickied or events will be performed twice
         if (event instanceof LoadMoreFinishedEvent) {
             return LoadMoreFinishedEvent.class;
 

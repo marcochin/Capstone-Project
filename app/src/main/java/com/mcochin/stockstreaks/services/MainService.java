@@ -383,6 +383,7 @@ public class MainService extends IntentService {
         values.put(StockEntry.COLUMN_PREV_STREAK, 0);
         values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, 0);
         values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
+        values.put(StockEntry.COLUMN_STREAK_CHART_MAP, "");
 
         return values;
     }

@@ -35,7 +35,7 @@ public class ListManagerFragment extends Fragment {
     private static volatile boolean mLoadingMore;
 
     public interface EventListener {
-        void onLoadFromDbFinished();
+        void onLoadFromDbFinished(InitLoadFromDbFinishedEvent event);
 
         void onLoadMoreFinished(LoadMoreFinishedEvent event);
 
@@ -232,7 +232,7 @@ public class ListManagerFragment extends Fragment {
      */
     public void onEvent(InitLoadFromDbFinishedEvent event) {
         if (mEventListener != null) {
-            mEventListener.onLoadFromDbFinished();
+            mEventListener.onLoadFromDbFinished(event);
         }
     }
 

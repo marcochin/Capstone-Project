@@ -30,4 +30,14 @@
         android:layout_toEndOf="@+id/center_space"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <ImageView
+        android:id="@+id/bar_chart_button"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginRight="16dp"
+        android:src="@drawable/ic_bar_chart"
+        android:layout_alignParentRight="true"
+        android:contentDescription="@string/content_description_button_bar_chart"/>
 </RelativeLayout>

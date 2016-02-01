@@ -17,8 +17,10 @@ import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 import de.greenrobot.event.EventBus;
@@ -54,7 +56,6 @@ public class DetailService extends Service {
                     if(!Utility.isNetworkAvailable(DetailService.this)){
                         throw new IOException(getString(R.string.toast_no_network));
                     }
-
                     performActionLoadDetails(params[0].getStringExtra(KEY_DETAIL_SYMBOL));
 
                 } catch (IOException e) {
@@ -65,8 +66,9 @@ public class DetailService extends Service {
                     }else {
                         Utility.showToast(DetailService.this, getString(R.string.toast_error_retrieving_data));
                     }
-                    EventBus.getDefault().post(new LoadDetailErrorEvent(
-                            params[0].getStringExtra(KEY_SESSION_ID)));
+                    EventBus.getDefault().postSticky(new LoadDetailErrorEvent(
+                            params[0].getStringExtra(KEY_SESSION_ID),
+                            params[0].getStringExtra(KEY_DETAIL_SYMBOL)));
                 }
                 return null;
             }
@@ -105,6 +107,7 @@ public class DetailService extends Service {
             int prevStreak = 0;
             int yearStreakHigh = 0;
             int yearStreakLow = 0;
+            Map<Integer, Integer> streakMap = new HashMap<>();
 
             //projection
             final String[] projection = new String[]{
@@ -187,18 +190,25 @@ public class DetailService extends Service {
                     }
 
                     if (resetStreakCounter) {
-                        //record the first history streak as the prev streak
+                        // Record the first history streak as the prev streak
                         if (prevStreak == 0) {
                             prevStreak = streakCounter;
                         }
-                        //set the history high and lows if streakCounter exceeds them
+                        // Set the history high and lows if streakCounter exceeds them
                         if (streakCounter > yearStreakHigh) {
                             yearStreakHigh = streakCounter;
                         } else if (streakCounter < yearStreakLow) {
                             yearStreakLow = streakCounter;
                         }
 
-                        //reset streakCounter to whatever broke the streak so we don't skip it
+                        // Store the streak counter in the map and save it for the chart
+                        if(streakMap.containsKey(streakCounter)){
+                            streakMap.put(streakCounter, streakMap.get(streakCounter) + 1);
+                        }else{
+                            streakMap.put(streakCounter, 1);
+                        }
+
+                        // Reset streakCounter to whatever broke the streak so we don't skip it
                         if (streakCounter > 0) {
                             streakCounter = -1;
                         } else {
@@ -219,6 +229,10 @@ public class DetailService extends Service {
         }
 
         return values;
+    }
+
+    private String convertMapToString(Map map){
+        return "";
     }
 
     @Nullable

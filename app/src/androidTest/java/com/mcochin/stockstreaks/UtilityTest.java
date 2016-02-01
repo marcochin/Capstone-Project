@@ -7,7 +7,9 @@ import com.mcochin.stockstreaks.utils.Utility;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Test for some Utility Methods
@@ -212,4 +214,15 @@ public class UtilityTest extends ActivityInstrumentationTestCase2<MainActivity> 
 //                (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE),
 //                TestService.class.getName()));
 //    }
+
+    public void testHashMapToString(){
+        Map<String, String> map = new HashMap<>();
+        map.put("h", "1");
+        map.put("e", "2");
+        map.put("l", "3");
+        map.put("l", "4");
+        map.put("o", "5");
+        Log.d("map", map.toString());
+        // D/map: {l=4, h=1, e=2, o=5}
+    }
 }
