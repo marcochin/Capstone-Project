@@ -160,6 +160,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 .findFragmentByTag(ListManagerFragment.TAG));
 
         if (savedInstanceState == null) {
+            Log.d("meme", "oncreate null");
             mFirstOpen = true;
             // We have to generate a new session so network calls from previous sessions
             // have a chance to cancel themselves
@@ -193,6 +194,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         // saveInstanceState != null
         else {
+            Log.d("meme", "oncreate not null");
             // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mToolbar.toggleSearch();
@@ -215,15 +217,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
-
     @Override
     protected void onNewIntent(Intent intent) {
+        Log.d("meme", "onNewIntent");
         super.onNewIntent(intent);
         // Checks to see if app is opened from widget
-        // On Phones opening from widget ALWAYS starts from both onCreate() and onNewIntent() with a
-        // savedInstanceState of null, even if app is already open. However on tablets, onCreate()
-        // won't be called if app is already open, only onNewIntent().
-
+        // On Phone --> DetailActivity, onCreate null, no onNewIntent. Click back to MainActivity, onCreate null, onNewIntent called.
+        // On Phone & Tablet --> MainActivity, onNewIntent called only if already opened. If not onCreate null only.
         Uri detailUri = intent.getData();
         if (detailUri != null) {
             String symbol = StockContract.getSymbolFromUri(detailUri);
@@ -459,17 +459,24 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
                 //If tablet insert fragment into container
                 if (mDetailContainer != null) {
-                    insertFragmentIntoDetailContainer(symbol);
+                    String detailSymbol = ((DetailFragment) getSupportFragmentManager()
+                            .findFragmentByTag(DetailFragment.TAG)).getSymbol();
+
+                    // If the symbol's detail fragment is already loaded, don't load again if
+                    // clicked again.
+                    if(!detailSymbol.equals(symbol)) {
+                        insertFragmentIntoDetailContainer(symbol);
+                    }
                 } else {
                     insertFragmentIntoDetailActivity(symbol);
                 }
 
                 // Check if it is time to show interstitial ad
-                if (mItemClicksForInterstitial >= CLICKS_UNTIL_INTERSTITIAL
-                        && mInterstitialAd.isLoaded()) {
-                    mInterstitialAd.show();
-                }
-                mItemClicksForInterstitial++;
+//                if (mItemClicksForInterstitial >= CLICKS_UNTIL_INTERSTITIAL
+//                        && mInterstitialAd.isLoaded()) {
+//                    mInterstitialAd.show();
+//                }
+//                mItemClicksForInterstitial++;
             }
         }
     }

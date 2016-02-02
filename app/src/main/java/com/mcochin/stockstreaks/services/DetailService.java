@@ -12,10 +12,11 @@ import android.util.Log;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract;
-import com.mcochin.stockstreaks.pojos.events.LoadDetailErrorEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadDetailFinishedEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -38,6 +39,7 @@ public class DetailService extends Service {
 
     //needs to be 366 since we need to compare closing to prev day's closing price
     private static final int YEAR = 366;
+    private boolean mFirstAsyncTask = true;
 
     Queue<Intent> mQueue = new LinkedList<>();
 
@@ -48,42 +50,64 @@ public class DetailService extends Service {
         intent.putExtra(KEY_SESSION_ID, MyApplication.getInstance().getSessionId());
         mQueue.offer(intent);
 
-        new AsyncTask<Intent, Void, Void>(){
+        if(mFirstAsyncTask) {
+            mFirstAsyncTask = false;
+            startLoadDetailAsyncTask(mQueue.poll());
+        }
+
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void startLoadDetailAsyncTask(Intent intent){
+        new AsyncTask<Intent, Void, Void>() {
             @Override
             protected Void doInBackground(Intent... params) {
                 try {
                     // check for internet
+
                     if(!Utility.isNetworkAvailable(DetailService.this)){
-                        throw new IOException(getString(R.string.toast_no_network));
+                    throw new IOException(getString(R.string.toast_no_network));
                     }
-                    performActionLoadDetails(params[0].getStringExtra(KEY_DETAIL_SYMBOL));
+
+                    String symbol = params[0].getStringExtra(KEY_DETAIL_SYMBOL);
+
+                    if(isDetailDataExist(symbol)) {
+                        EventBus.getDefault().postSticky(new LoadDetailFinishedEvent(
+                                params[0].getStringExtra(KEY_SESSION_ID),
+                                params[0].getStringExtra(KEY_DETAIL_SYMBOL),
+                                true));
+
+                        return null;
+                    }
+                    performActionLoadDetails(symbol);
 
                 } catch (IOException e) {
                     Log.e(TAG, Log.getStackTraceString(e));
 
-                    if(e.getMessage().equals(getString(R.string.toast_no_network))){
+                    if (e.getMessage().equals(getString(R.string.toast_no_network))) {
                         Utility.showToast(DetailService.this, e.getMessage());
-                    }else {
-                        Utility.showToast(DetailService.this, getString(R.string.toast_error_retrieving_data));
+                    } else {
+                        Utility.showToast(DetailService.this,
+                                getString(R.string.toast_error_retrieving_data));
                     }
-                    EventBus.getDefault().postSticky(new LoadDetailErrorEvent(
+                    EventBus.getDefault().postSticky(new LoadDetailFinishedEvent(
                             params[0].getStringExtra(KEY_SESSION_ID),
-                            params[0].getStringExtra(KEY_DETAIL_SYMBOL)));
+                            params[0].getStringExtra(KEY_DETAIL_SYMBOL),
+                            false));
                 }
                 return null;
             }
 
             @Override
             protected void onPostExecute(Void aVoid) {
-                if(!mQueue.isEmpty()){
-                    execute(mQueue.poll());
-                }else{
+                // Loop through queue
+                if (!mQueue.isEmpty()) {
+                    startLoadDetailAsyncTask(mQueue.poll());
+                } else {
                     stopSelf();
                 }
             }
-        }.execute(mQueue.poll());
-
-        return super.onStartCommand(intent, flags, startId);
+        }.execute(intent);
     }
 
     private void performActionLoadDetails(String symbol)throws IOException {
@@ -107,7 +131,7 @@ public class DetailService extends Service {
             int prevStreak = 0;
             int yearStreakHigh = 0;
             int yearStreakLow = 0;
-            Map<Integer, Integer> streakMap = new HashMap<>();
+            List<String> streakMap = new ArrayList<>();
 
             //projection
             final String[] projection = new String[]{
@@ -201,12 +225,8 @@ public class DetailService extends Service {
                             yearStreakLow = streakCounter;
                         }
 
-                        // Store the streak counter in the map and save it for the chart
-                        if(streakMap.containsKey(streakCounter)){
-                            streakMap.put(streakCounter, streakMap.get(streakCounter) + 1);
-                        }else{
-                            streakMap.put(streakCounter, 1);
-                        }
+                        // TODO Store the streak counter in the list and save it for the chart
+
 
                         // Reset streakCounter to whatever broke the streak so we don't skip it
                         if (streakCounter > 0) {
@@ -233,6 +253,37 @@ public class DetailService extends Service {
 
     private String convertMapToString(Map map){
         return "";
+    }
+
+    /**
+     * Used to determine is a symbol's detail data already exist
+     *
+     * @param symbol The symbol to look up
+     * @return true if exists, otherwise false
+     */
+    public boolean isDetailDataExist(String symbol) {
+        Cursor cursor = null;
+        try {
+            final String[] projection = {StockContract.StockEntry.COLUMN_PREV_STREAK};
+            final int indexPrevStreak = 0;
+
+            cursor = getContentResolver().query(
+                    StockContract.StockEntry.buildUri(symbol),
+                    projection,
+                    null,
+                    null,
+                    null);
+
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getInt(indexPrevStreak) != 0;
+            }
+
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return false;
     }
 
     @Nullable

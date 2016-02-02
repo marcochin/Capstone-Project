@@ -5,5 +5,5 @@
 
     <!--list_item-->
     <dimen name="list_item_horizontal_padding">40dp</dimen>
-    <item name="text_change_amt_column_weight" type="dimen" format="integer">4</item>
+    <item name="list_item_change_amt_column_weight" type="dimen" format="integer">4</item>
 </resources>

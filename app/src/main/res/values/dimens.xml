@@ -44,7 +44,8 @@
     <dimen name="list_item_horizontal_padding">10dp</dimen>
     <dimen name="text_view_full_name_padding_end">10dp</dimen>
     <dimen name="progress_wheel_size">40dp</dimen>
-    <item name="text_change_amt_column_weight" type="dimen" format="integer">5</item>
+    <item name="list_item_change_amt_column_weight" type="dimen" format="integer">5</item>
+    <item name="list_item_symbol_column_weight" type="dimen" format="float">4.75</item>
     <!-- For the load items (list_item_loading & widgetList_item_load_more) we want them to be the
     same size as a regular item, but since a regular item is wrap_content we are just going by eye-->
     <dimen name="list_item_estimated_height">60dp</dimen>
@@ -58,6 +59,7 @@
     <dimen name="widget_min_resize_height">@dimen/widget_min_height</dimen>
     <dimen name="widget_list_item_padding">10dp</dimen>
     <dimen name="widget_list_item_estimated_height">60dp</dimen>
+    <item name="widget_list_item_change_amt_column_weight" type="dimen" format="integer">5</item>
 
     <!-- material design dialog specs-->
     <dimen name="md_dialog_frame_margin">24dp</dimen>

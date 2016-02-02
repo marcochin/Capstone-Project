@@ -2,6 +2,7 @@ package com.mcochin.stockstreaks.services;
 
 import android.app.IntentService;
 import android.content.ContentProviderOperation;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
@@ -151,7 +152,7 @@ public class MainService extends IntentService {
 
     private void performActionLoadSymbol(String symbol)throws IOException{
         // Check if symbol already exists in database
-        if (Utility.isEntryExist(symbol, getContentResolver())) {
+        if (isEntryExist(symbol)) {
             throw new IllegalArgumentException(getString(R.string.toast_placeholder_symbol_exists, symbol));
         }
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
@@ -474,6 +475,28 @@ public class MainService extends IntentService {
     }
 
     /**
+     * Used to determine is a symbol already exists in the database
+     *
+     * @param symbol The symbol to look up
+     * @return true if exists, otherwise false
+     */
+    public boolean isEntryExist(String symbol) {
+        Cursor cursor = null;
+        try {
+            cursor = getContentResolver().query(StockEntry.buildUri(symbol), null, null, null, null);
+            if (cursor != null && cursor.getCount() > 0) {
+                return true;
+            }
+
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return false;
+    }
+
+    /**
      * Sends the operations to the Content Provider to be executed.
      * @param ops the operations to be executed
      * @param method the custom method of your choice.
@@ -489,6 +512,7 @@ public class MainService extends IntentService {
                 arg,
                 extras);
     }
+
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {

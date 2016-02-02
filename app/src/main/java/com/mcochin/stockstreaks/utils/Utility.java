@@ -83,29 +83,6 @@ public class Utility {
     }
 
     /**
-     * Used to determine is a symbol already exists in the database
-     *
-     * @param symbol The symbol to look up
-     * @param cr     The ContentResolver to access your ContentProvider
-     * @return true if exists, otherwise false
-     */
-    public static boolean isEntryExist(String symbol, ContentResolver cr) {
-        Cursor cursor = null;
-        try {
-            cursor = cr.query(StockEntry.buildUri(symbol), null, null, null, null);
-            if (cursor != null && cursor.getCount() > 0) {
-                return true;
-            }
-
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        return false;
-    }
-
-    /**
      * This is intended for threads to show toast messages on the main thread.
      *
      * @param context

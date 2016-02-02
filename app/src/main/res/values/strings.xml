@@ -100,6 +100,9 @@
         \nThe stock list can be refreshed at 4:30PM EST. I am aware that markets close at 4:00PM, but
         due to limitations of the API there is a delay in the updating of prices.
 
+        \n\n<b>Is there a limit to how many stock I can add?</b>
+        \nYes, to stay within API quota limits, the list is limited to 200 stocks.
+
         \n\n<b>Do you have a widget?</b>
         \nYes, depending on if your device supports it, I have created a widget you can use on your
         home screen. When you enable the widget, you\'ll also enable automatic updates.
@@ -112,7 +115,7 @@
         many days in a row a stock has gone up or down. This information might not have any merit
         to it, but maybe some of you might still find it interesting nonetheless.
 
-        \n\nIt took me about a period of three and a half months to complete everything, so I hope
+        \n\nIt took me about a period of four months to complete everything, so I hope
         you like it!
     </string>
 </resources>

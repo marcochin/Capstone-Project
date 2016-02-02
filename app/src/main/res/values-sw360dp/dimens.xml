@@ -8,5 +8,8 @@ some reason and we need to fill it out vertically-->
     <dimen name="detail_section_vertical_padding">0dp</dimen>
 
     <!-- list item -->
-    <item name="text_change_amt_column_weight" type="dimen" format="integer">4</item>
+    <item name="list_item_change_amt_column_weight" type="dimen" format="integer">4</item>
+
+    <!-- widget -->
+    <item name="widget_list_item_change_amt_column_weight" type="dimen" format="integer">5</item>
 </resources>

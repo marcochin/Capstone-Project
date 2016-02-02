@@ -22,7 +22,7 @@
             android:id="@+id/text_symbol"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_columnWeight="4.75"
+            app:layout_columnWeight="@dimen/list_item_symbol_column_weight"
             tools:text="GPRO"/>
 
         <TextView
@@ -59,15 +59,14 @@
             android:paddingStart="0dp"
             android:paddingRight="@dimen/text_view_full_name_padding_end"
             android:paddingLeft="0dp"
-
-            app:layout_columnWeight="4.75"
+            app:layout_columnWeight="@dimen/list_item_symbol_column_weight"
             tools:text="GoPro, Inc."/>
 
         <TextView
             android:id="@+id/text_change_amt"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_columnWeight="@dimen/text_change_amt_column_weight"
+            app:layout_columnWeight="@dimen/list_item_change_amt_column_weight"
             app:layout_columnSpan="3"
             tools:text="$-2222.00 (-2223.44%)"
             tools:textColor="@color/stock_down_red"/>

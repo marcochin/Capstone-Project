@@ -24,7 +24,7 @@ import android.widget.TextView;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
-import com.mcochin.stockstreaks.pojos.events.LoadDetailErrorEvent;
+import com.mcochin.stockstreaks.pojos.events.LoadDetailFinishedEvent;
 import com.mcochin.stockstreaks.services.DetailService;
 import com.mcochin.stockstreaks.utils.Utility;
 
@@ -42,6 +42,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     public static final int ID_LOADER_DETAILS = 2;
     public static final String KEY_REPLY_BUTTON_VISIBLE = "replyButtonVisible";
+    public static final String KEY_IS_DETAIL_REQUEST_LOADING= "isDetailRequestLoading";
     public static final String KEY_DETAIL_URI = "detailUri";
 
 
@@ -90,6 +91,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     private Uri mDetailUri;
     private boolean mReplyButtonVisible;
+    private boolean mIsDetailRequestLoading;
 
     @Nullable
     @Override
@@ -106,6 +108,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
         if(savedInstanceState != null){
             mReplyButtonVisible = savedInstanceState.getBoolean(KEY_REPLY_BUTTON_VISIBLE);
+            mIsDetailRequestLoading = savedInstanceState.getBoolean(KEY_IS_DETAIL_REQUEST_LOADING);
         }
 
         AppCompatActivity activity = (AppCompatActivity) getActivity();
@@ -138,8 +141,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mProgressWheel = view.findViewById(R.id.progress_wheel);
         mRetryButton = view.findViewById(R.id.button_retry);
         mRetryButton.setOnClickListener(this);
-
-        initializeDetailExtrasSection();
     }
 
     @Override
@@ -147,18 +148,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         super.onStart();
         EventBus eventBus = EventBus.getDefault();
         eventBus.registerSticky(this);
-    }
 
-    @Override
-    public void onStop() {
-        EventBus.getDefault().unregister(this);
-        super.onStop();
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putBoolean(KEY_REPLY_BUTTON_VISIBLE, mRetryButton.getVisibility() == View.VISIBLE);
-        super.onSaveInstanceState(outState);
+        if(mTextPrevStreak.getText().toString().isEmpty()) {
+            fetchDetailsData();
+        }
     }
 
     @Override
@@ -166,15 +159,16 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         int id = v.getId();
         switch (id){
             case R.id.button_retry:
+                mReplyButtonVisible = false;
                 startDetailService();
                 break;
         }
     }
 
     /**
-     * Initializes the details extras section by starting a loader to query for symbol's data.
+     * Fetches the detail data from the db of the selected stock using a cursor loader.
      */
-    private void initializeDetailExtrasSection(){
+    private void fetchDetailsData(){
         showProgressWheel();
 
         LoaderManager loaderManager = getActivity().getSupportLoaderManager();
@@ -186,6 +180,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
      * history.
      */
     private void startDetailService(){
+        mIsDetailRequestLoading = true;
         showProgressWheel();
 
         Intent serviceIntent = new Intent(getActivity(), DetailService.class);
@@ -209,7 +204,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     // releases its data and reloads during onResume. Yes, if you are seeing a behavior where the
     // loader may callback and you don't want that callback, then destroy the loader.
     // http://stackoverflow.com/questions/21031692/why-is-onloadfinished-called-again-after-fragment-resumed
-    // This is ok for me as it doesn't really break my program.. only happens for the first onResume
+    // I destroy the Loader when I finished getting the extras section, so it doesn't happen.
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
 
@@ -264,6 +259,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
             // Extras Section
             if(prevStreak != 0) {
+                mIsDetailRequestLoading = false;
+
                 mTextPrevStreak.setText(getString(Math.abs(prevStreak) == 1 ?
                         R.string.placeholder_day : R.string.placeholder_days, prevStreak));
 
@@ -287,7 +284,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             }else if(mReplyButtonVisible){
                 showRetryButton();
 
-            }else{
+            }else if(!mIsDetailRequestLoading){
                 startDetailService();
             }
         }
@@ -297,12 +294,32 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public void onLoaderReset(Loader<Cursor> loader) {
     }
 
-    public void onEventMainThread(LoadDetailErrorEvent event){
-        // Make sure we don't process the event of another stock symbol
+    public void onEventMainThread(LoadDetailFinishedEvent event){
+        // Make sure we don't process the event of another stock symbol. This can happen is we
+        // switch to a different DetailFragment while the prev one is still loading.
         if(event.getSymbol().equals(getSymbol())) {
-            showRetryButton();
+            mIsDetailRequestLoading = false;
+
+            if(!event.isSuccessful()) {
+                showRetryButton();
+            }else{
+                showExtrasInfo();
+            }
         }
-        EventBus.getDefault().removeStickyEvent(LoadDetailErrorEvent.class);
+        EventBus.getDefault().removeStickyEvent(LoadDetailFinishedEvent.class);
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(KEY_REPLY_BUTTON_VISIBLE, mReplyButtonVisible);
+        outState.putBoolean(KEY_IS_DETAIL_REQUEST_LOADING, mIsDetailRequestLoading);
+        super.onSaveInstanceState(outState);
     }
 
     private void showProgressWheel(){
@@ -312,6 +329,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     }
 
     private void showRetryButton(){
+        mReplyButtonVisible = true;
         mProgressWheel.setVisibility(View.INVISIBLE);
         mRetryButton.setVisibility(View.VISIBLE);
         mExtrasInfo.setVisibility(View.INVISIBLE);

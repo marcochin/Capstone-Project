@@ -18,7 +18,7 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_weight="4.75">
+        android:layout_weight="@dimen/list_item_symbol_column_weight">
 
         <TextView
             android:textAppearance="@style/ListItemBlackText"
@@ -45,7 +45,7 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_weight="@dimen/text_change_amt_column_weight">
+        android:layout_weight="@dimen/widget_list_item_change_amt_column_weight">
 
         <RelativeLayout
             android:layout_width="wrap_content"
