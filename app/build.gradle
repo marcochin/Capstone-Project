@@ -41,8 +41,9 @@ dependencies {
     compile 'com.google.android.gms:play-services-analytics:8.4.0'
 
     compile project(':persistent-search')
-    compile 'de.greenrobot:eventbus:2.4.0'
     compile 'com.yahoofinance-api:YahooFinanceAPI:2.0.0'
+    compile 'de.greenrobot:eventbus:2.4.0'
+    compile 'com.github.PhilJay:MPAndroidChart:v2.2.0'
     compile('com.h6ah4i.android.widget.advrecyclerview:advrecyclerview:0.8.5@aar') {
         transitive = true
     }

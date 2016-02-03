@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.mcochin.stockstreaks.BarChartActivity;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
@@ -111,18 +112,20 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             mIsDetailRequestLoading = savedInstanceState.getBoolean(KEY_IS_DETAIL_REQUEST_LOADING);
         }
 
-        AppCompatActivity activity = (AppCompatActivity) getActivity();
         Toolbar toolbar = (Toolbar) view.findViewById(R.id.toolbar);
-        activity.setSupportActionBar(toolbar);
-        ActionBar actionBar = activity.getSupportActionBar();
-        if (actionBar != null) {
-            if(getResources().getBoolean(R.bool.is_phone)) {
+        if(getResources().getBoolean(R.bool.is_phone)) {
+            AppCompatActivity activity = (AppCompatActivity) getActivity();
+            activity.setSupportActionBar(toolbar);
+            ActionBar actionBar = activity.getSupportActionBar();
+
+            if (actionBar != null) {
                 actionBar.setDisplayShowTitleEnabled(false);
                 actionBar.setDisplayHomeAsUpEnabled(true);
-            }else{
-                toolbar.setVisibility(View.GONE);
             }
+        }else{
+            toolbar.setVisibility(View.GONE);
         }
+
         mTextUpdateTime = (TextView)view.findViewById(R.id.text_update_time);
         mTextSymbol = (TextView)view.findViewById(R.id.text_symbol);
         mTextFullName = (TextView)view.findViewById(R.id.text_full_name);
@@ -137,10 +140,13 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mImageStreakArrow = (ImageView)view.findViewById(R.id.image_streak_arrow);
         mImagePrevStreakArrow = (ImageView)view.findViewById(R.id.image_prev_streak_arrow);
 
+
         mExtrasInfo = view.findViewById(R.id.detail_extras_info);
         mProgressWheel = view.findViewById(R.id.progress_wheel);
         mRetryButton = view.findViewById(R.id.button_retry);
+
         mRetryButton.setOnClickListener(this);
+        initBarChartButton(view);
     }
 
     @Override
@@ -161,6 +167,13 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             case R.id.button_retry:
                 mReplyButtonVisible = false;
                 startDetailService();
+                break;
+
+            case R.id.button_main_section_bar_chart:
+            case R.id.button_extras_section_bar_chart:
+                Intent barChartIntent = new Intent(getActivity(), BarChartActivity.class);
+                barChartIntent.setData(mDetailUri);
+                startActivity(barChartIntent);
                 break;
         }
     }
@@ -307,6 +320,20 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             }
         }
         EventBus.getDefault().removeStickyEvent(LoadDetailFinishedEvent.class);
+    }
+
+    public void initBarChartButton(View view){
+        ImageView barChartButton;
+
+        if(getContext().getResources().getBoolean(R.bool.tint_icon)) {
+            barChartButton = (ImageView)view.findViewById((R.id.button_main_section_bar_chart));
+            barChartButton.setColorFilter(ContextCompat.getColor(getActivity(),
+                    R.color.search_box_grey));
+        }else{
+            barChartButton = (ImageView)view.findViewById((R.id.button_extras_section_bar_chart));
+            barChartButton.setVisibility(View.VISIBLE);
+        }
+        barChartButton.setOnClickListener(this);
     }
 
     @Override

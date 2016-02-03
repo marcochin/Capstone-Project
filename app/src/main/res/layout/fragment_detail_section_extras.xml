@@ -7,10 +7,6 @@
     android:layout_width="match_parent"
     android:paddingTop="@dimen/detail_section_vertical_padding"
     android:paddingBottom="@dimen/detail_section_vertical_padding"
-    android:paddingLeft="@dimen/detail_section_horizontal_padding"
-    android:paddingStart="@dimen/detail_section_horizontal_padding"
-    android:paddingRight="@dimen/detail_section_horizontal_padding"
-    android:paddingEnd="@dimen/detail_section_horizontal_padding"
     android:background="@color/colorPrimaryDarker">
 
     <android.support.v7.widget.GridLayout
@@ -144,4 +140,24 @@
         android:text="@string/button_retry"
         android:visibility="invisible"
         android:contentDescription="@string/button_retry"/>
+
+
+    <!-- This button bar chart button might seem out of place from the main section bar chart
+    button, but I could not get the ripple selector to work. Some bug with the ripple not working
+     if it is placed on top of a background color that's not in its View/ ViewGroup
+     http://stackoverflow.com/questions/35151406/ -->
+    <ImageView
+        android:id="@+id/button_extras_section_bar_chart"
+        android:layout_width="@dimen/button_bar_chart_size"
+        android:layout_height="@dimen/button_bar_chart_size"
+        android:layout_marginTop="@dimen/button_bar_chart_margin"
+        android:layout_marginRight="@dimen/button_bar_chart_margin"
+        android:layout_marginEnd="@dimen/button_bar_chart_margin"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:src="@drawable/ic_bar_chart"
+        android:background="@drawable/selector_button_transparent"
+        android:focusable="true"
+        android:visibility="gone"
+        android:contentDescription="@string/content_description_button_bar_chart"/>
 </RelativeLayout>

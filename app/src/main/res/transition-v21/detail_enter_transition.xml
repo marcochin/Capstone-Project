@@ -15,6 +15,11 @@
             <target android:targetId="@+id/toolbar" />
         </targets>
     </slide>
+    <slide android:slideEdge="top">
+        <targets>
+            <target android:targetId="@+id/button_main_section_bar_chart" />
+        </targets>
+    </slide>
     <slide android:slideEdge="bottom">
         <targets>
             <target android:targetId="@+id/detail_extras_section" />

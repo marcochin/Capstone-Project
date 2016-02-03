@@ -33,6 +33,9 @@
         some reason and we need to fill it out vertically-->
     <dimen name="detail_section_vertical_padding">24dp</dimen>
     <dimen name="detail_section_horizontal_padding">20dp</dimen>
+
+    <dimen name="button_bar_chart_size">28dp</dimen>
+    <dimen name="button_bar_chart_margin">14dp</dimen>
     <!--End Detail fragment-->
 
     <!--list_item_first-->

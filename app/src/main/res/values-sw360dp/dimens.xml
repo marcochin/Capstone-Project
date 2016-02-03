@@ -11,5 +11,6 @@ some reason and we need to fill it out vertically-->
     <item name="list_item_change_amt_column_weight" type="dimen" format="integer">4</item>
 
     <!-- widget -->
+    <!-- widgets < API 21 have a lot more padding on them so we need to give more space-->
     <item name="widget_list_item_change_amt_column_weight" type="dimen" format="integer">5</item>
 </resources>

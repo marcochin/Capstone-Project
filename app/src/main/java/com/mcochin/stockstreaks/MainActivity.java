@@ -224,6 +224,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         // Checks to see if app is opened from widget
         // On Phone --> DetailActivity, onCreate null, no onNewIntent. Click back to MainActivity, onCreate null, onNewIntent called.
         // On Phone & Tablet --> MainActivity, onNewIntent called only if already opened. If not onCreate null only.
+        //
+        // If the parent activity has launch mode <singleTop>, or the up intent contains
+        // FLAG_ACTIVITY_CLEAR_TOP, the parent activity is brought to the top of the stack, and
+        // receives the intent through its onNewIntent() method.
         Uri detailUri = intent.getData();
         if (detailUri != null) {
             String symbol = StockContract.getSymbolFromUri(detailUri);

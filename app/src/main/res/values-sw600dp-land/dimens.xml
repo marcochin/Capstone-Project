@@ -5,5 +5,5 @@
     <dimen name="card_view_vertical_margin">0dp</dimen>
 
     <!--list_item-->
-    <dimen name="list_item_horizontal_padding">@dimen/list_item_vertical_padding</dimen>
+    <dimen name="list_item_horizontal_padding">25dp</dimen>
 </resources>

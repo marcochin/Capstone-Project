@@ -9,19 +9,20 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.mcochin.stockstreaks.BarChartActivity;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract;
+import com.mcochin.stockstreaks.pojos.StreakFrequency;
 import com.mcochin.stockstreaks.pojos.events.LoadDetailFinishedEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 
 import de.greenrobot.event.EventBus;
@@ -131,7 +132,7 @@ public class DetailService extends Service {
             int prevStreak = 0;
             int yearStreakHigh = 0;
             int yearStreakLow = 0;
-            List<String> streakMap = new ArrayList<>();
+            List<StreakFrequency> chartMap = new ArrayList<>();
 
             //projection
             final String[] projection = new String[]{
@@ -225,8 +226,15 @@ public class DetailService extends Service {
                             yearStreakLow = streakCounter;
                         }
 
-                        // TODO Store the streak counter in the list and save it for the chart
-
+                        // Store the streak counter in the list and save it for the chart
+                        StreakFrequency streakFreqItem = new StreakFrequency(streakCounter, 1);
+                        int streakFreqIndex = chartMap.indexOf(streakFreqItem);
+                        if(streakFreqIndex != -1 ){
+                            streakFreqItem = chartMap.get(streakFreqIndex);
+                            streakFreqItem.setFrequency(streakFreqItem.getFrequency() + 1);
+                        }else{
+                            chartMap.add(streakFreqItem);
+                        }
 
                         // Reset streakCounter to whatever broke the streak so we don't skip it
                         if (streakCounter > 0) {
@@ -240,6 +248,7 @@ public class DetailService extends Service {
                 values.put(StockContract.StockEntry.COLUMN_PREV_STREAK, prevStreak);
                 values.put(StockContract.StockEntry.COLUMN_STREAK_YEAR_HIGH, yearStreakHigh);
                 values.put(StockContract.StockEntry.COLUMN_STREAK_YEAR_LOW, yearStreakLow);
+                values.put(StockContract.StockEntry.COLUMN_STREAK_CHART_MAP, convertChartMapToString(chartMap));
             }
 
         }finally {
@@ -251,8 +260,19 @@ public class DetailService extends Service {
         return values;
     }
 
-    private String convertMapToString(Map map){
-        return "";
+    private String convertChartMapToString(List<StreakFrequency> chartMap){
+        // Sort ascending
+        Collections.sort(chartMap);
+
+        // Build a String like this -6,1,-5,2,-3,1 etc. w/ streak followed by freq.
+        StringBuilder sb = new StringBuilder("");
+        for (StreakFrequency streakFreqItem : chartMap){
+            sb.append(streakFreqItem.getStreak());
+            sb.append(BarChartActivity.CHART_MAP_DELIMITER);
+            sb.append(streakFreqItem.getFrequency());
+            sb.append(BarChartActivity.CHART_MAP_DELIMITER);
+        }
+        return sb.toString();
     }
 
     /**
