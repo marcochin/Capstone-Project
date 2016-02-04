@@ -36,14 +36,13 @@
 
     <!-- Toast msgs -->
     <string name="toast_error_retrieving_data">Error retrieving data from server</string>
-    <string name="toast_error_updating_list">Error updating list</string>
     <string name="toast_error_refresh_list">List out of sync. Please refresh list</string>
-
     <string name="toast_list_is_up_to_date">List is up to date</string>
     <string name="toast_symbol_not_found">Symbol not found</string>
     <string name="toast_empty_search">Please enter a symbol</string>
     <string name="toast_no_network">No Network Connection</string>
-    <string name="toast_already_up_to_date">Already up to date</string>
+    <string name="toast_chart_data_not_yet_available">Chart data not yet available</string>
+
     <string name="toast_placeholder_symbol_exists">%1$s already exists</string>
     <string name="toast_placeholder_error_stock_limit">Unable to exceed max limit of %1$d stocks</string>
 
@@ -80,7 +79,12 @@
     <string name="placeholder_days">%1$s days</string>
     <string name="placeholder_d">%1$sd</string>
     <string name="placeholder_update_time">Updated: %1$s</string>
-    <string name="update_time_format_wide" translatable="false">EEEE, MMMM dd @&#160;h:mm&#160;a</string>
+    <string name="update_time_format" translatable="false">EEEE, MMMM dd @&#160;h:mm&#160;a</string>
+
+    <!-- Bar Chart-->
+    <string name="bar_chart_description_placeholder">%1$s 365 Day Streaks</string>
+    <string name="bar_chart_negative_color_label">Negative Streak</string>
+    <string name="bar_chart_positive_color_label">Positive Streak</string>
 
     <!-- Widget -->
     <string name="widget_empty_list">No Information Available</string>
@@ -89,16 +93,16 @@
     <!-- Navigation menu item dialogs -->
     <string name="dialog_close">CLOSE</string>
     <string name="dialog_faq"><b>What do the $/% changes reflect?</b>
-        \nThe $/% changes reflects the TOTAL change from its previous streak and not the change
+        \nThe $/% changes reflect the TOTAL change from its previous streak and not the change
         from its previous close like you would normally see. It gives a better perspective on how
         much a stock has changed over the course of its streak.
 
         \n\n<b>Is the stock data live data?</b>
-        \nNo, the app only displays information from its most recent close.
+        \nNo, the app only displays information from its most recent regular hours close.
 
         \n\n<b>When can I refresh the stock list?</b>
-        \nThe stock list can be refreshed at 4:30PM EST. I am aware that markets close at 4:00PM, but
-        due to limitations of the API there is a delay in the updating of prices.
+        \nThe stock list can be refreshed at 4:30 PM EST. I am aware that markets close at 4:00 PM,
+        but due to limitations of the API there is a delay in the updating of prices.
 
         \n\n<b>Is there a limit to how many stock I can add?</b>
         \nYes, to stay within API quota limits, the list is limited to 200 stocks.
@@ -111,7 +115,7 @@
     <string name="dialog_about">This app was created as my final project towards my Android Developer
         Nanodegree which is a program developed together by Udacity and Google.
 
-        \n\nStock Streaks was an idea I had when out of curiosity I just wanted to find out how
+        \n\nStock Streaks was a idea I had when out of curiosity I just wanted to figure out how
         many days in a row a stock has gone up or down. This information might not have any merit
         to it, but maybe some of you might still find it interesting nonetheless.
 

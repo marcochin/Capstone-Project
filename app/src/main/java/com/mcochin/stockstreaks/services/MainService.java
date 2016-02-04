@@ -2,7 +2,6 @@ package com.mcochin.stockstreaks.services;
 
 import android.app.IntentService;
 import android.content.ContentProviderOperation;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
@@ -384,7 +383,7 @@ public class MainService extends IntentService {
         values.put(StockEntry.COLUMN_PREV_STREAK, 0);
         values.put(StockEntry.COLUMN_STREAK_YEAR_HIGH, 0);
         values.put(StockEntry.COLUMN_STREAK_YEAR_LOW, 0);
-        values.put(StockEntry.COLUMN_STREAK_CHART_MAP, "");
+        values.put(StockEntry.COLUMN_STREAK_CHART_MAP_CSV, "");
 
         return values;
     }

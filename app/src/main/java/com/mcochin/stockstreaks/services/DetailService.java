@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -13,7 +14,6 @@ import com.mcochin.stockstreaks.BarChartActivity;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract;
-import com.mcochin.stockstreaks.pojos.StreakFrequency;
 import com.mcochin.stockstreaks.pojos.events.LoadDetailFinishedEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 
@@ -46,7 +46,9 @@ public class DetailService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // Clear queue so if user spams it will clear all requests and process most recent one!
         mQueue.clear();
+
         // Every request should have a session id
         intent.putExtra(KEY_SESSION_ID, MyApplication.getInstance().getSessionId());
         mQueue.offer(intent);
@@ -108,7 +110,8 @@ public class DetailService extends Service {
                     stopSelf();
                 }
             }
-        }.execute(intent);
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, intent);// Use Executor to prevent blockage of MainActivity's AsyncTask
+
     }
 
     private void performActionLoadDetails(String symbol)throws IOException {
@@ -128,6 +131,7 @@ public class DetailService extends Service {
         ContentValues values = null;
 
         try {
+            int currentStreak;
             int streakCounter = 0;
             int prevStreak = 0;
             int yearStreakHigh = 0;
@@ -157,17 +161,16 @@ public class DetailService extends Service {
             if (cursor != null && cursor.moveToFirst()) {
                 long prevStreakEndDate;
                 float prevStreakEndPrice;
-                int streak;
 
                 prevStreakEndDate = cursor.getLong(indexPrevStreakEndDate);
                 prevStreakEndPrice = cursor.getFloat(indexPrevStreakEndPrice);
-                streak = cursor.getInt(indexStreak);
+                currentStreak = cursor.getInt(indexStreak);
 
                 //set its current streak to yearHigh or yearLow
-                if (streak > 0) {
-                    yearStreakHigh = streak;
-                } else if (streak < 0) {
-                    yearStreakLow = streak;
+                if (currentStreak > 0) {
+                    yearStreakHigh = currentStreak;
+                } else if (currentStreak < 0) {
+                    yearStreakLow = currentStreak;
                 }
 
                 Calendar fromCalendar = Utility.getNewYorkCalendarInstance();
@@ -227,14 +230,7 @@ public class DetailService extends Service {
                         }
 
                         // Store the streak counter in the list and save it for the chart
-                        StreakFrequency streakFreqItem = new StreakFrequency(streakCounter, 1);
-                        int streakFreqIndex = chartMap.indexOf(streakFreqItem);
-                        if(streakFreqIndex != -1 ){
-                            streakFreqItem = chartMap.get(streakFreqIndex);
-                            streakFreqItem.setFrequency(streakFreqItem.getFrequency() + 1);
-                        }else{
-                            chartMap.add(streakFreqItem);
-                        }
+                        addStreakToChartMap(chartMap, streakCounter);
 
                         // Reset streakCounter to whatever broke the streak so we don't skip it
                         if (streakCounter > 0) {
@@ -244,11 +240,15 @@ public class DetailService extends Service {
                         }
                     }
                 }
+
+                // Add the current streak to the chart map too
+                addStreakToChartMap(chartMap, currentStreak);
+
                 values = new ContentValues();
                 values.put(StockContract.StockEntry.COLUMN_PREV_STREAK, prevStreak);
                 values.put(StockContract.StockEntry.COLUMN_STREAK_YEAR_HIGH, yearStreakHigh);
                 values.put(StockContract.StockEntry.COLUMN_STREAK_YEAR_LOW, yearStreakLow);
-                values.put(StockContract.StockEntry.COLUMN_STREAK_CHART_MAP, convertChartMapToString(chartMap));
+                values.put(StockContract.StockEntry.COLUMN_STREAK_CHART_MAP_CSV, convertChartMapToCsv(chartMap));
             }
 
         }finally {
@@ -260,7 +260,31 @@ public class DetailService extends Service {
         return values;
     }
 
-    private String convertChartMapToString(List<StreakFrequency> chartMap){
+    /**
+     * Adds a streak to the chart mapping with frequency of 1.
+     * If the streak already exists, increment frequency by 1.
+     * @param chartMap
+     * @param streak
+     */
+    private void addStreakToChartMap(List<StreakFrequency> chartMap, int streak){
+        StreakFrequency streakFreqItem = new StreakFrequency(streak, 1);
+        int streakFreqIndex = chartMap.indexOf(streakFreqItem);
+
+        if(streakFreqIndex != -1 ){
+            streakFreqItem = chartMap.get(streakFreqIndex);
+            streakFreqItem.setFrequency(streakFreqItem.getFrequency() + 1);
+        }else{
+            chartMap.add(streakFreqItem);
+        }
+    }
+
+    /**
+     * Sorts map items in ascending order and combines them to form a single CSV String.
+     * @param chartMap
+     * @return The converted CSV string w/ streak followed by its frequency like so:
+     * -6,1,-5,2,-3,-1 20,1,24,4,3,2,5,1,6,2,
+     */
+    private String convertChartMapToCsv(List<StreakFrequency> chartMap){
         // Sort ascending
         Collections.sort(chartMap);
 
@@ -310,5 +334,62 @@ public class DetailService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    /**
+     * The chart mapping helper class that will store a stock's streak mapped to its frequency.
+     */
+    private static class StreakFrequency implements Comparable<StreakFrequency>{
+
+        private int mStreak;
+        private int mFrequency;
+
+        public StreakFrequency(int streak, int frequency) {
+            mStreak = streak;
+            mFrequency = frequency;
+        }
+
+        public int getStreak() {
+            return mStreak;
+        }
+
+        public void setStreak(int streak) {
+            mStreak = streak;
+        }
+
+        public int getFrequency() {
+            return mFrequency;
+        }
+
+        public void setFrequency(int frequency) {
+            mFrequency = frequency;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if(o instanceof StreakFrequency){
+                if(mStreak == ((StreakFrequency)o).getStreak()){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            //http://stackoverflow.com/questions/113511/best-implementation-for-hashcode-method
+            // Start with a non-zero constant. Prime is preferred
+            int result = 17;
+
+            //For every field f tested in the equals() method, calculate a hash code c by:
+            result = 31 * result + mStreak;
+
+            return result;
+        }
+
+        @Override
+        public int compareTo(@NonNull StreakFrequency another) {
+            return Utility.compare(mStreak, another.getStreak());
+        }
     }
 }

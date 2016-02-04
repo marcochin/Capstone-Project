@@ -176,7 +176,6 @@ public class StockProvider extends ContentProvider {
             case STOCK_SYMBOL:
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(StockEntry.TABLE_NAME, null, values);
-
                 break;
 
             default:

@@ -11,6 +11,9 @@
     <style name="AppTheme.Detail">
         <item name="android:windowEnterTransition">@transition/detail_enter_transition</item>
     </style>
+    <style name="AppTheme.BarChart">
+        <item name="android:windowEnterTransition">@transition/bar_chart_enter_transition</item>
+    </style>
 
     <!-- Overflow menu item -->
     <style name="OverflowMenuItem">

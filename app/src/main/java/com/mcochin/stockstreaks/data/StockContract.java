@@ -74,7 +74,7 @@ public class StockContract {
         public static final String COLUMN_PREV_STREAK= "prev_streak";
         public static final String COLUMN_STREAK_YEAR_HIGH = "streak_year_high";
         public static final String COLUMN_STREAK_YEAR_LOW = "streak_year_low";
-        public static final String COLUMN_STREAK_CHART_MAP = "streak_chart_map";
+        public static final String COLUMN_STREAK_CHART_MAP_CSV = "streak_chart_map_csv";
 
         /**
          * This will serve as the return URI for something like inserting a row.

@@ -160,7 +160,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 .findFragmentByTag(ListManagerFragment.TAG));
 
         if (savedInstanceState == null) {
-            Log.d("meme", "oncreate null");
             mFirstOpen = true;
             // We have to generate a new session so network calls from previous sessions
             // have a chance to cancel themselves
@@ -194,7 +193,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         // saveInstanceState != null
         else {
-            Log.d("meme", "oncreate not null");
             // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mToolbar.toggleSearch();
@@ -219,7 +217,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override
     protected void onNewIntent(Intent intent) {
-        Log.d("meme", "onNewIntent");
         super.onNewIntent(intent);
         // Checks to see if app is opened from widget
         // On Phone --> DetailActivity, onCreate null, no onNewIntent. Click back to MainActivity, onCreate null, onNewIntent called.

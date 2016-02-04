@@ -19,6 +19,10 @@
     <color name="stock_down_red">#ff0000</color>
     <color name="stock_neutral">#727272</color>
 
+    <!-- bar_chart-->
+    <color name="pale_green">#6bf3ad</color>
+    <color name="pale_red">#ff8e9b</color>
+
     <!--Detail Fragment extra colors -->
     <color name="detail_extras_label">#def5db</color>
 

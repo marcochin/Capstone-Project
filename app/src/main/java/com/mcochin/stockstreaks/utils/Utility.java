@@ -203,7 +203,7 @@ public class Utility {
                     null);
 
             if (cursor != null && cursor.moveToFirst()) {
-                lastUpdateTime = Utility.getNewYorkCalendarInstance();
+                lastUpdateTime = Calendar.getInstance();
                 long updateTimeInMilli = cursor.getLong(indexTimeInMilli);
                 lastUpdateTime.setTimeInMillis(updateTimeInMilli);
             }
@@ -294,7 +294,7 @@ public class Utility {
         }
 
         Calendar nowTime = getNewYorkCalendarInstance();
-        Calendar fourThirtyTime = Utility.getNewYorkCalendarQuickSetup(
+        Calendar newYorkFourThirtyTime = Utility.getNewYorkCalendarQuickSetup(
                 Utility.STOCK_MARKET_UPDATE_HOUR,
                 Utility.STOCK_MARKET_UPDATE_MINUTE,
                 0,
@@ -314,24 +314,24 @@ public class Utility {
         // check if lastUpdateTime was before TODAY @ 4:30pmEST, if so update.
         if ((dayOfWeek == Calendar.SATURDAY)) {
             // 1 days ago from Saturday is last Friday @ 4:30pm EST
-            fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
+            newYorkFourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
 
         } else if ((dayOfWeek == Calendar.SUNDAY)) {
             // 2 days ago from Sunday is last Friday @ 4:30pm EST
-            fourThirtyTime.add(Calendar.DAY_OF_MONTH, -2);
+            newYorkFourThirtyTime.add(Calendar.DAY_OF_MONTH, -2);
 
-        } else if (nowTime.before(fourThirtyTime)) {
+        } else if (nowTime.before(newYorkFourThirtyTime)) {
             if (dayOfWeek == Calendar.MONDAY) {
                 // 3 days ago from Monday is last Friday @ 4:30pm EST
-                fourThirtyTime.add(Calendar.DAY_OF_MONTH, -3);
+                newYorkFourThirtyTime.add(Calendar.DAY_OF_MONTH, -3);
             } else {
                 // 1 day ago is yesterday @ 4:30pm EST
-                fourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
+                newYorkFourThirtyTime.add(Calendar.DAY_OF_MONTH, -1);
             }
         }
 
         //if lastUpdateTime is before the recentClose time, then update.
-        if (lastUpdateTime.before(fourThirtyTime)) {
+        if (lastUpdateTime.before(newYorkFourThirtyTime)) {
             return true;
         }
 

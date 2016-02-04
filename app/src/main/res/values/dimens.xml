@@ -53,6 +53,10 @@
     same size as a regular item, but since a regular item is wrap_content we are just going by eye-->
     <dimen name="list_item_estimated_height">60dp</dimen>
 
+    <!-- Bar chart description position offset-->
+    <dimen name="bar_chart_description_vertical_margin">8dp</dimen>
+    <dimen name="bar_chart_description_horizontal_margin">5dp</dimen>
+
     <!-- widget (formula 70dp x n - 30 dp) This formula is not accurate for tablets. For tablets
     I had to allocate an extra column (70dp) to reach my desired 4 columns. This is because
     tablets are too big and interprets 250dp as 3 columns-->

@@ -100,7 +100,7 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
                         Binder.restoreCallingIdentity(identityToken);
 
                         SimpleDateFormat sdf = new SimpleDateFormat(
-                                getString(R.string.update_time_format_wide), Locale.US);
+                                getString(R.string.update_time_format), Locale.US);
 
                         views = new RemoteViews(getPackageName(), R.layout.widget_list_item_first);
                         views.setTextViewText(R.id.text_update_time,

@@ -174,8 +174,9 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             // list_first_item
             if (position == 0 && resources.getBoolean(R.bool.is_phone)) {
                 Date updateTime = Utility.getLastUpdateTime(mContext.getContentResolver()).getTime();
+                // sdf will automatically set the time in the correct timezone unless specified.
                 SimpleDateFormat sdf = new SimpleDateFormat(resources.getString(
-                        R.string.update_time_format_wide), Locale.US);
+                        R.string.update_time_format), Locale.US);
                 myHolder.mUpdateTime.setText(resources.getString(R.string.placeholder_update_time,
                         sdf.format(updateTime)));
 

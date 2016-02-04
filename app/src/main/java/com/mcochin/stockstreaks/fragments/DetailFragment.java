@@ -14,12 +14,12 @@ import android.support.v4.util.Pair;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.mcochin.stockstreaks.BarChartActivity;
 import com.mcochin.stockstreaks.R;
@@ -94,6 +94,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private boolean mReplyButtonVisible;
     private boolean mIsDetailRequestLoading;
 
+    private Toast mBarChartButtonToast;
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -160,6 +162,16 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         }
     }
 
+    /**
+     * Fetches the detail data from the db of the selected stock using a cursor loader.
+     */
+    private void fetchDetailsData(){
+        showProgressWheel();
+
+        LoaderManager loaderManager = getActivity().getSupportLoaderManager();
+        loaderManager.restartLoader(ID_LOADER_DETAILS, null, this);
+    }
+
     @Override
     public void onClick(View v) {
         int id = v.getId();
@@ -171,22 +183,25 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
             case R.id.button_main_section_bar_chart:
             case R.id.button_extras_section_bar_chart:
-                Intent barChartIntent = new Intent(getActivity(), BarChartActivity.class);
-                barChartIntent.setData(mDetailUri);
-                startActivity(barChartIntent);
+                if(mExtrasInfo.getVisibility() == View.VISIBLE) {
+                    Intent barChartIntent = new Intent(getActivity(), BarChartActivity.class);
+                    barChartIntent.setData(mDetailUri);
+                    startActivity(barChartIntent);
+
+                }else if(mBarChartButtonToast == null){
+                    mBarChartButtonToast = Toast.makeText(getActivity(),
+                            R.string.toast_chart_data_not_yet_available,
+                            Toast.LENGTH_SHORT);
+                    mBarChartButtonToast.show();
+
+                }else if(!mBarChartButtonToast.getView().isShown()){
+                    mBarChartButtonToast.show();
+                }
+
                 break;
         }
     }
 
-    /**
-     * Fetches the detail data from the db of the selected stock using a cursor loader.
-     */
-    private void fetchDetailsData(){
-        showProgressWheel();
-
-        LoaderManager loaderManager = getActivity().getSupportLoaderManager();
-        loaderManager.restartLoader(ID_LOADER_DETAILS, null, this);
-    }
 
     /**
      * Starts the a {@link DetailService} to perform a network request to retrieve the symbol's
@@ -237,7 +252,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             Date lastUpdate = Utility.getLastUpdateTime(
                     getActivity().getContentResolver()).getTime();
             SimpleDateFormat sdf = new SimpleDateFormat(
-                    getString(R.string.update_time_format_wide), Locale.US);
+                    getString(R.string.update_time_format), Locale.US);
             String lastUpdateString = getString(R.string.placeholder_update_time,
                     sdf.format(lastUpdate));
 
@@ -323,17 +338,18 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     }
 
     public void initBarChartButton(View view){
-        ImageView barChartButton;
+        ImageView mBarChartButton;
 
         if(getContext().getResources().getBoolean(R.bool.tint_icon)) {
-            barChartButton = (ImageView)view.findViewById((R.id.button_main_section_bar_chart));
-            barChartButton.setColorFilter(ContextCompat.getColor(getActivity(),
+            mBarChartButton = (ImageView)view.findViewById((R.id.button_main_section_bar_chart));
+            mBarChartButton.setColorFilter(ContextCompat.getColor(getActivity(),
                     R.color.search_box_grey));
         }else{
-            barChartButton = (ImageView)view.findViewById((R.id.button_extras_section_bar_chart));
-            barChartButton.setVisibility(View.VISIBLE);
+            mBarChartButton = (ImageView)view.findViewById((R.id.button_extras_section_bar_chart));
+            // Extras section bar chart button starts out as invisible so make it visible
+            mBarChartButton.setVisibility(View.VISIBLE);
         }
-        barChartButton.setOnClickListener(this);
+        mBarChartButton.setOnClickListener(this);
     }
 
     @Override

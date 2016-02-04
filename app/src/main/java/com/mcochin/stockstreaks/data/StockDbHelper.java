@@ -45,7 +45,7 @@ public class StockDbHelper extends SQLiteOpenHelper {
                 StockEntry.COLUMN_PREV_STREAK + " INTEGER DEFAULT 0, " +
                 StockEntry.COLUMN_STREAK_YEAR_HIGH + " INTEGER DEFAULT 0, " +
                 StockEntry.COLUMN_STREAK_YEAR_LOW + " INTEGER DEFAULT 0, " +
-                StockEntry.COLUMN_STREAK_CHART_MAP + " TEXT DEFAULT '', " +
+                StockEntry.COLUMN_STREAK_CHART_MAP_CSV + " TEXT DEFAULT '', " +
 
                 // All symbols should be unique
                 " UNIQUE (" + StockEntry.COLUMN_SYMBOL + "));";
