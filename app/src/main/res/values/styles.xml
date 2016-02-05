@@ -48,10 +48,17 @@
     <style name="StreakArrow">
         <item name="android:layout_marginLeft">@dimen/stock_arrow_margin_left</item>
         <item name="android:layout_marginStart">@dimen/stock_arrow_margin_left</item>
+        <item name="android:contentDescription">@string/content_description_stock_arrow</item>
         <item name="android:baselineAlignBottom">true</item>
     </style>
 
     <!-- =============================Detail Fragment styles=====================================-->
+    <!--Main Section left column-->
+    <style name="DetailExtrasDaysTextView">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/detail_column_item_text_size</item>
+    </style>
+
     <!--Main Section left column-->
     <style name="DetailColumnsCommon.TextSize.LeftCommon.DetailMainLeft">
         <item name="android:textColor">@color/black</item>
@@ -90,13 +97,13 @@
 
     <!--Common between both left and right columns item that aren't linear layouts-->
     <style name="DetailColumnsCommon.TextSize">
-        <item name="android:textSize">@dimen/column_item_text_size</item>
+        <item name="android:textSize">@dimen/detail_column_item_text_size</item>
     </style>
 
     <!--Common between both left and right columns item -->
     <style name="DetailColumnsCommon">
-        <item name="android:layout_marginTop">@dimen/column_item_vertical_margin</item>
-        <item name="android:layout_marginBottom">@dimen/column_item_vertical_margin</item>
+        <item name="android:layout_marginTop">@dimen/detail_column_item_vertical_margin</item>
+        <item name="android:layout_marginBottom">@dimen/detail_column_item_vertical_margin</item>
     </style>
     <!-- ==========================End of Detail Fragment styles=================================-->
 </resources>

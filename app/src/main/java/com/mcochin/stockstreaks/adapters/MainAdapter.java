@@ -157,7 +157,7 @@ public class MainAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
             // Determine the color and the arrow image of the changes
             Pair<Integer, Integer> changeColorAndDrawableIds =
-                    Utility.getChangeColorAndArrowDrawableIds(changeDollar);
+                    Utility.getChangeColorAndArrowDrawableIds(streak);
             int color = ContextCompat.getColor(mContext, changeColorAndDrawableIds.first);
             myHolder.mStreakArrow.setBackgroundResource(changeColorAndDrawableIds.second);
 

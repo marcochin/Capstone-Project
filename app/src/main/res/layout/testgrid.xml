@@ -46,20 +46,12 @@
             app:layout_columnWeight="1">
 
             <TextView
-                android:id="@+id/text_streak_prev_neg_sign"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/detail_column_item_text_size"
-                android:textColor="@color/white"
-                android:text="@string/offset_negative_sign"
-                android:visibility="invisible"/>
-
-            <TextView
-                android:textAppearance="@style/DetailExtrasDaysTextView"
                 android:id="@+id/text_streak_prev"
                 android:layout_width="@dimen/detail_extras_days_text_view_width"
                 android:layout_height="wrap_content"
-                tools:text="33 days"/>
+                android:textSize="@dimen/detail_column_item_text_size"
+                android:textColor="@color/white"
+                tools:text="-33 days"/>
 
             <ImageView
                 style="@style/StreakArrow"
@@ -84,18 +76,11 @@
             app:layout_columnWeight="1">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/detail_column_item_text_size"
-                android:textColor="@color/white"
-                android:text="@string/offset_negative_sign"
-                android:visibility="invisible"/>
-
-            <TextView
-                android:textAppearance="@style/DetailExtrasDaysTextView"
                 android:id="@+id/text_streak_year_high"
                 android:layout_width="@dimen/detail_extras_days_text_view_width"
                 android:layout_height="wrap_content"
+                android:textSize="@dimen/detail_column_item_text_size"
+                android:textColor="@color/white"
                 tools:text="3 days"/>
 
             <ImageView
@@ -103,8 +88,8 @@
                 android:id="@+id/image_streak_arrow_year_high"
                 android:layout_width="@dimen/stock_arrow_size_normal"
                 android:layout_height="@dimen/stock_arrow_size_normal"
-                android:src="@drawable/ic_streak_up"
-                tools:ignore="ContentDescription"/>
+                tools:ignore="ContentDescription"
+                tools:src="@drawable/ic_streak_up"/>
         </LinearLayout>
 
         <TextView
@@ -121,27 +106,20 @@
             app:layout_columnWeight="1">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/detail_column_item_text_size"
-                android:textColor="@color/white"
-                android:text="@string/offset_negative_sign"
-                android:visibility="visible"/>
-
-            <TextView
-                android:textAppearance="@style/DetailExtrasDaysTextView"
                 android:id="@+id/text_streak_year_low"
                 android:layout_width="@dimen/detail_extras_days_text_view_width"
                 android:layout_height="wrap_content"
-                tools:text="3 days"/>
+                android:textSize="@dimen/detail_column_item_text_size"
+                android:textColor="@color/white"
+                tools:text="-3 days"/>
 
             <ImageView
                 style="@style/StreakArrow"
                 android:id="@+id/image_streak_arrow_year_low"
                 android:layout_width="@dimen/stock_arrow_size_normal"
                 android:layout_height="@dimen/stock_arrow_size_normal"
-                android:src="@drawable/ic_streak_down"
-                tools:ignore="ContentDescription"/>
+                tools:ignore="ContentDescription"
+                tools:src="@drawable/ic_streak_down"/>
         </LinearLayout>
     </android.support.v7.widget.GridLayout>
 

@@ -126,7 +126,7 @@ public class StockWidgetRemoteViewsService extends RemoteViewsService{
 
                     // Determine the color and the arrow image of the changes
                     Pair<Integer, Integer> changeColorAndDrawableIds =
-                            Utility.getChangeColorAndArrowDrawableIds(changeDollar);
+                            Utility.getChangeColorAndArrowDrawableIds(streak);
                     int color = ContextCompat.getColor(StockWidgetRemoteViewsService.this,
                             changeColorAndDrawableIds.first);
 

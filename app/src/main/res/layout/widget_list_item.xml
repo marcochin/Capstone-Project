@@ -77,10 +77,9 @@ http://developer.android.com/guide/topics/appwidgets/index.html#CreatingLayout--
                 android:layout_height="@dimen/stock_arrow_size_normal"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
-                android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
                 android:layout_alignBottom="@+id/text_streak"
-                android:contentDescription="@string/content_description_stock_arrow"
+                tools:ignore="ContentDescription"
                 tools:src="@drawable/ic_streak_down"/>
         </RelativeLayout>
 

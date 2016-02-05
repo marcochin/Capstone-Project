@@ -342,19 +342,19 @@ public class Utility {
      * Determines a stock's change color, e.g. green for up and red for down. It also determines
      * which image id to use for the stock arrow image.
      *
-     * @param change The change amount of a stock
-     * @return
+     * @param streak The change amount of a stock
+     * @return Pair.first = colorId. Pair.second = arrowDrawableId.
      */
-    public static Pair<Integer, Integer> getChangeColorAndArrowDrawableIds(float change) {
+    public static Pair<Integer, Integer> getChangeColorAndArrowDrawableIds(int streak) {
         Integer colorId;
         Integer arrowDrawableId;
 
         // Get our dollar/percent change colors and set our stock arrow ImageView
-        if (change > 0) {
+        if (streak > 0) {
             colorId = R.color.stock_up_green;
             arrowDrawableId = R.drawable.ic_streak_up;
 
-        } else if (change < 0) {
+        } else if (streak < 0) {
             colorId = R.color.stock_down_red;
             arrowDrawableId = R.drawable.ic_streak_down;
 

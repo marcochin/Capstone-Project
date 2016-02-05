@@ -20,13 +20,14 @@
     <dimen name="overflow_menu_compat_padding">8dp</dimen>
 
     <!--Detail fragment-->
-    <dimen name="symbol_text_size">24sp</dimen>
+    <dimen name="detail_symbol_text_size">24sp</dimen>
 
-    <dimen name="column_item_text_size">18sp</dimen>
-    <dimen name="column_item_vertical_margin">5dp</dimen>
+    <dimen name="detail_column_item_text_size">18sp</dimen>
+    <dimen name="detail_column_item_vertical_margin">5dp</dimen>
+    <dimen name="detail_extras_days_text_view_width">62dp</dimen>
 
-    <dimen name="detail_right_column_inner_padding">30dp</dimen>
-    <dimen name="detail_left_column_inner_padding">0dp</dimen>
+    <dimen name="detail_right_column_inner_padding">27dp</dimen>
+    <dimen name="detail_left_column_inner_padding">3dp</dimen>
     <dimen name="detail_common_column_outer_padding">0dp</dimen>
 
         <!-- On devices < sw360dp scrollview generates this whitespace on bottom of screen for

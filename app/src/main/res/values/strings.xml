@@ -60,9 +60,15 @@
     <string name="dollar_change">$ Change:</string>
     <string name="streak">Streak:</string>
     <string name="last_streak_price">Prev. Streak \nEnd Price:</string>
-    <string name="last_streak">Prev. Streak:</string>
+    <string name="prev_streak">Prev. Streak:</string>
     <string name="streak_year_high">365 Day \nStreak High:</string>
     <string name="streak_year_low">365 Day \nStreak Low:</string>
+    <string name="offset_negative_sign">-</string>
+
+    <!-- Bar Chart-->
+    <string name="bar_chart_description_placeholder">%1$s 365 Day Streaks</string>
+    <string name="bar_chart_negative_color_label">Negative Streak</string>
+    <string name="bar_chart_positive_color_label">Positive Streak</string>
 
     <!-- list_item load a few-->
     <string name="button_retry">RETRY</string>
@@ -80,11 +86,6 @@
     <string name="placeholder_d">%1$sd</string>
     <string name="placeholder_update_time">Updated: %1$s</string>
     <string name="update_time_format" translatable="false">EEEE, MMMM dd @&#160;h:mm&#160;a</string>
-
-    <!-- Bar Chart-->
-    <string name="bar_chart_description_placeholder">%1$s 365 Day Streaks</string>
-    <string name="bar_chart_negative_color_label">Negative Streak</string>
-    <string name="bar_chart_positive_color_label">Positive Streak</string>
 
     <!-- Widget -->
     <string name="widget_empty_list">No Information Available</string>

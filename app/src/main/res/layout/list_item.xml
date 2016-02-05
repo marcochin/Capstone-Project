@@ -45,7 +45,7 @@
             android:id="@+id/image_streak_arrow"
             android:layout_width="@dimen/stock_arrow_size_normal"
             android:layout_height="@dimen/stock_arrow_size_normal"
-            android:contentDescription="@string/content_description_stock_arrow"
+            tools:ignore="ContentDescription"
             tools:src="@drawable/ic_streak_down"/>
 
         <TextView
