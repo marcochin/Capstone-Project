@@ -1,0 +1,209 @@
+{
+    "exportFormatVersion": 1.3,
+    "exportTime": "2016-02-06 00:58:30",
+    "containerVersion": {
+        "accountId": "161166586",
+        "containerId": "1870023",
+        "containerVersionId": "0",
+        "deleted": false,
+        "container": {
+            "accountId": "161166586",
+            "containerId": "1870023",
+            "name": "Stock Streaks Container",
+            "publicId": "GTM-N2N5TS",
+            "timeZoneCountryId": "US",
+            "timeZoneId": "America/Los_Angeles",
+            "notes": "",
+            "usageContext": [
+                "ANDROID"
+            ],
+            "fingerprint": "1454718312458",
+            "enabledBuiltInVariable": [
+                "EVENT",
+                "APP_ID",
+                "APP_NAME",
+                "APP_VERSION_CODE",
+                "APP_VERSION_NAME"
+            ]
+        },
+        "tag": [
+            {
+                "accountId": "161166586",
+                "containerId": "1870023",
+                "tagId": "1",
+                "name": "Symbol Add Tag",
+                "type": "ua",
+                "liveOnly": false,
+                "parameter": [
+                    {
+                        "type": "BOOLEAN",
+                        "key": "nonInteraction",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "eventCategory",
+                        "value": "{{event_category}}"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "collectAdid",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "trackType",
+                        "value": "TRACK_EVENT"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "eventAction",
+                        "value": "{{event_action}}"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "eventLabel",
+                        "value": "{{event_label}}"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "enableEcommerce",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "trackingId",
+                        "value": "{{Stock Streaks Analytics Tracking ID}}"
+                    }
+                ],
+                "fingerprint": "0",
+                "firingTriggerId": [
+                    "1"
+                ]
+            }
+        ],
+        "fingerprint": "0",
+        "trigger": [
+            {
+                "accountId": "161166586",
+                "containerId": "1870023",
+                "triggerId": "1",
+                "name": "Symbol Add Trigger",
+                "type": "ALWAYS",
+                "filter": [
+                    {
+                        "type": "EQUALS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Event}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "Symbol Add"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1453182053042"
+            }
+        ],
+        "variable": [
+            {
+                "accountId": "161166586",
+                "containerId": "1870023",
+                "variableId": "4",
+                "name": "Stock Streaks Analytics Tracking ID",
+                "type": "c",
+                "parameter": [
+                    {
+                        "type": "TEMPLATE",
+                        "key": "value",
+                        "value": "UA-72551263-1"
+                    }
+                ],
+                "fingerprint": "0"
+            },
+            {
+                "accountId": "161166586",
+                "containerId": "1870023",
+                "variableId": "2",
+                "name": "event_action",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "event_action"
+                    }
+                ],
+                "fingerprint": "0"
+            },
+            {
+                "accountId": "161166586",
+                "containerId": "1870023",
+                "variableId": "1",
+                "name": "event_category",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "event_category"
+                    }
+                ],
+                "fingerprint": "0"
+            },
+            {
+                "accountId": "161166586",
+                "containerId": "1870023",
+                "variableId": "3",
+                "name": "event_label",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "event_label"
+                    }
+                ],
+                "fingerprint": "0"
+            },
+            {
+                "accountId": "161166586",
+                "containerId": "1870023",
+                "variableId": "5",
+                "name": "msg_of_the_day",
+                "type": "vc",
+                "parameter": [
+                    {
+                        "type": "TEMPLATE",
+                        "key": "collection",
+                        "value": "{'msg_of_the_day': 'Thanks for downloading my app. This is where I\\'ll post some important messages, so check here often! http://www.google.com'}"
+                    }
+                ],
+                "enablingTriggerId": [
+                    "2147479555"
+                ],
+                "fingerprint": "0"
+            }
+        ]
+    }
+}

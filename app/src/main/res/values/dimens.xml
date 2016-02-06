@@ -34,10 +34,13 @@
         some reason and we need to fill it out vertically-->
     <dimen name="detail_section_vertical_padding">24dp</dimen>
     <dimen name="detail_section_horizontal_padding">20dp</dimen>
-
-    <dimen name="button_bar_chart_size">28dp</dimen>
-    <dimen name="button_bar_chart_margin">14dp</dimen>
     <!--End Detail fragment-->
+
+    <!-- Bar chart-->
+    <dimen name="bar_chart_button_size">48dp</dimen>
+    <dimen name="bar_chart_button_padding">10dp</dimen>
+    <dimen name="bar_chart_description_vertical_margin">8dp</dimen>
+    <dimen name="bar_chart_description_horizontal_margin">5dp</dimen>
 
     <!--list_item_first-->
     <dimen name="list_item_first_padding">15dp</dimen>
@@ -53,10 +56,6 @@
     <!-- For the load items (list_item_loading & widgetList_item_load_more) we want them to be the
     same size as a regular item, but since a regular item is wrap_content we are just going by eye-->
     <dimen name="list_item_estimated_height">60dp</dimen>
-
-    <!-- Bar chart description position offset-->
-    <dimen name="bar_chart_description_vertical_margin">8dp</dimen>
-    <dimen name="bar_chart_description_horizontal_margin">5dp</dimen>
 
     <!-- widget (formula 70dp x n - 30 dp) This formula is not accurate for tablets. For tablets
     I had to allocate an extra column (70dp) to reach my desired 4 columns. This is because

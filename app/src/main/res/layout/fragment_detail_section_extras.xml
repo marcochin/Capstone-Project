@@ -59,7 +59,7 @@
                 android:id="@+id/text_streak_prev"
                 android:layout_width="@dimen/detail_extras_days_text_view_width"
                 android:layout_height="wrap_content"
-                tools:text="33 days"/>
+                tools:text="-3 days"/>
 
             <ImageView
                 style="@style/StreakArrow"
@@ -168,18 +168,18 @@
     button, but I could not get the ripple selector to work. Some bug with the ripple not working
      if it is placed on top of a background color that's not in its View/ ViewGroup
      http://stackoverflow.com/questions/35151406/ -->
-    <ImageView
-        android:id="@+id/button_extras_section_bar_chart"
-        android:layout_width="@dimen/button_bar_chart_size"
-        android:layout_height="@dimen/button_bar_chart_size"
-        android:layout_marginTop="@dimen/button_bar_chart_margin"
-        android:layout_marginRight="@dimen/button_bar_chart_margin"
-        android:layout_marginEnd="@dimen/button_bar_chart_margin"
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:src="@drawable/ic_bar_chart"
-        android:background="@drawable/selector_button_transparent"
-        android:focusable="true"
-        android:visibility="gone"
-        android:contentDescription="@string/content_description_button_bar_chart"/>
+        android:layout_alignParentEnd="true">
+
+        <ImageView
+            style="@style/BarChartButton"
+            android:id="@+id/button_extras_section_bar_chart"
+            android:layout_width="@dimen/bar_chart_button_size"
+            android:layout_height="@dimen/bar_chart_button_size"
+            tools:ignore="ContentDescription"/>
+    </FrameLayout>
+
 </RelativeLayout>

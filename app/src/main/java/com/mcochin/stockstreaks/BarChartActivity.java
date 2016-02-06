@@ -21,6 +21,7 @@ import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.utils.Utils;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
@@ -110,6 +111,8 @@ public class BarChartActivity extends AppCompatActivity {
      */
     private void drawChart(String[] xData, int[] yData) {
         int[] barColors = new int[xData.length];
+        // Set up bar chart settings
+        final BarChart barChart = (BarChart) findViewById(R.id.bar_chart);
 
         // yData: Create BarEntries to be put in a List
         ArrayList<BarEntry> yDataList = new ArrayList<>();
@@ -133,7 +136,8 @@ public class BarChartActivity extends AppCompatActivity {
 
         // Put xData and yData together
         BarData barData = new BarData(xData, yBarDataSet);
-
+        // Make bar value text size same as axis textSize
+        barData.setValueTextSize(Utils.convertPixelsToDp(barChart.getXAxis().getTextSize()));
         // Convert the bar values from float to int
         barData.setValueFormatter(new ValueFormatter() {
             @Override
@@ -142,11 +146,8 @@ public class BarChartActivity extends AppCompatActivity {
             }
         });
 
-        // Set up bar chart settings
-        final BarChart barChart = (BarChart) findViewById(R.id.bar_chart);
         barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
         barChart.setGridBackgroundColor(ContextCompat.getColor(this, R.color.list_item_bg_color));
-
         barChart.setDescription(getString(R.string.bar_chart_description_placeholder,
                 StockContract.getSymbolFromUri(mDetailUri)));
 

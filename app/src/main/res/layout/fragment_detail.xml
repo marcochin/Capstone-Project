@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -30,18 +31,18 @@
         </LinearLayout>
     </ScrollView>
 
-    <ImageView
-        android:id="@+id/button_main_section_bar_chart"
-        android:layout_width="@dimen/button_bar_chart_size"
-        android:layout_height="@dimen/button_bar_chart_size"
-        android:layout_marginTop="@dimen/button_bar_chart_margin"
-        android:layout_marginRight="@dimen/button_bar_chart_margin"
-        android:layout_marginEnd="@dimen/button_bar_chart_margin"
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:src="@drawable/ic_bar_chart"
-        android:background="@drawable/selector_button_transparent"
-        android:focusable="true"
-        android:clickable="true"
-        android:contentDescription="@string/content_description_button_bar_chart"/>
+        android:layout_alignParentEnd="true">
+
+        <ImageView
+            style="@style/BarChartButton"
+            android:id="@+id/button_main_section_bar_chart"
+            android:layout_width="@dimen/bar_chart_button_size"
+            android:layout_height="@dimen/bar_chart_button_size"
+            tools:ignore="ContentDescription"/>
+
+    </FrameLayout>
 </RelativeLayout>

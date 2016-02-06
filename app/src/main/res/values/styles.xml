@@ -53,6 +53,17 @@
     </style>
 
     <!-- =============================Detail Fragment styles=====================================-->
+    <!-- Bar Chart Button-->
+    <style name="BarChartButton">
+        <item name="android:padding">@dimen/bar_chart_button_padding</item>
+        <item name="android:layout_gravity">end</item>
+        <item name="android:src">@drawable/ic_bar_chart</item>
+        <item name="android:background">@drawable/selector_button_transparent</item>
+        <item name="android:focusable">true</item>
+        <item name="android:contentDescription">@string/content_description_button_bar_chart</item>
+        <item name="android:visibility">invisible</item>
+    </style>
+
     <!--Main Section left column-->
     <style name="DetailExtrasDaysTextView">
         <item name="android:textColor">@color/white</item>

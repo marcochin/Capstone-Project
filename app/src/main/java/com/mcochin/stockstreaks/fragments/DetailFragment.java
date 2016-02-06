@@ -5,6 +5,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
@@ -13,11 +15,15 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.util.Pair;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -128,6 +134,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 actionBar.setDisplayShowTitleEnabled(false);
                 actionBar.setDisplayHomeAsUpEnabled(true);
             }
+            setHasOptionsMenu(true);
+
         }else{
             toolbar.setVisibility(View.GONE);
         }
@@ -380,8 +388,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         }else{
             mBarChartButton = (ImageView)view.findViewById((R.id.button_extras_section_bar_chart));
             // Extras section bar chart button starts out as invisible so make it visible
-            mBarChartButton.setVisibility(View.VISIBLE);
         }
+        mBarChartButton.setVisibility(View.VISIBLE);
         mBarChartButton.setOnClickListener(this);
     }
 

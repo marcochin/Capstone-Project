@@ -32,6 +32,7 @@ import android.widget.Toast;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.analytics.HitBuilders;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
@@ -365,7 +366,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if (!refreshList(null, false) && getListManipulator().getCount() < mNumberOfLaunchItems) {
             dynamicLoadMore();
         }
-        EventBus.getDefault().removeStickyEvent(InitLoadFromDbFinishedEvent.class);
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -374,7 +374,13 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         if (event.isSuccessful()) {
             if (!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
-                mAdapter.notifyItemInserted(0);
+                // Can't use notifyDataInserted(...) because we are suppose to update adapter size
+                // AND notifyItem...() in the main thread and same call stack. We happen to update
+                // adapter size in a bg thread. Also another problem is when we rotate and we post
+                // all from queue, we will call notifyItemInserted w/o inserting an item.
+                // But we can use notifyDataSetChanged() to work around that.
+                // http://stackoverflow.com/questions/30220771/recyclerview-inconsistency-detected-invalid-item-position
+                mAdapter.notifyDataSetChanged();
                 mRecyclerView.smoothScrollToPosition(0);
             }
             mSearchEditText.setText("");
@@ -396,7 +402,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 showEmptyWidgets();
             }
         }
-        EventBus.getDefault().removeStickyEvent(LoadSymbolFinishedEvent.class);
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -421,7 +426,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 mAdapter.notifyItemChanged(getListManipulator().getCount() - 1);
             }
         }
-        EventBus.getDefault().removeStickyEvent(LoadMoreFinishedEvent.class);
     }
 
     @Override // ListManipulatorFragment.EventListener
@@ -441,13 +445,11 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 showEmptyWidgets();
             }
         }
-        EventBus.getDefault().removeStickyEvent(AppRefreshFinishedEvent.class);
     }
 
     @Override // ListManipulatorFragment.EventListener
     public void onWidgetRefreshDelegate(WidgetRefreshDelegateEvent event) {
         showProgressWheel();
-        EventBus.getDefault().removeStickyEvent(WidgetRefreshDelegateEvent.class);
     }
 
     @Override // MainAdapter.EventListener

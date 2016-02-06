@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    android:layout_alignParentRight="true"
+    android:layout_alignParentEnd="true">
+
+    <ImageView
+        android:id="@+id/button_extras_section_bar_chart"
+        android:layout_width="@dimen/bar_chart_button_size"
+        android:layout_height="@dimen/bar_chart_button_size"
+        android:padding="@dimen/bar_chart_button_padding"
+        android:layout_gravity="end"
+        android:src="@drawable/ic_bar_chart"
+        android:background="@drawable/selector_button_transparent"
+        android:focusable="true"
+        android:contentDescription="@string/content_description_button_bar_chart"
+        android:visibility="invisible" />
+
+</FrameLayout>

@@ -23,6 +23,8 @@ import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 
+import de.greenrobot.event.EventBus;
+
 public class ListManagerFragment extends Fragment {
     public static final String TAG = ListManagerFragment.class.getSimpleName();
 
@@ -231,6 +233,8 @@ public class ListManagerFragment extends Fragment {
      * @param event
      */
     public void onEvent(InitLoadFromDbFinishedEvent event) {
+        EventBus.getDefault().removeStickyEvent(InitLoadFromDbFinishedEvent.class);
+
         if (mEventListener != null) {
             mEventListener.onLoadFromDbFinished(event);
         }
@@ -242,6 +246,7 @@ public class ListManagerFragment extends Fragment {
      * @param event
      */
     public void onEventMainThread(final LoadSymbolFinishedEvent event) {
+        EventBus.getDefault().removeStickyEvent(LoadSymbolFinishedEvent.class);
         // We use async task for the benefit of them executing sequentially in a single
         // background thread. And in order to prevent using the synchronized keyword in the main
         // thread which may block it.
@@ -272,6 +277,8 @@ public class ListManagerFragment extends Fragment {
         if (!event.getSessionId().equals(MyApplication.getInstance().getSessionId())) {
             return;
         }
+        EventBus.getDefault().removeStickyEvent(LoadMoreFinishedEvent.class);
+
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -302,6 +309,8 @@ public class ListManagerFragment extends Fragment {
      * @param event
      */
     public void onEventMainThread(final AppRefreshFinishedEvent event) {
+        EventBus.getDefault().removeStickyEvent(AppRefreshFinishedEvent.class);
+
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -333,6 +342,8 @@ public class ListManagerFragment extends Fragment {
      * @param event
      */
     public void onEventMainThread(final WidgetRefreshDelegateEvent event) {
+        EventBus.getDefault().removeStickyEvent(WidgetRefreshDelegateEvent.class);
+
         new AsyncTask<Context, Void, Void>() {
             @Override
             protected Void doInBackground(Context... params) {
