@@ -14,7 +14,12 @@
     <dimen name="stock_arrow_size_first">16dp</dimen>
     <dimen name="stock_arrow_margin_left">2dp</dimen>
 
-    <!--Overflow Menu -->
+    <!--ActionBar / Overflow Menu -->
+    <dimen name="toolbar_size">68dp</dimen> <!-- Need toolbar this size to encompass entire ripple-->
+
+    <dimen name="action_bar_button_size">48dp</dimen>
+    <dimen name="action_bar_button_padding">12dp</dimen> <!-- dl icons w/ 15% padding icons 8-->
+
     <dimen name="overflow_menu_width">180dp</dimen>
     <dimen name="overflow_menu_elevation">8dp</dimen>
     <dimen name="overflow_menu_compat_padding">8dp</dimen>
@@ -24,7 +29,6 @@
 
     <dimen name="detail_column_item_text_size">18sp</dimen>
     <dimen name="detail_column_item_vertical_margin">5dp</dimen>
-    <dimen name="detail_extras_days_text_view_width">62dp</dimen>
 
     <dimen name="detail_right_column_inner_padding">27dp</dimen>
     <dimen name="detail_left_column_inner_padding">3dp</dimen>
@@ -37,8 +41,6 @@
     <!--End Detail fragment-->
 
     <!-- Bar chart-->
-    <dimen name="bar_chart_button_size">48dp</dimen>
-    <dimen name="bar_chart_button_padding">10dp</dimen>
     <dimen name="bar_chart_description_vertical_margin">8dp</dimen>
     <dimen name="bar_chart_description_horizontal_margin">5dp</dimen>
 

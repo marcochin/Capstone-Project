@@ -7,14 +7,13 @@
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"/>
+        android:layout_width="@dimen/toolbar_size"
+        android:layout_height="@dimen/toolbar_size"/>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/toolbar">
+        android:layout_below="@+id/button_bar_chart">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -31,18 +30,12 @@
         </LinearLayout>
     </ScrollView>
 
-    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true">
+    <ImageView
+        style="@style/BarChartButton"
+        android:id="@+id/button_bar_chart"
+        android:layout_width="@dimen/action_bar_button_size"
+        android:layout_height="@dimen/action_bar_button_size"
+        android:tint="@color/search_box_grey"
+        tools:ignore="ContentDescription"/>
 
-        <ImageView
-            style="@style/BarChartButton"
-            android:id="@+id/button_main_section_bar_chart"
-            android:layout_width="@dimen/bar_chart_button_size"
-            android:layout_height="@dimen/bar_chart_button_size"
-            tools:ignore="ContentDescription"/>
-
-    </FrameLayout>
 </RelativeLayout>

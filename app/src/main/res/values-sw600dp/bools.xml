@@ -2,7 +2,4 @@
 <resources>
     <!-- Tablets will NOT use list_item_first-->
     <bool name="is_phone">false</bool>
-
-    <!-- DetailFragment "toolbar" button icon tint-->
-    <bool name="tint_icon">false</bool>
 </resources>

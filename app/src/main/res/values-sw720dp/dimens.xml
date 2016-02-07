@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 720dp are for devices between 7 and 10 inch-->
+    <!-- 720dp are for devices ~ 10 inch-->
+    <!-- detail fragment-->
+    <dimen name="detail_column_item_text_size">20sp</dimen>
+
     <!-- Values for the cardView detail view in tablets-->
     <dimen name="card_view_horizontal_margin">32dp</dimen>
     <dimen name="card_view_height">380dp</dimen>

@@ -17,7 +17,7 @@
     </slide>
     <slide android:slideEdge="top">
         <targets>
-            <target android:targetId="@+id/button_main_section_bar_chart" />
+            <target android:targetId="@+id/button_bar_chart" />
         </targets>
     </slide>
     <slide android:slideEdge="bottom">

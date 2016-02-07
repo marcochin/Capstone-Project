@@ -11,12 +11,9 @@
     <style name="AppTheme.Detail">
         <item name="android:windowEnterTransition">@transition/detail_enter_transition</item>
     </style>
-    <style name="AppTheme.BarChart">
-        <item name="android:windowEnterTransition">@transition/bar_chart_enter_transition</item>
-    </style>
 
     <!-- Overflow menu item -->
-    <style name="OverflowMenuItem">
+    <style name="OverflowPopUpMenuItem">
         <item name="android:padding">12dp</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textColor">@color/black</item>
@@ -52,17 +49,20 @@
         <item name="android:baselineAlignBottom">true</item>
     </style>
 
-    <!-- =============================Detail Fragment styles=====================================-->
-    <!-- Bar Chart Button-->
+    <!-- Custom Action Bar styles -->
+
     <style name="BarChartButton">
-        <item name="android:padding">@dimen/bar_chart_button_padding</item>
+        <item name="android:layout_alignParentRight">true</item>
+        <item name="android:layout_alignParentEnd">true</item>
         <item name="android:layout_gravity">end</item>
+        <item name="android:padding">@dimen/action_bar_button_padding</item>
         <item name="android:src">@drawable/ic_bar_chart</item>
         <item name="android:background">@drawable/selector_button_transparent</item>
         <item name="android:focusable">true</item>
         <item name="android:contentDescription">@string/content_description_button_bar_chart</item>
-        <item name="android:visibility">invisible</item>
     </style>
+
+    <!-- =============================Detail Fragment styles=====================================-->
 
     <!--Main Section left column-->
     <style name="DetailExtrasDaysTextView">

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 7 inch tablet and above-->
+    <!-- detail fragment-->
+    <dimen name="detail_column_item_text_size">18sp</dimen>
+
     <!-- Values for the cardView detail view in tablets-->
     <dimen name="details_app_bar_overlap">24dp</dimen>
     <dimen name="detail_card_elevation">6dp</dimen>

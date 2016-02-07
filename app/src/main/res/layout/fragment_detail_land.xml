@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- This layout is only used for sw360+ phone landscape-->
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_toLeftOf="@+id/center_space"
-        android:layout_toStartOf="@+id/center_space"
+        android:layout_width="@dimen/toolbar_size"
+        android:layout_height="@dimen/toolbar_size"
         android:background="@android:color/transparent"/>
 
     <include layout="@layout/fragment_detail_section_main"
@@ -30,4 +28,22 @@
         android:layout_height="match_parent"
         android:layout_toRightOf="@+id/center_space"
         android:layout_toEndOf="@+id/center_space" />
+
+    <!-- Need -to put BarChartButton in a ViewGroup w/ transparent bg so the ripple will be drawn
+    The selector for the button may not have any bg for this to work.-->
+    <FrameLayout
+        android:id="@+id/button_bar_chart_parent"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:background="@android:color/transparent">
+        <ImageView
+            style="@style/BarChartButton"
+            android:id="@+id/button_bar_chart"
+            android:layout_width="@dimen/action_bar_button_size"
+            android:layout_height="@dimen/action_bar_button_size"
+            tools:ignore="ContentDescription"/>
+    </FrameLayout>
+
 </RelativeLayout>

@@ -15,9 +15,9 @@
             <target android:targetId="@+id/toolbar" />
         </targets>
     </slide>
-    <slide android:slideEdge="top">
+    <slide android:slideEdge="right">
         <targets>
-            <target android:targetId="@+id/button_main_section_bar_chart" />
+            <target android:targetId="@+id/button_bar_chart_parent" />
         </targets>
     </slide>
     <slide android:slideEdge="right">

@@ -11,6 +11,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.View;
 
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.BarChart;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 /**
  * Created by Marco on 2/2/2016.
  */
-public class BarChartActivity extends AppCompatActivity {
+public class BarChartActivity extends AppCompatActivity{
     private final String TAG = BarChartActivity.class.getSimpleName();
 
     public static final String CHART_MAP_DELIMITER = ",";
@@ -45,7 +46,6 @@ public class BarChartActivity extends AppCompatActivity {
         setContentView(R.layout.activity_bar_chart);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {

@@ -11,8 +11,10 @@
     <string name="analytics_label_add_placeholder">Add %1$s</string>
 
     <!-- Navigation menu -->
+    <string name="navigation_msg_of_the_day">Message of the Day</string>
     <string name="navigation_faq">FAQ</string>
     <string name="navigation_about">About</string>
+    <string name="navigation_google_play">Google Play</string>
 
     <!-- Overflow menu -->
     <string name="overflow_refresh">Refresh</string>
@@ -41,7 +43,7 @@
     <string name="toast_symbol_not_found">Symbol not found</string>
     <string name="toast_empty_search">Please enter a symbol</string>
     <string name="toast_no_network">No Network Connection</string>
-    <string name="toast_chart_data_not_yet_available">Chart data not yet available</string>
+    <string name="toast_chart_data_not_yet_available">Chart data not yet loaded</string>
 
     <string name="toast_placeholder_symbol_exists">%1$s already exists</string>
     <string name="toast_placeholder_error_stock_limit">Unable to exceed max limit of %1$d stocks</string>
@@ -53,6 +55,7 @@
     <string name="content_description_stock_arrow">Stock arrow</string>
     <string name="content_description_button_refresh">Refresh</string>
     <string name="content_description_button_bar_chart">Bar Chart</string>
+    <string name="content_description_back">Back</string>
 
     <!-- detail fragment strings-->
     <string name="recent_close">Recent Close:</string>

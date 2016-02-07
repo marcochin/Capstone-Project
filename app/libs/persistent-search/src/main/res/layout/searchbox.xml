@@ -120,6 +120,7 @@
                 android:layout_marginRight="8dp"
                 android:layout_marginEnd="8dp"
                 android:src="@drawable/ic_overflow"
+                android:tint="@color/search_box_grey"
                 android:contentDescription="@string/content_description_menu"
                 android:background="@drawable/selector_button_transparent"
                 android:focusable="true"

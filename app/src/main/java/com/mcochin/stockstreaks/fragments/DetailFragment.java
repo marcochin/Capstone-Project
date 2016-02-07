@@ -5,25 +5,17 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.util.Pair;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -149,7 +141,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         mRetryButton = view.findViewById(R.id.button_retry);
 
         mRetryButton.setOnClickListener(this);
-        initBarChartButton(view);
+        view.findViewById((R.id.button_bar_chart)).setOnClickListener(this);
     }
 
     @Override
@@ -175,20 +167,17 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onClick(View v) {
-        int id = v.getId();
-        switch (id){
+        switch (v.getId()){
             case R.id.button_retry:
                 mReplyButtonVisible = false;
                 startDetailService();
                 break;
 
-            case R.id.button_main_section_bar_chart:
-            case R.id.button_extras_section_bar_chart:
+            case R.id.button_bar_chart:
                 if(mExtrasInfo.getVisibility() == View.VISIBLE) {
                     Intent barChartIntent = new Intent(getActivity(), BarChartActivity.class);
                     barChartIntent.setData(mDetailUri);
-                    Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity()).toBundle();
-                    getActivity().startActivity(barChartIntent, bundle);
+                    startActivity(barChartIntent);
 
                 }else if(mBarChartButtonToast == null){
                     mBarChartButtonToast = Toast.makeText(getActivity(),
@@ -197,6 +186,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     mBarChartButtonToast.show();
 
                 }else if(!mBarChartButtonToast.getView().isShown()){
+                    //TODO try setText thing
                     mBarChartButtonToast.show();
                 }
                 break;
@@ -376,21 +366,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
         showExtrasInfo();
         getActivity().getSupportLoaderManager().destroyLoader(ID_LOADER_DETAILS);
-    }
-
-    private void initBarChartButton(View view){
-        ImageView mBarChartButton;
-
-        if(getContext().getResources().getBoolean(R.bool.tint_icon)) {
-            mBarChartButton = (ImageView)view.findViewById((R.id.button_main_section_bar_chart));
-            mBarChartButton.setColorFilter(ContextCompat.getColor(getActivity(),
-                    R.color.search_box_grey));
-        }else{
-            mBarChartButton = (ImageView)view.findViewById((R.id.button_extras_section_bar_chart));
-            // Extras section bar chart button starts out as invisible so make it visible
-        }
-        mBarChartButton.setVisibility(View.VISIBLE);
-        mBarChartButton.setOnClickListener(this);
     }
 
     @Override

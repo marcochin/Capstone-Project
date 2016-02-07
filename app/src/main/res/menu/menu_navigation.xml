@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/navigation_msg_of_the_day"
+        android:title="@string/navigation_msg_of_the_day"/>
+
     <item android:id="@+id/navigation_faq"
         android:title="@string/navigation_faq"/>
 
     <item android:id="@+id/navigation_about"
         android:title="@string/navigation_about"/>
+
+    <item android:id="@+id/navigation_google_play"
+        android:title="@string/navigation_google_play"/>
 </menu>

@@ -7,9 +7,9 @@
 
     <ImageView
         android:id="@+id/button_extras_section_bar_chart"
-        android:layout_width="@dimen/bar_chart_button_size"
-        android:layout_height="@dimen/bar_chart_button_size"
-        android:padding="@dimen/bar_chart_button_padding"
+        android:layout_width="@dimen/action_bar_button_size"
+        android:layout_height="@dimen/action_bar_button_size"
+        android:padding="@dimen/action_bar_button_padding"
         android:layout_gravity="end"
         android:src="@drawable/ic_bar_chart"
         android:background="@drawable/selector_button_transparent"

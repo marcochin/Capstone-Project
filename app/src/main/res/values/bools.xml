@@ -2,7 +2,4 @@
 <resources>
     <!-- Phones WILL use list_item_first-->
     <bool name="is_phone">true</bool>
-
-    <!-- DetailFragment "toolbar" button icon tint-->
-    <bool name="tint_icon">true</bool>
 </resources>

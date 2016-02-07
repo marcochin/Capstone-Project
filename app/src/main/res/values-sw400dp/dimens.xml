@@ -2,7 +2,6 @@
 <resources>
     <!-- detail fragment-->
     <dimen name="detail_column_item_text_size">20sp</dimen>
-    <dimen name="detail_extras_days_text_view_width">69dp</dimen>
 
     <!-- widget -->
     <item name="widget_list_item_change_amt_column_weight" type="dimen" format="integer">4</item>

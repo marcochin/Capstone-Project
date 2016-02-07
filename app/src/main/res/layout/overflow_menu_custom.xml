@@ -12,14 +12,14 @@
         android:orientation="vertical">
 
         <TextView
-            style="@style/OverflowMenuItem"
+            style="@style/OverflowPopUpMenuItem"
             android:id="@+id/overflow_refresh"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/overflow_refresh" />
 
         <TextView
-            style="@style/OverflowMenuItem"
+            style="@style/OverflowPopUpMenuItem"
             android:id="@+id/overflow_sort"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
