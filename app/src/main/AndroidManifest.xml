@@ -28,13 +28,7 @@
             android:parentActivityName="com.mcochin.stockstreaks.MainActivity">
         </activity>
 
-        <activity
-            android:name="com.mcochin.stockstreaks.BarChartActivity"
-            android:parentActivityName="com.mcochin.stockstreaks.MainActivity">
-
-            <meta-data android:name="string"
-                android:value="@string/app_name" />
-        </activity>
+        <activity android:name="com.mcochin.stockstreaks.BarChartActivity"/>
 
         <provider
             android:name=".data.StockProvider"

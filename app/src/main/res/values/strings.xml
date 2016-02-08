@@ -108,7 +108,7 @@
         \nThe stock list can be refreshed at 4:30 PM EST. I am aware that markets close at 4:00 PM,
         but due to limitations of the API there is a delay in the updating of prices.
 
-        \n\n<b>Is there a limit to how many stock I can add?</b>
+        \n\n<b>Is there a limit to how many stocks I can add?</b>
         \nYes, to stay within API quota limits, the list is limited to 200 stocks.
 
         \n\n<b>Do you have a widget?</b>
@@ -116,12 +116,13 @@
         home screen. When you enable the widget, you\'ll also enable automatic updates.
     </string>
 
-    <string name="dialog_about">This app was created as my final project towards my Android Developer
-        Nanodegree which is a program developed together by Udacity and Google.
+    <string name="dialog_about"><b>Stock Streaks v1.0</b>
+        \n\nThis app was created as my final project towards my Android
+        Developer Nanodegree which is a program developed together by Udacity and Google.
 
-        \n\nStock Streaks was a idea I had when out of curiosity I just wanted to figure out how
-        many days in a row a stock has gone up or down. This information might not have any merit
-        to it, but maybe some of you might still find it interesting nonetheless.
+        \n\nStock Streaks was an idea I had when out of curiosity I just wanted to find out how
+        many days in a row a stock has gone up or down. This information might not be of any special
+        importance, but maybe some of you might still find it interesting nonetheless.
 
         \n\nIt took me about a period of four months to complete everything, so I hope
         you like it!

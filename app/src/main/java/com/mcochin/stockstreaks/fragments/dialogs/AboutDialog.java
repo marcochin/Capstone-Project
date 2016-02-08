@@ -17,6 +17,7 @@ public class AboutDialog extends DialogFragment{
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+
         return new MaterialDialog.Builder(getActivity())
                 .title(R.string.navigation_about)
                 .content(R.string.dialog_about)

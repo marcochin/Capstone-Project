@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private static final String KEY_PROGRESS_WHEEL_VISIBLE = "progressWheelVisible";
     private static final String KEY_EMPTY_MSG_VISIBLE = "emptyMsgVisible";
     private static final String KEY_DYNAMIC_SCROLL_ENABLED = "dynamicScrollEnabled";
+    private static final String KEY_DYNAMIC_LOAD_ANOTHER = "dynamicLoadAnother";
     private static final String KEY_ITEM_CLICKS_FOR_INTERSTITIAL = "ItemClicksForInterstitial";
 
     private static final int CLICKS_UNTIL_INTERSTITIAL = 10;
@@ -212,6 +213,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
 
             mDynamicScrollLoadEnabled = savedInstanceState.getBoolean(KEY_DYNAMIC_SCROLL_ENABLED);
+            mDynamicScrollLoadAnother = savedInstanceState.getBoolean(KEY_DYNAMIC_LOAD_ANOTHER);
             mItemClicksForInterstitial = savedInstanceState.getInt(KEY_ITEM_CLICKS_FOR_INTERSTITIAL);
         }
     }
@@ -896,6 +898,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         outState.putBoolean(KEY_PROGRESS_WHEEL_VISIBLE, mProgressWheel.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_EMPTY_MSG_VISIBLE, mEmptyMsg.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_DYNAMIC_SCROLL_ENABLED, mDynamicScrollLoadEnabled);
+        outState.putBoolean(KEY_DYNAMIC_LOAD_ANOTHER, mDynamicScrollLoadAnother);
         outState.putInt(KEY_ITEM_CLICKS_FOR_INTERSTITIAL, mItemClicksForInterstitial);
         super.onSaveInstanceState(outState);
     }

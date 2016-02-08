@@ -241,9 +241,6 @@ public class DetailService extends Service {
                     }
                 }
 
-                // Add the current streak to the chart map too
-                addStreakToChartMap(chartMap, currentStreak);
-
                 values = new ContentValues();
                 values.put(StockContract.StockEntry.COLUMN_PREV_STREAK, prevStreak);
                 values.put(StockContract.StockEntry.COLUMN_STREAK_YEAR_HIGH, yearStreakHigh);

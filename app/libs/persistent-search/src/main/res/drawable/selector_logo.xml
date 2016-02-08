@@ -16,5 +16,5 @@
 <!-- This selector works everywhere, but does not support ripple -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Even though these two point to the same resource, have two states so the drawable will invalidate itself when coming out of pressed state. -->
-    <item android:state_focused="true" android:drawable="@drawable/abc_list_selector_holo_light" />
+    <item android:state_focused="true" android:drawable="@color/logo_highlight" />
 </selector>

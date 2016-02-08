@@ -186,7 +186,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     mBarChartButtonToast.show();
 
                 }else if(!mBarChartButtonToast.getView().isShown()){
-                    //TODO try setText thing
                     mBarChartButtonToast.show();
                 }
                 break;

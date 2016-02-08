@@ -28,7 +28,7 @@ public class ListManipulator {
     private static final String TAG = ListManipulator.class.getSimpleName();
 
     public static final int MORE = 8;
-    public static final int LIST_LIMIT = 200;
+    public static final int LIST_LIMIT = 200; //Update FAQ if updating limit
 
     public static final String LOADING_ITEM = "loadingItem";
 
