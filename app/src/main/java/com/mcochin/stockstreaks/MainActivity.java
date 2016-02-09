@@ -1,12 +1,14 @@
 package com.mcochin.stockstreaks;
 
 import android.app.ActivityManager;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.NinePatchDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -18,7 +20,6 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -32,7 +33,9 @@ import android.widget.Toast;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
-import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.tagmanager.ContainerHolder;
+import com.google.android.gms.tagmanager.TagManager;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.decoration.SimpleListDividerDecorator;
@@ -52,6 +55,7 @@ import com.mcochin.stockstreaks.fragments.DetailFragment;
 import com.mcochin.stockstreaks.fragments.ListManagerFragment;
 import com.mcochin.stockstreaks.fragments.dialogs.AboutDialog;
 import com.mcochin.stockstreaks.fragments.dialogs.FaqDialog;
+import com.mcochin.stockstreaks.fragments.dialogs.MotdFragment;
 import com.mcochin.stockstreaks.fragments.dialogs.SortDialog;
 import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.InitLoadFromDbFinishedEvent;
@@ -64,6 +68,7 @@ import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import de.greenrobot.event.EventBus;
 
@@ -80,6 +85,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private static final String KEY_ITEM_CLICKS_FOR_INTERSTITIAL = "ItemClicksForInterstitial";
 
     private static final int CLICKS_UNTIL_INTERSTITIAL = 10;
+    private static final int MOTD_CONTAINER_TIMEOUT = 3000;
+    private static final int NAV_DRAWER_CLOSE_DELAY = 200;
 
     private RecyclerView mRecyclerView;
     private MyLinearLayoutManager mLayoutManager;
@@ -89,7 +96,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private RecyclerViewSwipeManager mSwipeManager;
     private RecyclerViewTouchActionGuardManager mTouchActionGuardManager;
 
-    private DrawerLayout mDrawerLayout;
     private EditText mSearchEditText;
     private TextView mSearchLogo;
     private SearchBox mToolbar;
@@ -101,9 +107,12 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private View mEmptyMsg;
     private ListManagerFragment mListFragment;
 
+    private DrawerLayout mDrawerLayout;
     private View mOverflowMenuButton;
     private PopupWindow mOverflowMenuPopUp;
     private View.OnClickListener mOverflowItemListener;
+
+    private Toast mListUpToDateToast;
 
     private boolean mFirstOpen;
     private boolean mStartedFromWidget;
@@ -139,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         initOverflowMenu();
         initRecyclerView();
 //        initInterstitialAd();
+        initGtmContainer();
 
         mListFragment.setEventListener(this);
         mSwipeToRefresh.setOnRefreshListener(this);
@@ -298,7 +308,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             return true;
 
         }else if(showUpToDateToast){
-            Toast.makeText(this, R.string.toast_list_is_up_to_date, Toast.LENGTH_SHORT).show();
+            showListUpToDateToast();
         }
 
         return false;
@@ -393,7 +403,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
 
             // Send to analytics what symbols were added.
-//            MyApplication.getInstance().getDefaultTracker().send(new HitBuilders.EventBuilder()
+//            MyApplication.getInstance().getAnalyticsTracker().send(new HitBuilders.EventBuilder()
 //                    .setCategory(getString(R.string.analytics_category))
 //                    .setAction(getString(R.string.analytics_action_add))
 //                    .setLabel(getString(R.string.analytics_label_add_placeholder,
@@ -572,7 +582,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // MainAdapter.EventListener
     public void onLoadItemRetryClick(MainAdapter.LoadViewHolder holder) {
         if (Utility.canUpdateList(getContentResolver())) {
-            Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.toast_list_out_of_sync, Toast.LENGTH_SHORT).show();
 
         } else if (!MyApplication.getInstance().isRefreshing()) {
             mListFragment.loadMore();
@@ -599,6 +609,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             public boolean onNavigationItemSelected(MenuItem item) {
                 int itemId = item.getItemId();
                 switch (itemId) {
+                    case R.id.navigation_msg_of_the_day:
+                        new MotdFragment().show(getSupportFragmentManager(), MotdFragment.TAG);
+                        break;
+
                     case R.id.navigation_faq:
                         new FaqDialog().show(getSupportFragmentManager(), FaqDialog.TAG);
                         break;
@@ -606,8 +620,28 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                     case R.id.navigation_about:
                         new AboutDialog().show(getSupportFragmentManager(), AboutDialog.TAG);
                         break;
+
+                    case R.id.navigation_google_play:
+                        // Link to the app in the play store
+                        final String appPackageName = getPackageName();
+                        try {
+                            startActivity(new Intent(Intent.ACTION_VIEW,
+                                    Uri.parse("market://details?id=" + appPackageName)));
+                        } catch (ActivityNotFoundException anfe) {
+                            startActivity(new Intent(Intent.ACTION_VIEW,
+                                    Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
+                        }
+                        break;
                 }
-                mDrawerLayout.closeDrawer(GravityCompat.START);
+
+                // Delay
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mDrawerLayout.closeDrawer(GravityCompat.START);
+                    }
+                }, NAV_DRAWER_CLOSE_DELAY);
+
                 return true;
             }
         });
@@ -788,7 +822,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             if (!Utility.canUpdateList(getContentResolver())) {
                 mListFragment.loadMore();
             } else {
-                Toast.makeText(this, R.string.toast_error_refresh_list, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.toast_list_out_of_sync, Toast.LENGTH_SHORT).show();
             }
 
             // Must notifyItemInserted AFTER loadMore for mIsLoadingAFew to be updated
@@ -845,6 +879,18 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             return mListFragment.getListManipulator();
         }
         return null;
+    }
+
+    private void showListUpToDateToast(){
+        if (mListUpToDateToast == null) {
+            mListUpToDateToast = Toast.makeText(this,
+                    R.string.toast_list_is_up_to_date,
+                    Toast.LENGTH_SHORT);
+            mListUpToDateToast.show();
+
+        } else if (!mListUpToDateToast.getView().isShown()) {
+            mListUpToDateToast.show();
+        }
     }
 
     private void showEmptyWidgets() {
@@ -955,6 +1001,26 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         mListFragment = null;
 
         super.onDestroy();
+    }
+
+    /**
+     * Retrieves and prepares a container that will serve as data for our Msg Of the Day.
+     */
+    private void initGtmContainer(){
+        TagManager tagManager = MyApplication.getInstance().getTagManager();
+
+        // Retrieves a fresh SAVED container. I don't think it ever performs network operations..
+        tagManager.loadContainerPreferFresh(getString(R.string.tag_manager_motd_container_id),
+                R.raw.gtm_default_container).setResultCallback(new ResultCallback<ContainerHolder>() {
+            @Override
+            public void onResult(@NonNull ContainerHolder containerHolder) {
+
+                // Refresh container over network manually in case the "fresh" container is stale.
+                containerHolder.refresh();
+                // Store the containerHolder for MOTD.
+                MyApplication.getInstance().setContainerHolder(containerHolder);
+            }
+        }, MOTD_CONTAINER_TIMEOUT, TimeUnit.MILLISECONDS);
     }
 
     /**

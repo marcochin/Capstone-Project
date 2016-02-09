@@ -1,17 +1,23 @@
 <resources>
     <string name="app_name" translatable="false">Stock Streaks</string>
-    <string name="app_name_initials">&#160;SS&#160;</string>
+    <string name="app_name_initials" translatable="false">&#160;SS&#160;</string>
 
     <!-- Admob -->
-    <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
+    <string name="interstitial_ad_unit_id" translatable="false">
+        ca-app-pub-3940256099942544/1033173712
+    </string>
 
     <!-- Analytics -->
+    <string name="analytics_tracking_id" translatable="false">YOUR ANALYTICS TRACKING ID HERE</string>
     <string name="analytics_category">Symbol Event</string>
     <string name="analytics_action_add">Item Add</string>
     <string name="analytics_label_add_placeholder">Add %1$s</string>
 
+    <!-- TagManager -->
+    <string name="tag_manager_motd_container_id" translatable="false"></string>
+
     <!-- Navigation menu -->
-    <string name="navigation_msg_of_the_day">Message of the Day</string>
+    <string name="navigation_motd">Message of the Day</string>
     <string name="navigation_faq">FAQ</string>
     <string name="navigation_about">About</string>
     <string name="navigation_google_play">Google Play</string>
@@ -38,7 +44,7 @@
 
     <!-- Toast msgs -->
     <string name="toast_error_retrieving_data">Error retrieving data from server</string>
-    <string name="toast_error_refresh_list">List out of sync. Please refresh list</string>
+    <string name="toast_list_out_of_sync">List out of sync. Please refresh list</string>
     <string name="toast_list_is_up_to_date">List is up to date</string>
     <string name="toast_symbol_not_found">Symbol not found</string>
     <string name="toast_empty_search">Please enter a symbol</string>
@@ -96,6 +102,9 @@
 
     <!-- Navigation menu item dialogs -->
     <string name="dialog_close">CLOSE</string>
+    <string name="dialog_motd">Thanks for downloading the app. This is where I\'ll post some
+        important messages, so check here often!</string>
+
     <string name="dialog_faq"><b>What do the $/% changes reflect?</b>
         \nThe $/% changes reflect the TOTAL change from its previous streak and not the change
         from its previous close like you would normally see. It gives a better perspective on how

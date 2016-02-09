@@ -4,6 +4,8 @@ import android.app.Application;
 
 import com.google.android.gms.analytics.GoogleAnalytics;
 import com.google.android.gms.analytics.Tracker;
+import com.google.android.gms.tagmanager.ContainerHolder;
+import com.google.android.gms.tagmanager.TagManager;
 import com.mcochin.stockstreaks.R;
 
 import java.util.UUID;
@@ -13,7 +15,12 @@ import java.util.UUID;
  */
 public class MyApplication extends Application {
     private static MyApplication sMyApplication;
+
+    // Even though we are using TagManager to send Analytics Hits, we still need Tracker
+    // to monitor uncaught exceptions
     private Tracker mTracker;
+    private TagManager mTagManager;
+    private ContainerHolder mContainerHolder;
 
     private static String mSessionId = "";
 
@@ -37,13 +44,28 @@ public class MyApplication extends Application {
      * Gets the default {@link Tracker} for this {@link Application}.
      * @return tracker
      */
-    public synchronized Tracker getDefaultTracker() {
+    public synchronized Tracker getAnalyticsTracker() {
         if (mTracker == null) {
             GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
             // To enable debug logging use: adb shell setprop log.tag.GAv4 DEBUG
             mTracker = analytics.newTracker(R.xml.analytics_tracker);
         }
         return mTracker;
+    }
+
+    public synchronized TagManager getTagManager(){
+        if (mTagManager == null) {
+            mTagManager = TagManager.getInstance(this);
+        }
+        return mTagManager;
+    }
+
+    public ContainerHolder getContainerHolder() {
+        return mContainerHolder;
+    }
+
+    public void setContainerHolder(ContainerHolder containerHolder) {
+        mContainerHolder = containerHolder;
     }
 
     public static void startNewSession(){

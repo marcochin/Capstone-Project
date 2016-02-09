@@ -1,14 +1,6 @@
 apply plugin: 'com.android.application'
 
 android {
-    signingConfigs {
-        config {
-            keyAlias 'udacitykey'
-            keyPassword 'password'
-            storeFile file('udacityks.jks') //the app folder is the root directory
-            storePassword 'password'
-        }
-    }
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
     defaultConfig {
@@ -23,7 +15,6 @@ android {
             minifyEnabled false
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.config
         }
     }
 }
@@ -31,20 +22,17 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.android.support:design:23.1.1'
     compile 'com.android.support:gridlayout-v7:23.1.1'
     compile 'com.android.support:cardview-v7:23.1.1'
-
     compile 'com.google.android.gms:play-services-ads:8.4.0'
     compile 'com.google.android.gms:play-services-analytics:8.4.0'
-
-    compile project(':persistent-search')
     compile 'com.yahoofinance-api:YahooFinanceAPI:2.0.0'
     compile 'de.greenrobot:eventbus:2.4.0'
     compile 'com.github.PhilJay:MPAndroidChart:v2.2.0'
-    compile('com.h6ah4i.android.widget.advrecyclerview:advrecyclerview:0.8.5@aar') {
+    compile project(':persistent-search')
+    compile('com.h6ah4i.android.widget.advrecyclerview:advrecyclerview:0.8.6@aar') {
         transitive = true
     }
     compile('com.github.afollestad.material-dialogs:core:0.8.5.3@aar') {

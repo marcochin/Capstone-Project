@@ -44,7 +44,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     public static final int ID_LOADER_DETAILS = 2;
     public static final String KEY_REPLY_BUTTON_VISIBLE = "replyButtonVisible";
-    public static final String KEY_IS_DETAIL_REQUEST_LOADING= "isDetailRequestLoading";
+    public static final String KEY_IS_DETAIL_REQUEST_LOADING = "isDetailRequestLoading";
     public static final String KEY_DETAIL_URI = "detailUri";
 
 
@@ -90,7 +90,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             // Need to postpone transition until data is loaded because if data is loading while
             // transition is happening setting visibility of some items to VISIBLE will make the
             // items appear instantly instead of being transitioned.
@@ -111,13 +111,13 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         Bundle args = getArguments();
         mDetailUri = args.getParcelable(KEY_DETAIL_URI);
 
-        if(savedInstanceState != null){
+        if (savedInstanceState != null) {
             mReplyButtonVisible = savedInstanceState.getBoolean(KEY_REPLY_BUTTON_VISIBLE);
             mIsDetailRequestLoading = savedInstanceState.getBoolean(KEY_IS_DETAIL_REQUEST_LOADING);
         }
 
         Toolbar toolbar = (Toolbar) view.findViewById(R.id.toolbar);
-        if(getResources().getBoolean(R.bool.is_phone)) {
+        if (getResources().getBoolean(R.bool.is_phone)) {
             AppCompatActivity activity = (AppCompatActivity) getActivity();
             activity.setSupportActionBar(toolbar);
             ActionBar actionBar = activity.getSupportActionBar();
@@ -128,14 +128,14 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             }
             setHasOptionsMenu(true);
 
-        }else{
+        } else {
             toolbar.setVisibility(View.GONE);
         }
 
         mExtrasInfo = view.findViewById(R.id.detail_extras_info);
         mMainInfo = view.findViewById(R.id.detail_main_info);
-        mTextUpdateTime = (TextView)view.findViewById(R.id.text_update_time);
-        mTextPrevStreak = (TextView)mExtrasInfo.findViewById(R.id.text_streak_prev);
+        mTextUpdateTime = (TextView) view.findViewById(R.id.text_update_time);
+        mTextPrevStreak = (TextView) mExtrasInfo.findViewById(R.id.text_streak_prev);
 
         mProgressWheel = view.findViewById(R.id.progress_wheel);
         mRetryButton = view.findViewById(R.id.button_retry);
@@ -150,7 +150,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         EventBus eventBus = EventBus.getDefault();
         eventBus.registerSticky(this);
 
-        if(mTextPrevStreak.getText().toString().isEmpty()) {
+        if (mTextPrevStreak.getText().toString().isEmpty()) {
             fetchDetailsData();
         }
     }
@@ -158,7 +158,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     /**
      * Fetches the detail data from the db of the selected stock using a cursor loader.
      */
-    private void fetchDetailsData(){
+    private void fetchDetailsData() {
         showProgressWheel();
 
         LoaderManager loaderManager = getActivity().getSupportLoaderManager();
@@ -167,26 +167,20 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+        switch (v.getId()) {
             case R.id.button_retry:
                 mReplyButtonVisible = false;
                 startDetailService();
                 break;
 
             case R.id.button_bar_chart:
-                if(mExtrasInfo.getVisibility() == View.VISIBLE) {
+                if (mExtrasInfo.getVisibility() == View.VISIBLE) {
                     Intent barChartIntent = new Intent(getActivity(), BarChartActivity.class);
                     barChartIntent.setData(mDetailUri);
                     startActivity(barChartIntent);
 
-                }else if(mBarChartButtonToast == null){
-                    mBarChartButtonToast = Toast.makeText(getActivity(),
-                            R.string.toast_chart_data_not_yet_available,
-                            Toast.LENGTH_SHORT);
-                    mBarChartButtonToast.show();
-
-                }else if(!mBarChartButtonToast.getView().isShown()){
-                    mBarChartButtonToast.show();
+                } else {
+                    showBarChartButtonToast();
                 }
                 break;
         }
@@ -196,7 +190,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
      * Starts the a {@link DetailService} to perform a network request to retrieve the symbol's
      * history.
      */
-    private void startDetailService(){
+    private void startDetailService() {
         mIsDetailRequestLoading = true;
         showProgressWheel();
 
@@ -224,7 +218,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     // I destroy the Loader when I finished getting the extras section, so it doesn't happen.
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if(data != null && data.moveToFirst()){
+        if (data != null && data.moveToFirst()) {
             int prevStreak = data.getInt(INDEX_PREV_STREAK);
 
             // Set update time
@@ -238,21 +232,21 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             // Main Section
             // Add check here so when the service returns from calculating the prev streak info
             // it wont have to load main section again.
-            if(!mTextUpdateTime.getText().toString().equals(lastUpdateString)) {
+            if (!mTextUpdateTime.getText().toString().equals(lastUpdateString)) {
                 initMainSection(data, lastUpdateString);
 
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     getActivity().startPostponedEnterTransition();
                 }
             }
             // Extras Section
-            if(prevStreak != 0) {
+            if (prevStreak != 0) {
                 initExtrasSection(data, prevStreak);
 
-            }else if(mReplyButtonVisible){
+            } else if (mReplyButtonVisible) {
                 showRetryButton();
 
-            }else if(!mIsDetailRequestLoading){
+            } else if (!mIsDetailRequestLoading) {
                 startDetailService();
             }
         }
@@ -262,30 +256,30 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public void onLoaderReset(Loader<Cursor> loader) {
     }
 
-    public void onEventMainThread(LoadDetailFinishedEvent event){
+    public void onEventMainThread(LoadDetailFinishedEvent event) {
         // Make sure we don't process the event of another stock symbol. This can happen is we
         // switch to a different DetailFragment while the prev one is still loading.
-        if(event.getSymbol().equals(getSymbol())) {
+        if (event.getSymbol().equals(getSymbol())) {
             mIsDetailRequestLoading = false;
 
-            if(!event.isSuccessful()) {
+            if (!event.isSuccessful()) {
                 showRetryButton();
-            }else{
+            } else {
                 showExtrasInfo();
             }
         }
         EventBus.getDefault().removeStickyEvent(LoadDetailFinishedEvent.class);
     }
 
-    private void initMainSection(Cursor data, String lastUpdateString){
-        TextView textSymbol = (TextView)mMainInfo.findViewById(R.id.text_symbol);
-        TextView textFullName = (TextView)mMainInfo.findViewById(R.id.text_full_name);
-        TextView textRecentClose = (TextView)mMainInfo.findViewById(R.id.text_recent_close);
-        TextView textChangeDollar = (TextView)mMainInfo.findViewById(R.id.text_change_dollar);
-        TextView textChangePercent = (TextView)mMainInfo.findViewById(R.id.text_change_percent);
-        TextView textStreak = (TextView)mMainInfo.findViewById(R.id.text_streak);
-        TextView textChangePercentNegSign = (TextView)mMainInfo.findViewById(R.id.text_change_percent_neg_sign);
-        ImageView imageStreakArrow = (ImageView)mMainInfo.findViewById(R.id.image_streak_arrow);
+    private void initMainSection(Cursor data, String lastUpdateString) {
+        TextView textSymbol = (TextView) mMainInfo.findViewById(R.id.text_symbol);
+        TextView textFullName = (TextView) mMainInfo.findViewById(R.id.text_full_name);
+        TextView textRecentClose = (TextView) mMainInfo.findViewById(R.id.text_recent_close);
+        TextView textChangeDollar = (TextView) mMainInfo.findViewById(R.id.text_change_dollar);
+        TextView textChangePercent = (TextView) mMainInfo.findViewById(R.id.text_change_percent);
+        TextView textStreak = (TextView) mMainInfo.findViewById(R.id.text_streak);
+        TextView textChangePercentNegSign = (TextView) mMainInfo.findViewById(R.id.text_change_percent_neg_sign);
+        ImageView imageStreakArrow = (ImageView) mMainInfo.findViewById(R.id.image_streak_arrow);
         View textStreakNegSign = mMainInfo.findViewById(R.id.text_streak_neg_sign);
 
         String symbol = data.getString(INDEX_SYMBOL);
@@ -303,7 +297,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         textRecentClose.setText(getString(R.string.placeholder_dollar,
                 Utility.roundTo2StringDecimals(recentClose)));
 
-        if(streak < 0){
+        if (streak < 0) {
             textStreakNegSign.setVisibility(View.VISIBLE);
         }
         textStreak.setText(getString(Math.abs(streak) == 1 ?
@@ -320,7 +314,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         textChangeDollar.setText(getString(R.string.placeholder_dollar,
                 Utility.roundTo2StringDecimals(changeDollar)));
 
-        if(changePercent < 0){
+        if (changePercent < 0) {
             textChangePercentNegSign.setVisibility(View.VISIBLE);
             textChangePercentNegSign.setTextColor(color);
         }
@@ -331,11 +325,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         textChangePercent.setTextColor(color);
     }
 
-    private void initExtrasSection(Cursor data, int prevStreak){
-        TextView mTextPrevStreakEndPrice = (TextView)mExtrasInfo.findViewById(R.id.text_prev_streak_end_price);
-        TextView mTextStreakYearHigh = (TextView)mExtrasInfo.findViewById(R.id.text_streak_year_high);
-        TextView mTextStreakYearLow = (TextView)mExtrasInfo.findViewById(R.id.text_streak_year_low);
-        ImageView mImagePrevStreakArrow = (ImageView)mExtrasInfo.findViewById(R.id.image_prev_streak_arrow);
+    private void initExtrasSection(Cursor data, int prevStreak) {
+        TextView mTextPrevStreakEndPrice = (TextView) mExtrasInfo.findViewById(R.id.text_prev_streak_end_price);
+        TextView mTextStreakYearHigh = (TextView) mExtrasInfo.findViewById(R.id.text_streak_year_high);
+        TextView mTextStreakYearLow = (TextView) mExtrasInfo.findViewById(R.id.text_streak_year_low);
+        ImageView mImagePrevStreakArrow = (ImageView) mExtrasInfo.findViewById(R.id.image_prev_streak_arrow);
         View textPrevStreakNegSign = mExtrasInfo.findViewById(R.id.text_streak_prev_neg_sign);
 
         float prevStreakEndPrice = data.getFloat(INDEX_PREV_STREAK_END_PRICE);
@@ -344,7 +338,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
         mIsDetailRequestLoading = false;
 
-        if(prevStreak < 0){
+        if (prevStreak < 0) {
             textPrevStreakNegSign.setVisibility(View.VISIBLE);
         }
         mTextPrevStreak.setText(getString(Math.abs(prevStreak) == 1 ?
@@ -380,26 +374,38 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         super.onSaveInstanceState(outState);
     }
 
-    private void showProgressWheel(){
+    private void showBarChartButtonToast(){
+        if (mBarChartButtonToast == null) {
+            mBarChartButtonToast = Toast.makeText(getActivity(),
+                    R.string.toast_chart_data_not_yet_available,
+                    Toast.LENGTH_SHORT);
+            mBarChartButtonToast.show();
+
+        } else if (!mBarChartButtonToast.getView().isShown()) {
+            mBarChartButtonToast.show();
+        }
+    }
+
+    private void showProgressWheel() {
         mProgressWheel.setVisibility(View.VISIBLE);
         mRetryButton.setVisibility(View.INVISIBLE);
         mExtrasInfo.setVisibility(View.INVISIBLE);
     }
 
-    private void showRetryButton(){
+    private void showRetryButton() {
         mReplyButtonVisible = true;
         mProgressWheel.setVisibility(View.INVISIBLE);
         mRetryButton.setVisibility(View.VISIBLE);
         mExtrasInfo.setVisibility(View.INVISIBLE);
     }
 
-    private void showExtrasInfo(){
+    private void showExtrasInfo() {
         mProgressWheel.setVisibility(View.INVISIBLE);
         mRetryButton.setVisibility(View.INVISIBLE);
         mExtrasInfo.setVisibility(View.VISIBLE);
     }
 
-    public String getSymbol(){
+    public String getSymbol() {
         return StockContract.getSymbolFromUri(mDetailUri);
     }
 }

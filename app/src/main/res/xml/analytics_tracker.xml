@@ -1,5 +1,5 @@
 <resources>
-    <string name="ga_trackingId">YOUR_ANALYTICS_TRACKING_ID_HERE</string>
+    <string name="ga_trackingId">@string/analytics_tracking_id</string>
     <string name="ga_logLevel">verbose</string>
 
     <!--  Problem with auto-tracking is that it tracks all activities and if it is popular,
