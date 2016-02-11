@@ -7,10 +7,10 @@ import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.LinkedList;
 import java.util.Queue;
-
-import de.greenrobot.event.EventBus;
 
 /**
  * This is a queue for our EventBus events. If an event is sent with no subscriber OR if queue not

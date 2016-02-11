@@ -133,7 +133,7 @@
         home screen. When you enable the widget, you\'ll also enable automatic updates.
     </string>
 
-    <string name="dialog_about"><b>Stock Streaks v1.0</b>
+    <string name="dialog_about"><b>Stock Streaks v1.0.0</b>
         \n\nThis app was created as my final project towards my Android
         Developer Nanodegree which is a program developed together by Udacity and Google.
 

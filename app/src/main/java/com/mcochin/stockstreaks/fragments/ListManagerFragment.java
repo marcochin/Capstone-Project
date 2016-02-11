@@ -13,17 +13,19 @@ import com.mcochin.stockstreaks.data.ListEventQueue;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.data.StockProvider;
+import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.InitLoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
-import com.mcochin.stockstreaks.pojos.Stock;
 import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
 
-import de.greenrobot.event.EventBus;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 public class ListManagerFragment extends Fragment {
     public static final String TAG = ListManagerFragment.class.getSimpleName();
@@ -233,7 +235,8 @@ public class ListManagerFragment extends Fragment {
      *
      * @param event
      */
-    public void onEvent(InitLoadFromDbFinishedEvent event) {
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onInitLoadFromDbFinished(InitLoadFromDbFinishedEvent event) {
         EventBus.getDefault().removeStickyEvent(InitLoadFromDbFinishedEvent.class);
 
         if (mEventListener != null) {
@@ -246,7 +249,8 @@ public class ListManagerFragment extends Fragment {
      *
      * @param event
      */
-    public void onEventMainThread(final LoadSymbolFinishedEvent event) {
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onLoadSymbolFinished(final LoadSymbolFinishedEvent event) {
         EventBus.getDefault().removeStickyEvent(LoadSymbolFinishedEvent.class);
         // We use async task for the benefit of them executing sequentially in a single
         // background thread. And in order to prevent using the synchronized keyword in the main
@@ -274,7 +278,8 @@ public class ListManagerFragment extends Fragment {
      *
      * @param event
      */
-    public void onEventMainThread(final LoadMoreFinishedEvent event) {
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onLoadMoreFinished(final LoadMoreFinishedEvent event) {
         if (!event.getSessionId().equals(MyApplication.getInstance().getSessionId())) {
             return;
         }
@@ -309,7 +314,8 @@ public class ListManagerFragment extends Fragment {
      *
      * @param event
      */
-    public void onEventMainThread(final AppRefreshFinishedEvent event) {
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAppRefreshFinished(final AppRefreshFinishedEvent event) {
         EventBus.getDefault().removeStickyEvent(AppRefreshFinishedEvent.class);
 
         new AsyncTask<Void, Void, Void>() {
@@ -342,7 +348,8 @@ public class ListManagerFragment extends Fragment {
      *
      * @param event
      */
-    public void onEventMainThread(final WidgetRefreshDelegateEvent event) {
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onWidgetRefreshDelegate(final WidgetRefreshDelegateEvent event) {
         EventBus.getDefault().removeStickyEvent(WidgetRefreshDelegateEvent.class);
 
         new AsyncTask<Context, Void, Void>() {

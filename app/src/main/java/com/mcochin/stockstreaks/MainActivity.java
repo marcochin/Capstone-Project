@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.NinePatchDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -66,10 +67,10 @@ import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-
-import de.greenrobot.event.EventBus;
 
 public class MainActivity extends AppCompatActivity implements SearchBox.SearchListener,
         MainAdapter.EventListener, SwipeRefreshLayout.OnRefreshListener,
@@ -151,8 +152,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         initOverflowMenu();
         initRecyclerView();
         initInterstitialAd();
-        initGtmContainer();
-        MyApplication.getInstance().initAnalyticsTracking();
+        initTagManagerAndAnalytics();
 
         mListFragment.setEventListener(this);
         mSwipeToRefresh.setOnRefreshListener(this);
@@ -172,8 +172,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if (MyApplication.getInstance().getSessionId().isEmpty()) {
             savedInstanceState = null;
         }
-        mListFragment = ((ListManagerFragment) getSupportFragmentManager()
-                .findFragmentByTag(ListManagerFragment.TAG));
 
         if (savedInstanceState == null) {
             mFirstOpen = true;
@@ -182,11 +180,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             MyApplication.startNewSession();
 
             // Initialize the fragment that stores the list
-            if (mListFragment == null) {
-                mListFragment = new ListManagerFragment();
-                getSupportFragmentManager().beginTransaction()
-                        .add(mListFragment, ListManagerFragment.TAG).commit();
-            }
+            mListFragment = new ListManagerFragment();
+            getSupportFragmentManager().beginTransaction()
+                    .add(mListFragment, ListManagerFragment.TAG).commit();
 
             // Execute pending transaction to immediately add the ListManagerFragment because
             // the RecyclerView Adapter is dependent on it.
@@ -207,6 +203,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
 
         } else { // saveInstanceState != null
+            mListFragment = ((ListManagerFragment) getSupportFragmentManager()
+                    .findFragmentByTag(ListManagerFragment.TAG));
+
             // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mToolbar.toggleSearch();
@@ -258,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         initDynamicScrollListener();
 
         EventBus eventBus = EventBus.getDefault();
-        eventBus.registerSticky(mListFragment);
+        eventBus.register(mListFragment);
 
         // Fetch the stock list
         fetchStockList();
@@ -1039,6 +1038,19 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
                         getString(R.string.tag_manager_event_label_key),
                         getString(R.string.tag_manager_placeholder_event_label, symbol)));
+    }
+
+    private void initTagManagerAndAnalytics(){
+        // Init Analytics and Tag Manager in AsyncTask to slightly speed up app startup
+        new AsyncTask<Void, Void, Void>(){
+            @Override
+            protected Void doInBackground(Void... params) {
+                MyApplication.getInstance().initAnalyticsTracking();
+                initGtmContainer();
+
+                return null;
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     /**

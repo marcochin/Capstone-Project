@@ -13,13 +13,18 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name="com.mcochin.stockstreaks.MainActivity"
-            android:label="@string/app_name"
-            android:launchMode="singleTop">
+            android:name="com.mcochin.stockstreaks.SplashActivity"
+            android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.mcochin.stockstreaks.MainActivity"
+            android:label="@string/app_name"
+            android:launchMode="singleTop">
         </activity>
 
         <activity
@@ -57,6 +62,29 @@
             android:name=".widget.StockWidgetRemoteViewsService"
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <!-- Analytics -->
+        <!-- Optionally, register AnalyticsReceiver and AnalyticsService to support background
+          dispatching on non-Google Play devices -->
+        <receiver android:name="com.google.android.gms.analytics.AnalyticsReceiver"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.analytics.ANALYTICS_DISPATCH" />
+            </intent-filter>
+        </receiver>
+        <service android:name="com.google.android.gms.analytics.AnalyticsService"
+            android:enabled="true"
+            android:exported="false"/>
+
+        <!-- Optionally, register CampaignTrackingReceiver and CampaignTrackingService to enable
+             installation campaign reporting -->
+        <receiver android:name="com.google.android.gms.analytics.CampaignTrackingReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.vending.INSTALL_REFERRER" />
+            </intent-filter>
+        </receiver>
+        <service android:name="com.google.android.gms.analytics.CampaignTrackingService" />
 
     </application>
 </manifest>

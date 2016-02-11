@@ -8,6 +8,8 @@ import com.google.android.gms.tagmanager.ContainerHolder;
 import com.google.android.gms.tagmanager.TagManager;
 import com.mcochin.stockstreaks.R;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.UUID;
 
 /**
@@ -38,6 +40,9 @@ public class MyApplication extends Application {
     public void onCreate() {
         super.onCreate();
         sMyApplication = this;
+        // Optimization to speed up event bus
+        // http://greenrobot.org/eventbus/documentation/subscriber-index/
+        EventBus.builder().addIndex(new MyEventBusIndex()).installDefaultEventBus();
     }
 
     /**

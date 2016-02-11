@@ -30,11 +30,13 @@ import com.mcochin.stockstreaks.pojos.events.LoadDetailFinishedEvent;
 import com.mcochin.stockstreaks.services.DetailService;
 import com.mcochin.stockstreaks.utils.Utility;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-
-import de.greenrobot.event.EventBus;
 
 /**
  * Fragment that contains more details of the list items in the main list.
@@ -148,7 +150,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public void onStart() {
         super.onStart();
         EventBus eventBus = EventBus.getDefault();
-        eventBus.registerSticky(this);
+        eventBus.register(this);
 
         if (mTextPrevStreak.getText().toString().isEmpty()) {
             fetchDetailsData();
@@ -256,7 +258,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public void onLoaderReset(Loader<Cursor> loader) {
     }
 
-    public void onEventMainThread(LoadDetailFinishedEvent event) {
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onLoadDetailFinished(LoadDetailFinishedEvent event) {
         // Make sure we don't process the event of another stock symbol. This can happen is we
         // switch to a different DetailFragment while the prev one is still loading.
         if (event.getSymbol().equals(getSymbol())) {

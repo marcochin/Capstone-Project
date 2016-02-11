@@ -17,6 +17,8 @@ import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.pojos.events.LoadDetailFinishedEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -25,7 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-import de.greenrobot.event.EventBus;
 import yahoofinance.Stock;
 import yahoofinance.histquotes.HistoricalQuote;
 import yahoofinance.histquotes.Interval;
@@ -242,6 +243,9 @@ public class DetailService extends Service {
                         }
                     }
                 }
+
+                // Add the current streak to chart too!
+                addStreakToChartMap(chartMap, currentStreak);
 
                 values = new ContentValues();
                 values.put(StockContract.StockEntry.COLUMN_PREV_STREAK, prevStreak);
