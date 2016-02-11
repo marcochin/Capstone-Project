@@ -118,8 +118,11 @@
         from its previous close like you would normally see. It gives a better perspective on how
         much a stock has changed over the course of its streak.
 
-        \n\n<b>Is the stock data live data?</b>
+        \n\n<b>Is the stock data real-time?</b>
         \nNo, the app only displays information from its most recent regular hours close.
+
+        \n\n<b>Are all stocks supported?</b>
+        No, the app currently only supports stocks from NASDAQ/NYSE.
 
         \n\n<b>When can I refresh the stock list?</b>
         \nThe stock list can be refreshed at 4:30 PM EST. I am aware that markets close at 4:00 PM,
