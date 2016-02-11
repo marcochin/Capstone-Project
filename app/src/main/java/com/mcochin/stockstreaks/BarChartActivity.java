@@ -1,8 +1,6 @@
 package com.mcochin.stockstreaks;
 
 import android.database.Cursor;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -10,9 +8,7 @@ import android.support.v4.util.Pair;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.MenuItem;
-import android.view.View;
 
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.BarChart;
@@ -25,6 +21,9 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.utils.Utils;
 import com.github.mikephil.charting.utils.ViewPortHandler;
+import com.google.android.gms.tagmanager.DataLayer;
+import com.google.android.gms.tagmanager.TagManager;
+import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.StockContract;
 import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 
@@ -53,8 +52,11 @@ public class BarChartActivity extends AppCompatActivity{
             actionBar.setDisplayShowTitleEnabled(false);
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
-
         initBarChart();
+
+        if(savedInstanceState == null){
+            sendScreenViewHit();
+        }
     }
 
     @Override
@@ -160,7 +162,7 @@ public class BarChartActivity extends AppCompatActivity{
 
         barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
         barChart.setGridBackgroundColor(ContextCompat.getColor(this, R.color.list_item_bg_color));
-        barChart.setDescription(getString(R.string.bar_chart_description_placeholder,
+        barChart.setDescription(getString(R.string.bar_chart_placeholder_description,
                 StockContract.getSymbolFromUri(mDetailUri)));
 
         // Need to post so when we use getWidth() it will not return 0. Anything you post to queue
@@ -191,5 +193,17 @@ public class BarChartActivity extends AppCompatActivity{
 
         barChart.animateY(BAR_CHART_ANIMATION_DURATION, Easing.EasingOption.EaseOutQuart);
         barChart.setData(barData);
+    }
+
+    /**
+     * Send a hit to Tag Manager which will forward to Analytics the data of a Screen View Hit.
+     */
+    private void sendScreenViewHit(){
+        String symbol = StockContract.getSymbolFromUri(mDetailUri);
+        TagManager tagManager = MyApplication.getInstance().getTagManager();
+        tagManager.getDataLayer().pushEvent(getString(R.string.tag_manager_screen_view_bar_chart_event_name),
+
+                DataLayer.mapOf(getString(R.string.tag_manager_screen_view_bar_chart_key),
+                        getString(R.string.tag_manager_placeholder_screen_view_bar_chart, symbol)));
     }
 }

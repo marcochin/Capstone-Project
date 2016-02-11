@@ -1,6 +1,5 @@
 package com.mcochin.stockstreaks;
 
-import android.app.ActivityManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
@@ -35,6 +34,7 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.tagmanager.ContainerHolder;
+import com.google.android.gms.tagmanager.DataLayer;
 import com.google.android.gms.tagmanager.TagManager;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
@@ -62,7 +62,6 @@ import com.mcochin.stockstreaks.pojos.events.InitLoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
-import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
@@ -80,6 +79,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private static final String KEY_LOGO_VISIBLE = "logoVisible";
     private static final String KEY_PROGRESS_WHEEL_VISIBLE = "progressWheelVisible";
     private static final String KEY_EMPTY_MSG_VISIBLE = "emptyMsgVisible";
+    private static final String KEY_PROGRESS_WHEEL_QUEUE = "progressWheelQueue";
+
+    private static final String KEY_FIRST_OPEN = "firstOpen";
     private static final String KEY_DYNAMIC_SCROLL_ENABLED = "dynamicScrollEnabled";
     private static final String KEY_DYNAMIC_LOAD_ANOTHER = "dynamicLoadAnother";
     private static final String KEY_ITEM_CLICKS_FOR_INTERSTITIAL = "ItemClicksForInterstitial";
@@ -120,6 +122,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private boolean mDynamicScrollLoadEnabled;
     private boolean mDynamicScrollLoadAnother;
     private int mNumberOfLaunchItems;
+    private int mProgressWheelQueue;
 
     private InterstitialAd mInterstitialAd;
     private int mItemClicksForInterstitial;
@@ -147,8 +150,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         initNavigationMenu();
         initOverflowMenu();
         initRecyclerView();
-//        initInterstitialAd();
+        initInterstitialAd();
         initGtmContainer();
+        MyApplication.getInstance().initAnalyticsTracking();
 
         mListFragment.setEventListener(this);
         mSwipeToRefresh.setOnRefreshListener(this);
@@ -165,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private void initSavedInstanceState(Bundle savedInstanceState) {
         // When Android kills this app because of low memory check if sessionId is empty. If it is,
         // start the app as if it were the first time.
-        if(MyApplication.getInstance().getSessionId().isEmpty()){
+        if (MyApplication.getInstance().getSessionId().isEmpty()) {
             savedInstanceState = null;
         }
         mListFragment = ((ListManagerFragment) getSupportFragmentManager()
@@ -178,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             MyApplication.startNewSession();
 
             // Initialize the fragment that stores the list
-            if(mListFragment == null) {
+            if (mListFragment == null) {
                 mListFragment = new ListManagerFragment();
                 getSupportFragmentManager().beginTransaction()
                         .add(mListFragment, ListManagerFragment.TAG).commit();
@@ -201,10 +205,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             if (!mStartedFromWidget && mDetailContainer != null) {
                 showDetailEmptyFragment();
             }
-        }
 
-        // saveInstanceState != null
-        else {
+        } else { // saveInstanceState != null
             // If editText was focused, return that focus on orientation change
             if (savedInstanceState.getBoolean(KEY_SEARCH_FOCUSED)) {
                 mToolbar.toggleSearch();
@@ -222,6 +224,8 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 mEmptyMsg.setVisibility(View.VISIBLE);
             }
 
+            mFirstOpen = savedInstanceState.getBoolean(KEY_FIRST_OPEN);
+            mProgressWheelQueue = savedInstanceState.getInt(KEY_PROGRESS_WHEEL_QUEUE);
             mDynamicScrollLoadEnabled = savedInstanceState.getBoolean(KEY_DYNAMIC_SCROLL_ENABLED);
             mDynamicScrollLoadAnother = savedInstanceState.getBoolean(KEY_DYNAMIC_LOAD_ANOTHER);
             mItemClicksForInterstitial = savedInstanceState.getInt(KEY_ITEM_CLICKS_FOR_INTERSTITIAL);
@@ -267,8 +271,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         ListEventQueue listEventQueue = ListEventQueue.getInstance();
 
         if (mFirstOpen) {
+            mFirstOpen = false;
             mDynamicScrollLoadAnother = false;
-            showProgressWheel();
+
+            showProgressWheel(1);
             listEventQueue.clearQueue();
             mListFragment.initFromDb();
 
@@ -276,28 +282,28 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             listEventQueue.postAllFromQueue();
             refreshList(null, false);
         }
-        mFirstOpen = false;
     }
 
     /**
      * Sends a request to refresh the list.
      *
-     * @param attachSymbol The symbol to load after the list has been refreshed. This is to ensure
-     *                     already loaded symbols will be in sync with the new symbol.
+     * @param attachSymbol      The symbol to load after the list has been refreshed. This is to ensure
+     *                          already loaded symbols will be in sync with the new symbol.
      * @param showUpToDateToast set to true if you would like a toast to notify if you're already up to
      *                          date.
      * @return true if list can be refreshed, false otherwise.
      */
     private boolean refreshList(String attachSymbol, boolean showUpToDateToast) {
         if (MyApplication.getInstance().isRefreshing()) {
-            showProgressWheel();
+            showProgressWheel(1);
 
-        }else if(Utility.canUpdateList(getContentResolver())){
+        } else if (Utility.canUpdateList(getContentResolver()) && mEmptyMsg.getVisibility() != View.VISIBLE) {
             // We set Dynamic scroll to false here as early as possible as a precaution to prevent
             // load as we don't setRefreshing to true until initFromRefresh();
             mDynamicScrollLoadEnabled = false;
             mDynamicScrollLoadAnother = false;
-            showProgressWheel();
+
+            showProgressWheel(attachSymbol == null ? 1 : 2);
 
             // Dismiss Snack-bar to prevent undo removal because the old data will not be in sync with
             // new data when list is refreshed.
@@ -307,7 +313,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             mListFragment.initFromRefresh(attachSymbol);
             return true;
 
-        }else if(showUpToDateToast){
+        } else if (showUpToDateToast) {
             showListUpToDateToast();
         }
 
@@ -353,10 +359,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             if (TextUtils.isEmpty(query)) {
                 Toast.makeText(this, R.string.toast_empty_search, Toast.LENGTH_SHORT).show();
 
-            } else if(!refreshList(query, false)){
+            } else if (!refreshList(query, false)) {
                 // Refresh the shownList BEFORE fetching a new stock. This is to prevent
                 // fetching the new stock twice when it becomes apart of that list.
-                showProgressWheel();
+                showProgressWheel(1);
                 mListFragment.loadSymbol(query);
             }
         }
@@ -402,13 +408,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 insertFragmentIntoDetailContainer(getListManipulator().getItem(0).getSymbol());
             }
 
-            // Send to analytics what symbols were added.
-//            MyApplication.getInstance().getAnalyticsTracker().send(new HitBuilders.EventBuilder()
-//                    .setCategory(getString(R.string.analytics_category))
-//                    .setAction(getString(R.string.analytics_action_add))
-//                    .setLabel(getString(R.string.analytics_label_add_placeholder,
-//                            event.getStock().getSymbol()))
-//                    .build());
+            // Send to Tag Manager a hit of a Symbol Add Event.
+            sendSymbolAddHit(event.getStock().getSymbol());
+
         } else {
             if (getListManipulator().getCount() == 0) {
                 showEmptyWidgets();
@@ -443,6 +445,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     @Override // ListManipulatorFragment.EventListener
     public void onRefreshFinished(AppRefreshFinishedEvent event) {
         hideProgressWheel();
+
         if (event.isSuccessful()) {
             mAdapter.notifyDataSetChanged();
             dynamicLoadMore();
@@ -461,7 +464,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // ListManipulatorFragment.EventListener
     public void onWidgetRefreshDelegate(WidgetRefreshDelegateEvent event) {
-        showProgressWheel();
+        showProgressWheel(1);
     }
 
     @Override // MainAdapter.EventListener
@@ -479,7 +482,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
                     // If the symbol's detail fragment is already loaded, don't load again if
                     // clicked again.
-                    if(!detailSymbol.equals(symbol)) {
+                    if (!detailSymbol.equals(symbol)) {
                         insertFragmentIntoDetailContainer(symbol);
                     }
                 } else {
@@ -487,11 +490,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 }
 
                 // Check if it is time to show interstitial ad
-//                if (mItemClicksForInterstitial >= CLICKS_UNTIL_INTERSTITIAL
-//                        && mInterstitialAd.isLoaded()) {
-//                    mInterstitialAd.show();
-//                }
-//                mItemClicksForInterstitial++;
+                if (mItemClicksForInterstitial >= CLICKS_UNTIL_INTERSTITIAL) {
+                    if (mInterstitialAd.isLoaded()) {
+                        mInterstitialAd.show();
+                    } else {
+                        requestNewInterstitialAd();
+                    }
+                }
+                mItemClicksForInterstitial++;
             }
         }
     }
@@ -881,7 +887,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         return null;
     }
 
-    private void showListUpToDateToast(){
+    private void showListUpToDateToast() {
         if (mListUpToDateToast == null) {
             mListUpToDateToast = Toast.makeText(this,
                     R.string.toast_list_is_up_to_date,
@@ -912,7 +918,15 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
-    private void showProgressWheel() {
+    /**
+     * @param numberOfBackgroundTasks Number of background tasks you will be performing. It is
+     *                                important to keep track of this information so we know when to hide the progress wheel.
+     */
+    private void showProgressWheel(int numberOfBackgroundTasks) {
+        if (mProgressWheelQueue < 0) {
+            mProgressWheelQueue = 0;
+        }
+        mProgressWheelQueue += numberOfBackgroundTasks;
         mEmptyMsg.setVisibility(View.INVISIBLE);
         mProgressWheel.setVisibility(View.VISIBLE);
     }
@@ -922,8 +936,10 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     private void hideProgressWheel() {
-        if (!Utility.isServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE),
-                MainService.class.getName())) {
+//        if (!Utility.isServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE),
+//                MainService.class.getName())) {
+        mProgressWheelQueue--;
+        if (mProgressWheelQueue <= 0) {
             mProgressWheel.setVisibility(View.INVISIBLE);
         }
     }
@@ -943,6 +959,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         outState.putBoolean(KEY_LOGO_VISIBLE, mSearchLogo.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_PROGRESS_WHEEL_VISIBLE, mProgressWheel.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_EMPTY_MSG_VISIBLE, mEmptyMsg.getVisibility() == View.VISIBLE);
+        outState.putInt(KEY_PROGRESS_WHEEL_QUEUE, mProgressWheelQueue);
+
+        outState.putBoolean(KEY_FIRST_OPEN, mFirstOpen);
         outState.putBoolean(KEY_DYNAMIC_SCROLL_ENABLED, mDynamicScrollLoadEnabled);
         outState.putBoolean(KEY_DYNAMIC_LOAD_ANOTHER, mDynamicScrollLoadAnother);
         outState.putInt(KEY_ITEM_CLICKS_FOR_INTERSTITIAL, mItemClicksForInterstitial);
@@ -1004,9 +1023,28 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     /**
+     * Send a hit to Tag Manager which will forward to Analytics the data of a Symbol Add Event.
+     *
+     * @param symbol
+     */
+    private void sendSymbolAddHit(String symbol) {
+        TagManager tagManager = MyApplication.getInstance().getTagManager();
+        tagManager.getDataLayer().pushEvent(getString(R.string.tag_manager_symbol_add_event_name),
+
+                DataLayer.mapOf(getString(R.string.tag_manager_event_category_key),
+                        getString(R.string.tag_manager_event_category),
+
+                        getString(R.string.tag_manager_event_action_key),
+                        getString(R.string.tag_manager_event_action),
+
+                        getString(R.string.tag_manager_event_label_key),
+                        getString(R.string.tag_manager_placeholder_event_label, symbol)));
+    }
+
+    /**
      * Retrieves and prepares a container that will serve as data for our Msg Of the Day.
      */
-    private void initGtmContainer(){
+    private void initGtmContainer() {
         TagManager tagManager = MyApplication.getInstance().getTagManager();
 
         // Retrieves a fresh SAVED container. I don't think it ever performs network operations..

@@ -230,6 +230,7 @@ public class ListManagerFragment extends Fragment {
 
     /**
      * A callback for the when loading from db as initialization of the stock list has finished.
+     *
      * @param event
      */
     public void onEvent(InitLoadFromDbFinishedEvent event) {

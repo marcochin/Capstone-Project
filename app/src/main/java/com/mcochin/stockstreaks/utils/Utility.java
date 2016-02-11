@@ -1,7 +1,5 @@
 package com.mcochin.stockstreaks.utils;
 
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -15,9 +13,7 @@ import android.widget.Toast;
 import com.mcochin.stockstreaks.R;
 import com.mcochin.stockstreaks.data.ListManipulator;
 import com.mcochin.stockstreaks.data.StockContract.SaveStateEntry;
-import com.mcochin.stockstreaks.data.StockContract.StockEntry;
 import com.mcochin.stockstreaks.pojos.Stock;
-import com.mcochin.stockstreaks.services.MainService;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -65,21 +61,6 @@ public class Utility {
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         return activeNetwork != null &&
                 activeNetwork.isConnectedOrConnecting();
-    }
-
-    /**
-     * Detects to see if {@link MainService} is still running.
-     *
-     * @param manager ActivityManager
-     * @return returns true if running, false otherwise
-     */
-    public static boolean isServiceRunning(ActivityManager manager, String serviceName) {
-        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceName.equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -140,21 +121,6 @@ public class Utility {
 
         return calendar;
     }
-
-
-//    public static Calendar getNewYorkCalendarQuickSetup(int hourOfDay, int minute, int milli, int month,
-//                                                        int dayOfMonth, int year) {
-//        // we are changing the month, day, and year so new york instance doesn't matter
-//        Calendar calendar = getNewYorkCalendarInstance();
-//        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-//        calendar.set(Calendar.MINUTE, minute);
-//        calendar.set(Calendar.MILLISECOND, milli);
-//        calendar.set(Calendar.YEAR, year);
-//        calendar.set(Calendar.MONTH, month);
-//        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-//
-//        return calendar;
-//    }
 
     /**
      * Extracts the {@link Stock} from the cursor's current position.
@@ -388,6 +354,7 @@ public class Utility {
 
     /**
      * Compat version of the {@link Integer#compare(int, int)} that works in API < 19
+     *
      * @param lhs
      * @param rhs
      * @return

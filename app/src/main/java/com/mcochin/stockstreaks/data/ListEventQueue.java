@@ -23,12 +23,12 @@ public class ListEventQueue {
     private static ListEventQueue sListEventQueue;
     private Queue<Event> mQueue;
 
-    private ListEventQueue(){
+    private ListEventQueue() {
         mQueue = new LinkedList<>();
     }
 
-    public synchronized static ListEventQueue getInstance(){
-        if(sListEventQueue == null){
+    public synchronized static ListEventQueue getInstance() {
+        if (sListEventQueue == null) {
             sListEventQueue = new ListEventQueue();
         }
 
@@ -38,15 +38,16 @@ public class ListEventQueue {
     /**
      * Posts an event to {@link EventBus}. If there is no subscribers for the event or if
      * there are already events on the event queue, the event will be added to the event queue.
+     *
      * @param event The {@link Event} to be posted.
      */
-    public void post(Event event){
+    public void post(Event event) {
         EventBus eventBus = EventBus.getDefault();
         Class c = getEventType(event);
 
-        if(eventBus.hasSubscriberForEvent(c) && mQueue.isEmpty()){
+        if (eventBus.hasSubscriberForEvent(c) && mQueue.isEmpty()) {
             eventBus.postSticky(event);
-        }else{
+        } else {
             mQueue.offer(event);
         }
     }
@@ -54,21 +55,23 @@ public class ListEventQueue {
     /**
      * Post all events that are queue in the event queue.
      */
-    public void postAllFromQueue(){
+    public void postAllFromQueue() {
         EventBus eventBus = EventBus.getDefault();
 
-        while(!mQueue.isEmpty()){
+        while (!mQueue.isEmpty()) {
             Class event = getEventType(mQueue.peek());
 
-            if(eventBus.hasSubscriberForEvent(event)){
+            if (eventBus.hasSubscriberForEvent(event)) {
                 eventBus.postSticky(mQueue.poll());
-            }else{
+            } else {
                 break;
             }
         }
     }
+
     /**
      * Determines what class the event is.
+     *
      * @param event The event to figure out the type for.
      * @return Class obj that represents the event class.
      */
@@ -93,15 +96,15 @@ public class ListEventQueue {
         return null;
     }
 
-    public Object peek(){
+    public Object peek() {
         return mQueue.peek();
     }
 
-    public void clearQueue(){
+    public void clearQueue() {
         mQueue.clear();
     }
 
-    public boolean isEmpty(){
+    public boolean isEmpty() {
         return mQueue.isEmpty();
     }
 }

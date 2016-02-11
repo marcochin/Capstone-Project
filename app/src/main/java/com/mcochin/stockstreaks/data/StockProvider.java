@@ -93,7 +93,7 @@ public class StockProvider extends ContentProvider {
     @Override
     public String getType(@NonNull Uri uri) {
         final int match = sUriMatcher.match(uri);
-        switch (match){
+        switch (match) {
             case SAVE_STATE:
                 return SaveStateEntry.CONTENT_DIR_TYPE;
 
@@ -154,7 +154,7 @@ public class StockProvider extends ContentProvider {
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);
         }
 
-        if(getContext()!= null) {
+        if (getContext() != null) {
             // This will register an observer for the queried information
             retCursor.setNotificationUri(getContext().getContentResolver(), uri);
         }
@@ -167,7 +167,7 @@ public class StockProvider extends ContentProvider {
         final int match = sUriMatcher.match(uri);
         long id;
 
-        switch (match){
+        switch (match) {
             case SAVE_STATE:
                 id = mStockDbHelper.getWritableDatabase()
                         .insert(SaveStateEntry.TABLE_NAME, null, values);
@@ -182,10 +182,10 @@ public class StockProvider extends ContentProvider {
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);
         }
 
-        if(id < 0){
+        if (id < 0) {
             throw new SQLException(ERROR_ROW_INSERT + uri);
         }
-        if(getContext()!= null) {
+        if (getContext() != null) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
         return uri;
@@ -196,7 +196,7 @@ public class StockProvider extends ContentProvider {
         final int match = sUriMatcher.match(uri);
         int rowsDeleted;
 
-        switch (match){
+        switch (match) {
             case STOCK_SYMBOL:
                 String symbol = StockContract.getSymbolFromUri(uri);
 
@@ -218,7 +218,7 @@ public class StockProvider extends ContentProvider {
         final int match = sUriMatcher.match(uri);
         int rowsAffected;
 
-        switch (match){
+        switch (match) {
             case SAVE_STATE:
                 rowsAffected = mStockDbHelper.getWritableDatabase().update(
                         SaveStateEntry.TABLE_NAME,
@@ -240,7 +240,7 @@ public class StockProvider extends ContentProvider {
             default:
                 throw new UnsupportedOperationException(UNKNOWN_URI + uri);
         }
-        if(getContext()!= null) {
+        if (getContext() != null) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
         return rowsAffected;
@@ -249,47 +249,48 @@ public class StockProvider extends ContentProvider {
     @Nullable
     @Override
     public Bundle call(@NonNull String method, String arg, Bundle extras) {
-            if(extras != null) {
-                ArrayList<ContentProviderOperation> operations =
-                        extras.getParcelableArrayList(KEY_OPERATIONS);
-                String sessionId = extras.getString(MainService.KEY_SESSION_ID);
+        if (extras != null) {
+            ArrayList<ContentProviderOperation> operations =
+                    extras.getParcelableArrayList(KEY_OPERATIONS);
+            String sessionId = extras.getString(MainService.KEY_SESSION_ID);
 
-                if (operations != null) {
-                    try {
-                        applyBatch(operations);
+            if (operations != null) {
+                try {
+                    applyBatch(operations);
 
-                        switch (method) {
-                            case METHOD_LOAD_SYMBOL:
-                                performLoadSymbol(operations, sessionId);
-                                break;
+                    switch (method) {
+                        case METHOD_LOAD_SYMBOL:
+                            performLoadSymbol(operations, sessionId);
+                            break;
 
-                            case METHOD_LOAD_A_FEW:
-                                performLoadAFew(operations, sessionId);
-                                break;
+                        case METHOD_LOAD_A_FEW:
+                            performLoadAFew(operations, sessionId);
+                            break;
 
-                            case METHOD_REFRESH:
-                                performRefresh(operations, sessionId);
-                                break;
+                        case METHOD_REFRESH:
+                            performRefresh(operations, sessionId);
+                            break;
 
-                            case METHOD_UPDATE_LIST_POSITION:
-                                // Do nothing
-                                break;
-                        }
-                    }catch (OperationApplicationException e){
-                        Log.e(TAG, Log.getStackTraceString(e));
+                        case METHOD_UPDATE_LIST_POSITION:
+                            // Do nothing
+                            break;
                     }
+                } catch (OperationApplicationException e) {
+                    Log.e(TAG, Log.getStackTraceString(e));
                 }
             }
+        }
         return super.call(method, arg, extras);
     }
 
     /**
      * Loops through ops and queries the ops' URI to retrieve the modified data to add to the list.
      * It will then post an event containing the data.
-     * @param ops List of operations that contain the URI's that were modified.
+     *
+     * @param ops       List of operations that contain the URI's that were modified.
      * @param sessionId session id of the current session
      */
-    private void performLoadSymbol(ArrayList<ContentProviderOperation> ops, String sessionId){
+    private void performLoadSymbol(ArrayList<ContentProviderOperation> ops, String sessionId) {
         List<Stock> stockList = loopThroughOperations(ops);
         LoadSymbolFinishedEvent event = new LoadSymbolFinishedEvent(sessionId, stockList.get(0), true);
         ListEventQueue.getInstance().post(event);
@@ -298,10 +299,11 @@ public class StockProvider extends ContentProvider {
     /**
      * Loops through ops and queries the ops' URI to retrieve the modified data to add to the list.
      * It will then post an event containing the data.
-     * @param ops List of operations that contain the URI's that were modified.
+     *
+     * @param ops       List of operations that contain the URI's that were modified.
      * @param sessionId session id of the current session
      */
-    private void performLoadAFew(ArrayList<ContentProviderOperation> ops, String sessionId){
+    private void performLoadAFew(ArrayList<ContentProviderOperation> ops, String sessionId) {
         List<Stock> stockList = loopThroughOperations(ops);
         LoadMoreFinishedEvent event = new LoadMoreFinishedEvent(sessionId, stockList, true);
         ListEventQueue.getInstance().post(event);
@@ -310,23 +312,24 @@ public class StockProvider extends ContentProvider {
     /**
      * Loops through ops and queries the ops' URI to retrieve the modified data to add to the list.
      * It will then post an event containing the data.
-     * @param ops List of operations that contain the URI's that were modified.
+     *
+     * @param ops       List of operations that contain the URI's that were modified.
      * @param sessionId session id of the current session
      */
-    private void performRefresh(ArrayList<ContentProviderOperation> ops, String sessionId){
+    private void performRefresh(ArrayList<ContentProviderOperation> ops, String sessionId) {
         List<Stock> stockList = loopThroughOperations(ops);
         AppRefreshFinishedEvent event = new AppRefreshFinishedEvent(sessionId, stockList, true);
         ListEventQueue.getInstance().post(event);
         // Update widget to reflect changes
-        if(getContext() != null) {
+        if (getContext() != null) {
             getContext().sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATED));
         }
-        if(!EventBus.getDefault().hasSubscriberForEvent(AppRefreshFinishedEvent.class)) {
+        if (!EventBus.getDefault().hasSubscriberForEvent(AppRefreshFinishedEvent.class)) {
             MyApplication.getInstance().setRefreshing(false);
         }
     }
 
-    private List<Stock> loopThroughOperations(ArrayList<ContentProviderOperation> ops){
+    private List<Stock> loopThroughOperations(ArrayList<ContentProviderOperation> ops) {
         List<Stock> stockList = new ArrayList<>();
         Cursor cursor = null;
 

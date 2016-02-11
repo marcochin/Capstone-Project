@@ -41,16 +41,16 @@ public class MyApplication extends Application {
     }
 
     /**
-     * Gets the default {@link Tracker} for this {@link Application}.
-     * @return tracker
+     * Initializes the Analytics Tracker
      */
-    public synchronized Tracker getAnalyticsTracker() {
+    public synchronized void initAnalyticsTracking() {
         if (mTracker == null) {
             GoogleAnalytics analytics = GoogleAnalytics.getInstance(this);
-            // To enable debug logging use: adb shell setprop log.tag.GAv4 DEBUG
+            // To enable debug logging use:
+            // adb shell setprop log.tag.GAv4 DEBUG
+            // adb logcat -s GAv4
             mTracker = analytics.newTracker(R.xml.analytics_tracker);
         }
-        return mTracker;
     }
 
     public synchronized TagManager getTagManager(){

@@ -43,14 +43,14 @@ import yahoofinance.quotes.stock.StockQuote;
  */
 public class MainService extends IntentService {
     private static final String TAG = MainService.class.getSimpleName();
-    public static final String KEY_LOAD_SYMBOL_QUERY ="searchQuery";
-    public static final String KEY_LOAD_MORE_QUERY ="loadMoreQuery";
-    public static final String KEY_SESSION_ID ="sessionId";
+    public static final String KEY_LOAD_SYMBOL_QUERY = "searchQuery";
+    public static final String KEY_LOAD_MORE_QUERY = "loadMoreQuery";
+    public static final String KEY_SESSION_ID = "sessionId";
 
     public static final String ACTION_LOAD_MORE = "actionLoadMore";
     public static final String ACTION_LOAD_SYMBOL = "actionStockWithSymbol";
-    public static final String ACTION_APP_REFRESH ="actionAppRefresh";
-    public static final String ACTION_WIDGET_REFRESH ="actionWidgetRefresh";
+    public static final String ACTION_APP_REFRESH = "actionAppRefresh";
+    public static final String ACTION_WIDGET_REFRESH = "actionWidgetRefresh";
 
     //needs to be 32 since we need to compare closing to prev day's closing price
     private static final int MONTH = 32;
@@ -60,17 +60,17 @@ public class MainService extends IntentService {
     private static final String NASDAQ = "NMS";
     private static final String NYSE = "NYQ";
 
-    public MainService(){
+    private String mSessionId;
+
+    public MainService() {
         super(TAG);
     }
-
-    private String mSessionId;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // Every request should have a session id. The sessionId may not exist yet if the process
         // was started by the widget and hence we have to create a new session if so.
-        if(MyApplication.getInstance().getSessionId().isEmpty()){
+        if (MyApplication.getInstance().getSessionId().isEmpty()) {
             MyApplication.startNewSession();
         }
         intent.putExtra(KEY_SESSION_ID, MyApplication.getInstance().getSessionId());
@@ -84,16 +84,16 @@ public class MainService extends IntentService {
         String action = intent.getAction();
         try {
             // check if the session is still valid
-            if(!MyApplication.validateSessionId(mSessionId)){
+            if (!MyApplication.validateSessionId(mSessionId)) {
                 throw new IllegalStateException();
             }
 
             // check for internet
-            if(!Utility.isNetworkAvailable(this)){
+            if (!Utility.isNetworkAvailable(this)) {
                 throw new IOException(getString(R.string.toast_no_network));
             }
 
-            switch(action) {
+            switch (action) {
                 case ACTION_LOAD_SYMBOL:
                     String symbol = intent.getStringExtra(KEY_LOAD_SYMBOL_QUERY);
                     performActionLoadSymbol(symbol);
@@ -112,22 +112,21 @@ public class MainService extends IntentService {
                     performActionWidgetRefresh();
                     break;
             }
-        } catch (IOException | IllegalArgumentException| IllegalStateException e) {
+        } catch (IOException | IllegalArgumentException | IllegalStateException e) {
             Log.e(TAG, Log.getStackTraceString(e));
 
-            if(e instanceof IllegalArgumentException){
+            if (e instanceof IllegalArgumentException) {
                 Utility.showToast(this, e.getMessage());
 
-            }else if(e instanceof IOException){
-                if(e.getMessage().equals(getString(R.string.toast_no_network))) {
+            } else if (e instanceof IOException) {
+                if (e.getMessage().equals(getString(R.string.toast_no_network))) {
                     Utility.showToast(this, e.getMessage());
-                }
-                else{
+                } else {
                     Utility.showToast(this, getString(R.string.toast_error_retrieving_data));
                 }
             }
 
-            switch(action) {
+            switch (action) {
                 case ACTION_LOAD_SYMBOL:
                     ListEventQueue.getInstance().post(new LoadSymbolFinishedEvent(
                             mSessionId, null, false));
@@ -149,7 +148,7 @@ public class MainService extends IntentService {
         }
     }
 
-    private void performActionLoadSymbol(String symbol)throws IOException{
+    private void performActionLoadSymbol(String symbol) throws IOException {
         // Check if symbol already exists in database
         if (isEntryExist(symbol)) {
             throw new IllegalArgumentException(getString(R.string.toast_placeholder_symbol_exists, symbol));
@@ -171,25 +170,25 @@ public class MainService extends IntentService {
         applyOperations(ops, StockProvider.METHOD_LOAD_SYMBOL, null);
     }
 
-    private void performActionLoadMore(String[] symbolsToLoad) throws IOException{
+    private void performActionLoadMore(String[] symbolsToLoad) throws IOException {
         ArrayList<ContentProviderOperation> ops = getLoadMoreOperations(symbolsToLoad);
         applyOperations(ops, StockProvider.METHOD_LOAD_A_FEW, null);
     }
 
-    private void performActionAppRefresh()throws IOException{
-        if(!refreshList(false)){
+    private void performActionAppRefresh() throws IOException {
+        if (!refreshList(false)) {
             ListEventQueue.getInstance().post(new AppRefreshFinishedEvent(mSessionId, null, false));
             sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
         }
     }
 
-    private void performActionWidgetRefresh()throws IOException{
+    private void performActionWidgetRefresh() throws IOException {
         // If we receive a msg that widget is refreshing and the user is currently using the
         // app, delegate the refresh to the app
-        if(EventBus.getDefault().hasSubscriberForEvent(WidgetRefreshDelegateEvent.class)){
+        if (EventBus.getDefault().hasSubscriberForEvent(WidgetRefreshDelegateEvent.class)) {
             ListEventQueue.getInstance().post(new WidgetRefreshDelegateEvent(mSessionId));
 
-        }else if(!refreshList(true)){
+        } else if (!refreshList(true)) {
             ListEventQueue.getInstance().post(new AppRefreshFinishedEvent(mSessionId, null, false));
             sendBroadcast(new Intent(StockWidgetProvider.ACTION_DATA_UPDATE_ERROR));
         }
@@ -200,7 +199,7 @@ public class MainService extends IntentService {
      * @return true there are items to be refreshed, false if there are no items in the list
      * @throws IOException
      */
-    private boolean refreshList(boolean refreshingFromWidget)throws IOException{
+    private boolean refreshList(boolean refreshingFromWidget) throws IOException {
         Cursor cursor = null;
         try {
             final String[] projection = new String[]{StockEntry.COLUMN_SYMBOL};
@@ -208,7 +207,7 @@ public class MainService extends IntentService {
 
             // Widget does not have the ability to add more to its list, so we need to load a little
             // bit more on its refresh to make it more useful.
-            int more = refreshingFromWidget? StockWidgetRemoteViewsService.MORE : ListManipulator.MORE;
+            int more = refreshingFromWidget ? StockWidgetRemoteViewsService.MORE : ListManipulator.MORE;
 
             // Query db for the FIRST FEW as a normal refresh would do.
             cursor = getContentResolver().query(
@@ -220,15 +219,15 @@ public class MainService extends IntentService {
 
             if (cursor != null) {
                 int cursorCount = cursor.getCount();
-                String[] symbolsToLoad = new String[cursorCount];
+                String[] symbolsToRefresh = new String[cursorCount];
 
                 for (int i = 0; i < cursorCount; i++) {
                     cursor.moveToPosition(i);
-                    symbolsToLoad[i] = cursor.getString(indexSymbol);
+                    symbolsToRefresh[i] = cursor.getString(indexSymbol);
                 }
-                if (cursorCount != 0) {
+                if (cursorCount > 0) {
                     ContentProviderOperation updateTimeOp = getUpdateTimeOperation();
-                    ArrayList<ContentProviderOperation> ops = getLoadMoreOperations(symbolsToLoad);
+                    ArrayList<ContentProviderOperation> ops = getLoadMoreOperations(symbolsToRefresh);
 
                     ops.add(updateTimeOp);
                     applyOperations(ops, StockProvider.METHOD_REFRESH, null);
@@ -246,26 +245,27 @@ public class MainService extends IntentService {
 
     /**
      * Calculates the stock's values that is shown in the list's item view.
+     *
      * @param stock
      * @return
      * @throws IOException
      */
-    private ContentValues getMainValues(Stock stock) throws IOException{
+    private ContentValues getMainValues(Stock stock) throws IOException {
         float recentClose = 0;
         ContentValues values;
 
         // check if the session is still valid
-        if(!MyApplication.validateSessionId(mSessionId)){
+        if (!MyApplication.validateSessionId(mSessionId)) {
             throw new IllegalStateException();
         }
 
-        if(stock == null){
+        if (stock == null) {
             throw new IllegalArgumentException(getString(R.string.toast_error_retrieving_data));
 
         } else if (stock.getName().equals(NOT_AVAILABLE) || (!stock.getCurrency().equals(USD))) {
             throw new IllegalArgumentException(getString(R.string.toast_symbol_not_found));
 
-        } else{
+        } else {
             // Get history from a month ago to today!
             Calendar nowTime = Utility.getNewYorkCalendarInstance();
             Calendar fromTime = Utility.getNewYorkCalendarInstance();
@@ -285,8 +285,8 @@ public class MainService extends IntentService {
             // Determine if we should use stock price
             // "nowTimeDay > lastTradeDay" covers time during "non-active" trade hours such as
             // holidays and weekends in which history has not updated yet!
-            if(!lastTradeTime.equals(firstHistoricalDate)
-                    && (nowTimeDay > lastTradeDay || !Utility.isDuringTradingHours())){
+            if (!lastTradeTime.equals(firstHistoricalDate)
+                    && (nowTimeDay > lastTradeDay || !Utility.isDuringTradingHours())) {
 
                 recentClose = Utility.roundTo2FloatDecimals(
                         stock.getQuote().getPrice().floatValue());
@@ -304,12 +304,13 @@ public class MainService extends IntentService {
      * Loops through the stock's history to calculate it's current streak and streak info.
      * This only loops through enough of the history to calculate info needed to show in the list
      * item.
+     *
      * @param historyList
      * @param recentClose
      * @return
      */
     private ContentValues getValuesFromHistoryList(List<HistoricalQuote> historyList,
-                                                   float recentClose){
+                                                   float recentClose) {
         int streak = 0;
         long prevStreakEndDate = 0;
         float prevStreakEndPrice = 0;
@@ -318,17 +319,17 @@ public class MainService extends IntentService {
         // We can't determine the first up streak by looking at the change. We need to compare
         // to its previous adj close price. If it compares to itself, streak will not change.
         HistoricalQuote firstHistory = historyList.get(0);
-        if(recentClose != 0){
+        if (recentClose != 0) {
             float firstHistoryAdjClose = Utility.roundTo2FloatDecimals(
                     firstHistory.getAdjClose().floatValue());
 
-            if(recentClose > firstHistoryAdjClose){
+            if (recentClose > firstHistoryAdjClose) {
                 streak++;
-            }else if(recentClose < firstHistoryAdjClose) {
+            } else if (recentClose < firstHistoryAdjClose) {
                 streak--;
             }
 
-        }else{
+        } else {
             // Retrieves most recent close if not already retrieved.
             recentClose = Utility.roundTo2FloatDecimals(firstHistory.getAdjClose().floatValue());
         }
@@ -345,7 +346,7 @@ public class MainService extends IntentService {
             // nothing to compare it to.
             if (i + 1 < historyList.size()) {
                 float prevHistoryAdjClose = Utility.roundTo2FloatDecimals(
-                                historyList.get(i + 1).getAdjClose().floatValue());
+                        historyList.get(i + 1).getAdjClose().floatValue());
 
                 if (historyAdjClose > prevHistoryAdjClose) {
                     // Down streak broken so break;
@@ -376,8 +377,8 @@ public class MainService extends IntentService {
         ContentValues values = new ContentValues();
         values.put(StockEntry.COLUMN_RECENT_CLOSE, recentClose);
         values.put(StockEntry.COLUMN_STREAK, streak);
-        values.put(StockEntry.COLUMN_CHANGE_DOLLAR, (float)changeDollarAndPercentage.first);
-        values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float)changeDollarAndPercentage.second);
+        values.put(StockEntry.COLUMN_CHANGE_DOLLAR, (float) changeDollarAndPercentage.first);
+        values.put(StockEntry.COLUMN_CHANGE_PERCENT, (float) changeDollarAndPercentage.second);
         values.put(StockEntry.COLUMN_PREV_STREAK_END_PRICE, prevStreakEndPrice);
         values.put(StockEntry.COLUMN_PREV_STREAK_END_DATE, prevStreakEndDate);
         values.put(StockEntry.COLUMN_PREV_STREAK, 0);
@@ -391,11 +392,12 @@ public class MainService extends IntentService {
     /**
      * Queries the network for the symbolsToLoad in one request to retrieve their latest
      * main values.
+     *
      * @param symbolsToLoad The symbols to be updated.
      * @return This will return the update operations of the stocks needed to update the db.
      * @throws IOException
      */
-    private ArrayList<ContentProviderOperation> getLoadMoreOperations(String[] symbolsToLoad) throws IOException{
+    private ArrayList<ContentProviderOperation> getLoadMoreOperations(String[] symbolsToLoad) throws IOException {
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
         Map<String, Stock> stockList = YahooFinance.get(symbolsToLoad);
@@ -424,9 +426,10 @@ public class MainService extends IntentService {
      * Gets an update operation to update the update time.
      * The update time will be updated whenever the list refreshes and whenever a new symbol has
      * been added.
+     *
      * @return an update operation to update the update time.
      */
-    private ContentProviderOperation getUpdateTimeOperation(){
+    private ContentProviderOperation getUpdateTimeOperation() {
         ContentValues values = new ContentValues();
         values.put(SaveStateEntry.COLUMN_UPDATE_TIME_IN_MILLI, System.currentTimeMillis());
 
@@ -441,24 +444,25 @@ public class MainService extends IntentService {
      * Gets an update operation to update the shown position bookmark to the last shown position
      * bookmark. The shown list position bookmark needs to be updated whenever a the list is
      * refreshed or items are added after load "more".
+     *
      * @return an update operation to update the shown position bookmark to the last shown position
      * bookmark.
      */
-    private ContentProviderOperation getListPositionBookmarkOperation(String symbol){
+    private ContentProviderOperation getListPositionBookmarkOperation(String symbol) {
         Cursor cursor = null;
         int listPosition = ListManipulator.MORE; //Default to "more" in case something goes wrong
-        try{
-            final String [] projection = new String[]{StockEntry.COLUMN_LIST_POSITION};
+        try {
+            final String[] projection = new String[]{StockEntry.COLUMN_LIST_POSITION};
             final int indexListPosition = 0;
 
             cursor = getContentResolver().query(StockEntry.buildUri(symbol),
                     projection, null, null, null);
 
-            if(cursor != null && cursor.moveToFirst()){
+            if (cursor != null && cursor.moveToFirst()) {
                 listPosition = cursor.getInt(indexListPosition);
             }
-        }finally {
-            if(cursor != null){
+        } finally {
+            if (cursor != null) {
                 cursor.close();
             }
         }
@@ -497,11 +501,12 @@ public class MainService extends IntentService {
 
     /**
      * Sends the operations to the Content Provider to be executed.
-     * @param ops the operations to be executed
+     *
+     * @param ops    the operations to be executed
      * @param method the custom method of your choice.
      * @param arg
      */
-    private void applyOperations(ArrayList<ContentProviderOperation> ops, String method, String arg){
+    private void applyOperations(ArrayList<ContentProviderOperation> ops, String method, String arg) {
         Bundle extras = new Bundle();
         extras.putParcelableArrayList(StockProvider.KEY_OPERATIONS, ops);
         extras.putString(MainService.KEY_SESSION_ID, mSessionId);
@@ -511,7 +516,6 @@ public class MainService extends IntentService {
                 arg,
                 extras);
     }
-
 
     @Override
     public void onTaskRemoved(Intent rootIntent) {

@@ -36,7 +36,7 @@ import yahoofinance.histquotes.Interval;
 public class DetailService extends Service {
     private static final String TAG = DetailService.class.getSimpleName();
     public static final String KEY_DETAIL_SYMBOL = "detailSymbol";
-    public static final String KEY_SESSION_ID ="sessionId";
+    public static final String KEY_SESSION_ID = "sessionId";
 
     //needs to be 366 since we need to compare closing to prev day's closing price
     private static final int YEAR = 366;
@@ -53,7 +53,7 @@ public class DetailService extends Service {
         intent.putExtra(KEY_SESSION_ID, MyApplication.getInstance().getSessionId());
         mQueue.offer(intent);
 
-        if(mFirstAsyncTask) {
+        if (mFirstAsyncTask) {
             mFirstAsyncTask = false;
             startLoadDetailAsyncTask(mQueue.poll());
         }
@@ -61,27 +61,28 @@ public class DetailService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void startLoadDetailAsyncTask(Intent intent){
-        new AsyncTask<Intent, Void, Void>() {
+    private void startLoadDetailAsyncTask(final Intent intent) {
+        new AsyncTask<Void, Void, Void>() {
             @Override
-            protected Void doInBackground(Intent... params) {
+            protected Void doInBackground(Void... params) {
                 try {
-                    // check for internet
-
-                    if(!Utility.isNetworkAvailable(DetailService.this)){
-                    throw new IOException(getString(R.string.toast_no_network));
+                    // Check for internet
+                    if (!Utility.isNetworkAvailable(DetailService.this)) {
+                        throw new IOException(getString(R.string.toast_no_network));
                     }
 
-                    String symbol = params[0].getStringExtra(KEY_DETAIL_SYMBOL);
+                    String symbol = intent.getStringExtra(KEY_DETAIL_SYMBOL);
 
-                    if(isDetailDataExist(symbol)) {
+                    // Check if the detail data already exists
+                    if (isDetailDataExist(symbol)) {
                         EventBus.getDefault().postSticky(new LoadDetailFinishedEvent(
-                                params[0].getStringExtra(KEY_SESSION_ID),
-                                params[0].getStringExtra(KEY_DETAIL_SYMBOL),
+                                intent.getStringExtra(KEY_SESSION_ID),
+                                intent.getStringExtra(KEY_DETAIL_SYMBOL),
                                 true));
 
                         return null;
                     }
+
                     performActionLoadDetails(symbol);
 
                 } catch (IOException e) {
@@ -94,8 +95,8 @@ public class DetailService extends Service {
                                 getString(R.string.toast_error_retrieving_data));
                     }
                     EventBus.getDefault().postSticky(new LoadDetailFinishedEvent(
-                            params[0].getStringExtra(KEY_SESSION_ID),
-                            params[0].getStringExtra(KEY_DETAIL_SYMBOL),
+                            intent.getStringExtra(KEY_SESSION_ID),
+                            intent.getStringExtra(KEY_DETAIL_SYMBOL),
                             false));
                 }
                 return null;
@@ -110,11 +111,11 @@ public class DetailService extends Service {
                     stopSelf();
                 }
             }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, intent);// Use Executor to prevent blockage of MainActivity's AsyncTask
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);// Use Executor to prevent blockage of MainActivity's AsyncTask
 
     }
 
-    private void performActionLoadDetails(String symbol)throws IOException {
+    private void performActionLoadDetails(String symbol) throws IOException {
         ContentValues values = getDetailValues(symbol);
         getContentResolver().update(StockContract.StockEntry.buildUri(symbol), values, null, null);
     }
@@ -122,11 +123,12 @@ public class DetailService extends Service {
     /**
      * Retrieves the symbol's one year history and calculates its prev. streak, streak's year high,
      * and streak's year low.
+     *
      * @param symbol
      * @return
      * @throws IOException
      */
-    private ContentValues getDetailValues(String symbol) throws IOException{
+    private ContentValues getDetailValues(String symbol) throws IOException {
         Cursor cursor = null;
         ContentValues values = null;
 
@@ -248,8 +250,8 @@ public class DetailService extends Service {
                 values.put(StockContract.StockEntry.COLUMN_STREAK_CHART_MAP_CSV, convertChartMapToCsv(chartMap));
             }
 
-        }finally {
-            if (cursor != null){
+        } finally {
+            if (cursor != null) {
                 cursor.close();
             }
         }
@@ -260,34 +262,36 @@ public class DetailService extends Service {
     /**
      * Adds a streak to the chart mapping with frequency of 1.
      * If the streak already exists, increment frequency by 1.
+     *
      * @param chartMap
      * @param streak
      */
-    private void addStreakToChartMap(List<StreakFrequency> chartMap, int streak){
+    private void addStreakToChartMap(List<StreakFrequency> chartMap, int streak) {
         StreakFrequency streakFreqItem = new StreakFrequency(streak, 1);
         int streakFreqIndex = chartMap.indexOf(streakFreqItem);
 
-        if(streakFreqIndex != -1 ){
+        if (streakFreqIndex != -1) {
             streakFreqItem = chartMap.get(streakFreqIndex);
             streakFreqItem.setFrequency(streakFreqItem.getFrequency() + 1);
-        }else{
+        } else {
             chartMap.add(streakFreqItem);
         }
     }
 
     /**
      * Sorts map items in ascending order and combines them to form a single CSV String.
+     *
      * @param chartMap
      * @return The converted CSV string w/ streak followed by its frequency like so:
      * -6,1,-5,2,-3,-1 20,1,24,4,3,2,5,1,6,2,
      */
-    private String convertChartMapToCsv(List<StreakFrequency> chartMap){
+    private String convertChartMapToCsv(List<StreakFrequency> chartMap) {
         // Sort ascending
         Collections.sort(chartMap);
 
         // Build a String like this -6,1,-5,2,-3,1 etc. w/ streak followed by freq.
         StringBuilder sb = new StringBuilder("");
-        for (StreakFrequency streakFreqItem : chartMap){
+        for (StreakFrequency streakFreqItem : chartMap) {
             sb.append(streakFreqItem.getStreak());
             sb.append(BarChartActivity.CHART_MAP_DELIMITER);
             sb.append(streakFreqItem.getFrequency());
@@ -336,7 +340,7 @@ public class DetailService extends Service {
     /**
      * The chart mapping helper class that will store a stock's streak mapped to its frequency.
      */
-    private static class StreakFrequency implements Comparable<StreakFrequency>{
+    private static class StreakFrequency implements Comparable<StreakFrequency> {
 
         private int mStreak;
         private int mFrequency;
@@ -364,8 +368,8 @@ public class DetailService extends Service {
 
         @Override
         public boolean equals(Object o) {
-            if(o instanceof StreakFrequency){
-                if(mStreak == ((StreakFrequency)o).getStreak()){
+            if (o instanceof StreakFrequency) {
+                if (mStreak == ((StreakFrequency) o).getStreak()) {
                     return true;
                 }
             }

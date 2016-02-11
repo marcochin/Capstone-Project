@@ -23,7 +23,6 @@ import com.mcochin.stockstreaks.custom.MyApplication;
  */
 public class MotdFragment extends DialogFragment{
     public static final String TAG = MotdFragment.class.getSimpleName();
-    public static final String DATA_LAYER_MOTD_KEY = "msg_of_the_day";
 
     private MaterialDialog mMotdDialog;
     private TextView mTextMotd;
@@ -60,7 +59,7 @@ public class MotdFragment extends DialogFragment{
             // Make links such as: <a href="http://www.google.com">Go to Google</a> work
             //http://stackoverflow.com/questions/2734270/how-do-i-make-links-in-a-textview-clickable
             Spanned text = Html.fromHtml(containerHolder.getContainer()
-                    .getString(DATA_LAYER_MOTD_KEY));
+                    .getString(getString(R.string.tag_manager_motd_key)));
             URLSpan[] currentSpans = text.getSpans(0, text.length(), URLSpan.class);
             SpannableString buffer = new SpannableString(text);
             Linkify.addLinks(buffer, Linkify.ALL);
