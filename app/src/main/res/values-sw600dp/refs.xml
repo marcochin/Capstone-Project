@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item type="layout" name="fragment_detail_ref">@layout/fragment_detail_land</item>
-    <item type="id" name="button_bar_chart_ref">@null</item>
 </resources>

@@ -15,7 +15,6 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/button_bar_chart"
         android:orientation="vertical">
         <include layout="@layout/fragment_detail_section_main"
             android:layout_width="match_parent"
