@@ -21,6 +21,8 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.utils.Utils;
 import com.github.mikephil.charting.utils.ViewPortHandler;
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.tagmanager.DataLayer;
 import com.google.android.gms.tagmanager.TagManager;
 import com.mcochin.stockstreaks.custom.MyApplication;
@@ -196,14 +198,13 @@ public class BarChartActivity extends AppCompatActivity{
     }
 
     /**
-     * Send a hit to Tag Manager which will forward to Analytics the data of a Screen View Hit.
+     * Send a hit to Analytics to track data of a Screen View Hit.
      */
     private void sendScreenViewHit(){
-        String symbol = StockContract.getSymbolFromUri(mDetailUri);
-        TagManager tagManager = MyApplication.getInstance().getTagManager();
-        tagManager.getDataLayer().pushEvent(getString(R.string.tag_manager_screen_view_bar_chart_event_name),
+        Tracker tracker = MyApplication.getInstance().getAnalyticsTracker();
 
-                DataLayer.mapOf(getString(R.string.tag_manager_screen_view_bar_chart_key),
-                        getString(R.string.tag_manager_placeholder_screen_view_bar_chart, symbol)));
+        String symbol = StockContract.getSymbolFromUri(mDetailUri);
+        tracker.setScreenName(BarChartActivity.class.getSimpleName() + " " + symbol);
+        tracker.send(new HitBuilders.ScreenViewBuilder().build());
     }
 }

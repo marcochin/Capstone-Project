@@ -1,5 +1,7 @@
 package com.mcochin.stockstreaks.utils;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -61,6 +63,21 @@ public class Utility {
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         return activeNetwork != null &&
                 activeNetwork.isConnectedOrConnecting();
+    }
+
+    /**
+     * Detects to see if specified service is running.
+     *
+     * @param manager ActivityManager
+     * @return returns true if running, false otherwise
+     */
+    public static boolean isServiceRunning(ActivityManager manager, String serviceName) {
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceName.equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

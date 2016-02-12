@@ -20,6 +20,8 @@ import com.mcochin.stockstreaks.data.StockProvider;
 import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.MainProgressWheelHideEvent;
+import com.mcochin.stockstreaks.pojos.events.MainProgressWheelShowEvent;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.mcochin.stockstreaks.widget.StockWidgetProvider;
@@ -68,12 +70,20 @@ public class MainService extends IntentService {
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        // Every request should have a session id. The sessionId may not exist yet if the process
-        // was started by the widget and hence we have to create a new session if so.
+    public void onCreate() {
         if (MyApplication.getInstance().getSessionId().isEmpty()) {
             MyApplication.startNewSession();
         }
+        // Tell MainActivity to show progress wheel
+        ListEventQueue.getInstance().post(
+                new MainProgressWheelShowEvent(MyApplication.getInstance().getSessionId()));
+        super.onCreate();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        // Every request should have a session id. The sessionId may not exist yet if the process
+        // was started by the widget and hence we have to create a new session if so.
         intent.putExtra(KEY_SESSION_ID, MyApplication.getInstance().getSessionId());
 
         return super.onStartCommand(intent, flags, startId);
@@ -516,6 +526,14 @@ public class MainService extends IntentService {
                 method,
                 arg,
                 extras);
+    }
+
+    @Override
+    public void onDestroy() {
+        // Tell MainActivity to hide progress wheel
+        ListEventQueue.getInstance().post(
+                new MainProgressWheelHideEvent(MyApplication.getInstance().getSessionId()));
+        super.onDestroy();
     }
 
     @Override

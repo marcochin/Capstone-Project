@@ -7,6 +7,11 @@
         ca-app-pub-3940256099942544/1033173712
     </string>
 
+    <!-- Analytics -->
+    <string name="analytics_category" translatable="false">Symbol Event</string>
+    <string name="analytics_action_add" translatable="false">Symbol Add</string>
+    <string name="analytics_label_add_placeholder" translatable="false">Add %1$s</string>
+
     <!-- TagManager (Analytics config in xml folder) -->
     <string name="tag_manager_motd_container_id" translatable="false"></string>
     <string name="tag_manager_motd_key" translatable="false">msg_of_the_day</string>
@@ -122,7 +127,7 @@
         \nNo, the app only displays information from its most recent regular hours close.
 
         \n\n<b>Are all stocks supported?</b>
-        No, the app currently only supports stocks from NASDAQ/NYSE.
+        \nNo, the app currently only supports stocks from NASDAQ/NYSE.
 
         \n\n<b>When can I refresh the stock list?</b>
         \nThe stock list can be refreshed at 4:30 PM EST. I am aware that markets close at 4:00 PM,

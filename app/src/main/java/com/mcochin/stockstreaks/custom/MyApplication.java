@@ -45,6 +45,18 @@ public class MyApplication extends Application {
         EventBus.builder().addIndex(new MyEventBusIndex()).installDefaultEventBus();
     }
 
+    public static void startNewSession(){
+        mSessionId = UUID.randomUUID().toString();
+    }
+
+    public static boolean validateSessionId(String sessionId){
+        if(sessionId == null || sessionId.isEmpty()){
+            return false;
+        }
+
+        return mSessionId.equals(sessionId);
+    }
+
     /**
      * Initializes the Analytics Tracker
      */
@@ -56,6 +68,10 @@ public class MyApplication extends Application {
             // adb logcat -s GAv4
             mTracker = analytics.newTracker(R.xml.analytics_tracker);
         }
+    }
+
+    public Tracker getAnalyticsTracker(){
+        return mTracker;
     }
 
     public synchronized TagManager getTagManager(){
@@ -73,17 +89,6 @@ public class MyApplication extends Application {
         mContainerHolder = containerHolder;
     }
 
-    public static void startNewSession(){
-        mSessionId = UUID.randomUUID().toString();
-    }
-
-    public static boolean validateSessionId(String sessionId){
-        if(sessionId == null || sessionId.isEmpty()){
-            return false;
-        }
-
-        return mSessionId.equals(sessionId);
-    }
 
     public String getSessionId(){
         return mSessionId;

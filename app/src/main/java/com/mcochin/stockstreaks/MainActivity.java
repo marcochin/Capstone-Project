@@ -1,5 +1,6 @@
 package com.mcochin.stockstreaks;
 
+import android.app.ActivityManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
@@ -33,9 +34,9 @@ import android.widget.Toast;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.tagmanager.ContainerHolder;
-import com.google.android.gms.tagmanager.DataLayer;
 import com.google.android.gms.tagmanager.TagManager;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.SwipeDismissItemAnimator;
@@ -62,12 +63,16 @@ import com.mcochin.stockstreaks.pojos.events.AppRefreshFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.InitLoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
-import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
+import com.mcochin.stockstreaks.pojos.events.MainProgressWheelHideEvent;
+import com.mcochin.stockstreaks.pojos.events.MainProgressWheelShowEvent;
+import com.mcochin.stockstreaks.services.MainService;
 import com.mcochin.stockstreaks.utils.Utility;
 import com.quinny898.library.persistentsearch.SearchBox;
 import com.quinny898.library.persistentsearch.SearchResult;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +85,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private static final String KEY_LOGO_VISIBLE = "logoVisible";
     private static final String KEY_PROGRESS_WHEEL_VISIBLE = "progressWheelVisible";
     private static final String KEY_EMPTY_MSG_VISIBLE = "emptyMsgVisible";
-    private static final String KEY_PROGRESS_WHEEL_QUEUE = "progressWheelQueue";
 
     private static final String KEY_FIRST_OPEN = "firstOpen";
     private static final String KEY_DYNAMIC_SCROLL_ENABLED = "dynamicScrollEnabled";
@@ -123,7 +127,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     private boolean mDynamicScrollLoadEnabled;
     private boolean mDynamicScrollLoadAnother;
     private int mNumberOfLaunchItems;
-    private int mProgressWheelQueue;
 
     private InterstitialAd mInterstitialAd;
     private int mItemClicksForInterstitial;
@@ -224,7 +227,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             }
 
             mFirstOpen = savedInstanceState.getBoolean(KEY_FIRST_OPEN);
-            mProgressWheelQueue = savedInstanceState.getInt(KEY_PROGRESS_WHEEL_QUEUE);
             mDynamicScrollLoadEnabled = savedInstanceState.getBoolean(KEY_DYNAMIC_SCROLL_ENABLED);
             mDynamicScrollLoadAnother = savedInstanceState.getBoolean(KEY_DYNAMIC_LOAD_ANOTHER);
             mItemClicksForInterstitial = savedInstanceState.getInt(KEY_ITEM_CLICKS_FOR_INTERSTITIAL);
@@ -258,6 +260,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
         EventBus eventBus = EventBus.getDefault();
         eventBus.register(mListFragment);
+        eventBus.register(this);
 
         // Fetch the stock list
         fetchStockList();
@@ -273,7 +276,7 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             mFirstOpen = false;
             mDynamicScrollLoadAnother = false;
 
-            showProgressWheel(1);
+            showProgressWheel();
             listEventQueue.clearQueue();
             mListFragment.initFromDb();
 
@@ -294,15 +297,14 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
      */
     private boolean refreshList(String attachSymbol, boolean showUpToDateToast) {
         if (MyApplication.getInstance().isRefreshing()) {
-            showProgressWheel(1);
+            showProgressWheel();
+            return true;
 
         } else if (Utility.canUpdateList(getContentResolver()) && mEmptyMsg.getVisibility() != View.VISIBLE) {
             // We set Dynamic scroll to false here as early as possible as a precaution to prevent
             // load as we don't setRefreshing to true until initFromRefresh();
             mDynamicScrollLoadEnabled = false;
             mDynamicScrollLoadAnother = false;
-
-            showProgressWheel(attachSymbol == null ? 1 : 2);
 
             // Dismiss Snack-bar to prevent undo removal because the old data will not be in sync with
             // new data when list is refreshed.
@@ -361,7 +363,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
             } else if (!refreshList(query, false)) {
                 // Refresh the shownList BEFORE fetching a new stock. This is to prevent
                 // fetching the new stock twice when it becomes apart of that list.
-                showProgressWheel(1);
                 mListFragment.loadSymbol(query);
             }
         }
@@ -387,8 +388,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // ListManipulatorFragment.EventListener
     public void onLoadSymbolFinished(LoadSymbolFinishedEvent event) {
-        hideProgressWheel();
-
         if (event.isSuccessful()) {
             if (!mDragDropManager.isDragging() && !mSwipeManager.isSwiping()) {
                 // Can't use notifyDataInserted(...) because we are suppose to update adapter size
@@ -443,8 +442,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
 
     @Override // ListManipulatorFragment.EventListener
     public void onRefreshFinished(AppRefreshFinishedEvent event) {
-        hideProgressWheel();
-
         if (event.isSuccessful()) {
             mAdapter.notifyDataSetChanged();
             dynamicLoadMore();
@@ -459,11 +456,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
                 showEmptyWidgets();
             }
         }
-    }
-
-    @Override // ListManipulatorFragment.EventListener
-    public void onWidgetRefreshDelegate(WidgetRefreshDelegateEvent event) {
-        showProgressWheel(1);
     }
 
     @Override // MainAdapter.EventListener
@@ -917,30 +909,36 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         }
     }
 
-    /**
-     * @param numberOfBackgroundTasks Number of background tasks you will be performing. It is
-     *                                important to keep track of this information so we know when to hide the progress wheel.
-     */
-    private void showProgressWheel(int numberOfBackgroundTasks) {
-        if (mProgressWheelQueue < 0) {
-            mProgressWheelQueue = 0;
-        }
-        mProgressWheelQueue += numberOfBackgroundTasks;
-        mEmptyMsg.setVisibility(View.INVISIBLE);
-        mProgressWheel.setVisibility(View.VISIBLE);
-    }
-
     private void hideEmptyMessage() {
         mEmptyMsg.setVisibility(View.INVISIBLE);
     }
 
+    private void showProgressWheel() {
+        mEmptyMsg.setVisibility(View.INVISIBLE);
+        mProgressWheel.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * This method is reserved for operations not on the network, but still require a progress wheel.
+     * {@link MainService#onDestroy()} will cover hiding network operation progress wheels.
+     */
     private void hideProgressWheel() {
-//        if (!Utility.isServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE),
-//                MainService.class.getName())) {
-        mProgressWheelQueue--;
-        if (mProgressWheelQueue <= 0) {
+        if (!Utility.isServiceRunning((ActivityManager) getSystemService(ACTIVITY_SERVICE),
+                MainService.class.getName())) {
             mProgressWheel.setVisibility(View.INVISIBLE);
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onMainProgressWheelShow(MainProgressWheelShowEvent event) {
+        EventBus.getDefault().removeStickyEvent(MainProgressWheelShowEvent.class);
+        showProgressWheel();
+    }
+
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onMainProgressWheelHide(MainProgressWheelHideEvent event) {
+        EventBus.getDefault().removeStickyEvent(MainProgressWheelHideEvent.class);
+        mProgressWheel.setVisibility(View.INVISIBLE);
     }
 
     @Override
@@ -958,7 +956,6 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         outState.putBoolean(KEY_LOGO_VISIBLE, mSearchLogo.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_PROGRESS_WHEEL_VISIBLE, mProgressWheel.getVisibility() == View.VISIBLE);
         outState.putBoolean(KEY_EMPTY_MSG_VISIBLE, mEmptyMsg.getVisibility() == View.VISIBLE);
-        outState.putInt(KEY_PROGRESS_WHEEL_QUEUE, mProgressWheelQueue);
 
         outState.putBoolean(KEY_FIRST_OPEN, mFirstOpen);
         outState.putBoolean(KEY_DYNAMIC_SCROLL_ENABLED, mDynamicScrollLoadEnabled);
@@ -981,7 +978,9 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
         if (mRecyclerView != null) {
             mRecyclerView.clearOnScrollListeners();
         }
-        EventBus.getDefault().unregister(mListFragment);
+        EventBus eventBus = EventBus.getDefault();
+        eventBus.unregister(mListFragment);
+        eventBus.unregister(this);
 
         super.onStop();
     }
@@ -1022,55 +1021,45 @@ public class MainActivity extends AppCompatActivity implements SearchBox.SearchL
     }
 
     /**
-     * Send a hit to Tag Manager which will forward to Analytics the data of a Symbol Add Event.
+     * Send a hit to Analytics to track data of a Symbol Add Event.
      *
      * @param symbol
      */
     private void sendSymbolAddHit(String symbol) {
-        TagManager tagManager = MyApplication.getInstance().getTagManager();
-        tagManager.getDataLayer().pushEvent(getString(R.string.tag_manager_symbol_add_event_name),
-
-                DataLayer.mapOf(getString(R.string.tag_manager_event_category_key),
-                        getString(R.string.tag_manager_event_category),
-
-                        getString(R.string.tag_manager_event_action_key),
-                        getString(R.string.tag_manager_event_action),
-
-                        getString(R.string.tag_manager_event_label_key),
-                        getString(R.string.tag_manager_placeholder_event_label, symbol)));
+        MyApplication.getInstance().getAnalyticsTracker().send(new HitBuilders.EventBuilder()
+                .setCategory(getString(R.string.analytics_category))
+                .setAction(getString(R.string.analytics_action_add))
+                .setLabel(getString(R.string.analytics_label_add_placeholder, symbol))
+                .build());
     }
 
-    private void initTagManagerAndAnalytics(){
+    private void initTagManagerAndAnalytics() {
         // Init Analytics and Tag Manager in AsyncTask to slightly speed up app startup
-        new AsyncTask<Void, Void, Void>(){
+        new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
+                // Init Analytics
                 MyApplication.getInstance().initAnalyticsTracking();
-                initGtmContainer();
+
+                // Init Tag Manager / GTM container
+                TagManager tagManager = MyApplication.getInstance().getTagManager();
+
+                // Retrieves a fresh SAVED container. I don't think it ever performs network operations..
+                tagManager.loadContainerPreferFresh(getString(R.string.tag_manager_motd_container_id),
+                        R.raw.gtm_default_container).setResultCallback(new ResultCallback<ContainerHolder>() {
+                    @Override
+                    public void onResult(@NonNull ContainerHolder containerHolder) {
+
+                        // Refresh container over network manually in case the "fresh" container is stale.
+                        containerHolder.refresh();
+                        // Store the containerHolder for MOTD.
+                        MyApplication.getInstance().setContainerHolder(containerHolder);
+                    }
+                }, MOTD_CONTAINER_TIMEOUT, TimeUnit.MILLISECONDS);
 
                 return null;
             }
         }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-    }
-
-    /**
-     * Retrieves and prepares a container that will serve as data for our Msg Of the Day.
-     */
-    private void initGtmContainer() {
-        TagManager tagManager = MyApplication.getInstance().getTagManager();
-
-        // Retrieves a fresh SAVED container. I don't think it ever performs network operations..
-        tagManager.loadContainerPreferFresh(getString(R.string.tag_manager_motd_container_id),
-                R.raw.gtm_default_container).setResultCallback(new ResultCallback<ContainerHolder>() {
-            @Override
-            public void onResult(@NonNull ContainerHolder containerHolder) {
-
-                // Refresh container over network manually in case the "fresh" container is stale.
-                containerHolder.refresh();
-                // Store the containerHolder for MOTD.
-                MyApplication.getInstance().setContainerHolder(containerHolder);
-            }
-        }, MOTD_CONTAINER_TIMEOUT, TimeUnit.MILLISECONDS);
     }
 
     /**

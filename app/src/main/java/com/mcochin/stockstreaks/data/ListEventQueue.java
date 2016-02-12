@@ -5,6 +5,8 @@ import com.mcochin.stockstreaks.pojos.events.Event;
 import com.mcochin.stockstreaks.pojos.events.InitLoadFromDbFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadMoreFinishedEvent;
 import com.mcochin.stockstreaks.pojos.events.LoadSymbolFinishedEvent;
+import com.mcochin.stockstreaks.pojos.events.MainProgressWheelHideEvent;
+import com.mcochin.stockstreaks.pojos.events.MainProgressWheelShowEvent;
 import com.mcochin.stockstreaks.pojos.events.WidgetRefreshDelegateEvent;
 
 import org.greenrobot.eventbus.EventBus;
@@ -76,7 +78,7 @@ public class ListEventQueue {
      * @return Class obj that represents the event class.
      */
     private Class getEventType(Event event) {
-        // After every event remember to removeAllStickied or events will be performed twice
+        // After every event remember to remove its sticky event or events will be performed twice
         if (event instanceof LoadMoreFinishedEvent) {
             return LoadMoreFinishedEvent.class;
 
@@ -90,6 +92,12 @@ public class ListEventQueue {
             return AppRefreshFinishedEvent.class;
 
         } else if (event instanceof InitLoadFromDbFinishedEvent) {
+            return InitLoadFromDbFinishedEvent.class;
+
+        } else if (event instanceof MainProgressWheelShowEvent) {
+            return AppRefreshFinishedEvent.class;
+
+        } else if (event instanceof MainProgressWheelHideEvent) {
             return InitLoadFromDbFinishedEvent.class;
         }
 

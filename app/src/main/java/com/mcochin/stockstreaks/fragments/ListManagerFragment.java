@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 
 import com.mcochin.stockstreaks.custom.MyApplication;
 import com.mcochin.stockstreaks.data.ListEventQueue;
@@ -46,8 +47,6 @@ public class ListManagerFragment extends Fragment {
         void onLoadSymbolFinished(LoadSymbolFinishedEvent event);
 
         void onRefreshFinished(AppRefreshFinishedEvent event);
-
-        void onWidgetRefreshDelegate(WidgetRefreshDelegateEvent event);
     }
 
     @Override
@@ -82,12 +81,12 @@ public class ListManagerFragment extends Fragment {
      */
     public void initFromDb() {
         // Get load list of symbols to query
-        new AsyncTask<Context, Void, Void>() {
+        new AsyncTask<ContentResolver, Void, Void>() {
             @Override
-            protected Void doInBackground(Context... params) {
+            protected Void doInBackground(ContentResolver... params) {
                 Cursor cursor = null;
                 try {
-                    ContentResolver cr = params[0].getContentResolver();
+                    ContentResolver cr = params[0];
                     int shownPositionBookmark = Utility.getShownPositionBookmark(cr);
 
                     // Query db for data up to the list position bookmark;
@@ -103,7 +102,7 @@ public class ListManagerFragment extends Fragment {
                         int cursorCount = cursor.getCount();
                         if (cursorCount > 0) {
                             mListManipulator.setShownListCursor(cursor);
-                            mListManipulator.setLoadList(getLoadListFromDb());
+                            mListManipulator.setLoadList(getLoadListFromDb(cr));
                             mListManipulator.addToLoadListPositionBookmark(cursorCount);
                         }
                     }
@@ -120,7 +119,7 @@ public class ListManagerFragment extends Fragment {
                 ListEventQueue.getInstance().post(new InitLoadFromDbFinishedEvent(
                         MyApplication.getInstance().getSessionId()));
             }
-        }.execute(getActivity());
+        }.execute(getActivity().getContentResolver());
     }
 
     /**
@@ -154,9 +153,9 @@ public class ListManagerFragment extends Fragment {
             mListManipulator.saveShownListState(context);
         }
         // Start service to refresh app
-        Intent serviceIntent = new Intent(getContext(), MainService.class);
+        Intent serviceIntent = new Intent(getActivity(), MainService.class);
         serviceIntent.setAction(MainService.ACTION_APP_REFRESH);
-        getContext().startService(serviceIntent);
+        getActivity().startService(serviceIntent);
     }
 
     /**
@@ -166,10 +165,10 @@ public class ListManagerFragment extends Fragment {
      */
     public void loadSymbol(String symbol) {
         // Start service to retrieve stock info
-        Intent serviceIntent = new Intent(getContext(), MainService.class);
+        Intent serviceIntent = new Intent(getActivity(), MainService.class);
         serviceIntent.putExtra(MainService.KEY_LOAD_SYMBOL_QUERY, symbol);
         serviceIntent.setAction(MainService.ACTION_LOAD_SYMBOL);
-        getContext().startService(serviceIntent);
+        getActivity().startService(serviceIntent);
     }
 
     /**
@@ -182,10 +181,10 @@ public class ListManagerFragment extends Fragment {
             mLoadingMore = true;
 
             // Start service to load a few
-            Intent serviceIntent = new Intent(getContext(), MainService.class);
+            Intent serviceIntent = new Intent(getActivity(), MainService.class);
             serviceIntent.setAction(MainService.ACTION_LOAD_MORE);
             serviceIntent.putExtra(MainService.KEY_LOAD_MORE_QUERY, moreSymbols);
-            getContext().startService(serviceIntent);
+            getActivity().startService(serviceIntent);
 
         } else {
             mLoadingMore = false;
@@ -197,7 +196,7 @@ public class ListManagerFragment extends Fragment {
      *
      * @return a list of ALL the symbols from the db. This will serve as our load list.
      */
-    private String[] getLoadListFromDb() {
+    private String[] getLoadListFromDb(ContentResolver cr) {
         Cursor cursor = null;
         String[] loadList = null;
         try {
@@ -205,7 +204,7 @@ public class ListManagerFragment extends Fragment {
             final int indexSymbol = 0;
 
             // Query db for just symbols.
-            cursor = getContext().getContentResolver().query(
+            cursor = cr.query(
                     StockEntry.CONTENT_URI,
                     projection,
                     null,
@@ -318,13 +317,13 @@ public class ListManagerFragment extends Fragment {
     public void onAppRefreshFinished(final AppRefreshFinishedEvent event) {
         EventBus.getDefault().removeStickyEvent(AppRefreshFinishedEvent.class);
 
-        new AsyncTask<Void, Void, Void>() {
+        new AsyncTask<ContentResolver, Void, Void>() {
             @Override
-            protected Void doInBackground(Void... params) {
+            protected Void doInBackground(ContentResolver... params) {
                 if (event.isSuccessful()) {
                     mListManipulator.setShownListCursor(null);
                     // Give list to ListManipulator
-                    mListManipulator.setLoadList(getLoadListFromDb());
+                    mListManipulator.setLoadList(getLoadListFromDb(params[0]));
 
                     for (Stock stock : event.getStockList()) {
                         mListManipulator.addItemToBottom(stock);
@@ -340,7 +339,7 @@ public class ListManagerFragment extends Fragment {
                     mEventListener.onRefreshFinished(event);
                 }
             }
-        }.execute();
+        }.execute(getActivity().getContentResolver());
     }
 
     /**
@@ -357,13 +356,6 @@ public class ListManagerFragment extends Fragment {
             protected Void doInBackground(Context... params) {
                 refreshList(params[0]);
                 return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                if (mEventListener != null) {
-                    mEventListener.onWidgetRefreshDelegate(event);
-                }
             }
         }.execute(getActivity());
     }
