@@ -7,27 +7,14 @@
         ca-app-pub-3940256099942544/1033173712
     </string>
 
-    <!-- Analytics -->
+    <!-- Analytics (Analytics config in xml folder)-->
     <string name="analytics_category" translatable="false">Symbol Event</string>
     <string name="analytics_action_add" translatable="false">Symbol Add</string>
     <string name="analytics_label_add_placeholder" translatable="false">Add %1$s</string>
 
-    <!-- TagManager (Analytics config in xml folder) -->
+    <!-- TagManager -->
     <string name="tag_manager_motd_container_id" translatable="false"></string>
     <string name="tag_manager_motd_key" translatable="false">msg_of_the_day</string>
-
-    <string name="tag_manager_symbol_add_event_name" translatable="false">Symbol Add</string>
-    <string name="tag_manager_screen_view_bar_chart_event_name" translatable="false">Screen View Bar Chart</string>
-
-    <string name="tag_manager_event_category_key" translatable="false">event_category</string>
-    <string name="tag_manager_event_action_key" translatable="false">event_action</string>
-    <string name="tag_manager_event_label_key" translatable="false">event_label</string>
-    <string name="tag_manager_screen_view_bar_chart_key" translatable="false">screen_view_bar_chart</string>
-
-    <string name="tag_manager_event_category" translatable="false">Symbol Event</string>
-    <string name="tag_manager_event_action" translatable="false">Symbol Add</string>
-    <string name="tag_manager_placeholder_event_label" translatable="false">Add %1$s</string>
-    <string name="tag_manager_placeholder_screen_view_bar_chart" translatable="false">Bar Chart Activity %1$s</string>
 
     <!-- Navigation menu -->
     <string name="navigation_motd">Message of the Day</string>
