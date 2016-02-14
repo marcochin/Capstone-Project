@@ -1,16 +1,19 @@
 # Capstone-Project
 Android: Stock Streaks is an app that follows and tracks historical data of your favorite stocks. It calculates how many times a stock has gone up or down in a row and displays the information to you.
 
+[![](http://i.imgur.com/bP75K6w.png)](https://play.google.com/store/apps/details?id=com.mcochin.stockstreaks)
 ---
-### Notes
-This app has incorporated `Google Analytics` and `Google AdMob` libraries, but with their service ids removed. However, the app will still run regardless.
-Please insert your own ids as shown below:
 
-For `Analytics` in `res/xml/analytics_tracker.xml`:
+### Features:
+• Allows you to search and view a stock's current streak.</br>
+• Incorporates a bar chart to analyze past streaks and their frequency of occurrence.</br>
+• Has a built in widget that allows you to view your saved stocks without having to open the app.</br>
+• Optimized for phone and tablet.</br>
 
-    <string name="ga_trackingId">YOUR_ANALYTICS_TRACKING_ID_HERE</string>
-    
-For `Admob:` in `res/strings.xml`:
+### Preview:
+![App Preview](http://i.imgur.com/mjtAMut.gif)
+---
 
-    // This current id is a interstitial TEST id. Replace it with your own personal id.
-    <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
+<b>Design for Android API 16+</b>
+
+
