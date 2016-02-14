@@ -3,8 +3,8 @@
     <string name="app_name_initials" translatable="false">&#160;SS&#160;</string>
 
     <!-- Admob -->
+    <!-- Test Interstitial ID ca-app-pub-3940256099942544/1033173712-->
     <string name="interstitial_ad_unit_id" translatable="false">
-        ca-app-pub-3940256099942544/1033173712
     </string>
 
     <!-- Analytics (Analytics config in xml folder)-->

@@ -1,6 +1,5 @@
 <resources>
-    <!-- YOUR ANALYTICS TRACKING ID HERE -->
-    <string name="ga_trackingId">UA-72551263-1</string>
+    <string name="ga_trackingId"></string>
     <!--<string name="ga_logLevel">verbose</string>-->
 
     <!--  Problem with auto-tracking is that it tracks all activities and if it is popular,
