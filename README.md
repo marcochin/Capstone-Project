@@ -14,6 +14,6 @@ Android: Stock Streaks is an app that follows and tracks historical data of your
 ![App Preview](http://i.imgur.com/mjtAMut.gif)
 ---
 
-<b>Design for Android API 16+</b>
+<b>Designed for Android API 16+</b>
 
 
